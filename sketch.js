@@ -124,7 +124,6 @@ function draw() {
     }
     if (frameCount % DOWNSAMPLE_RATE === 0) {
         stats.colorCountHistory.push(Object.keys(stats.colors).length);
-        console.log(stats.colorCountHistory.length);
 
         if (stats.colorCountHistory.length > MAX_HISTORY_LENGTH) {
             stats.colorCountHistory = [];
