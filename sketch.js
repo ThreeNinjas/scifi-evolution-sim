@@ -261,25 +261,28 @@ function drawGraphs() {
         line(10, startingY, width-10, startingY);
         line(10, startingY + 100, width-10, startingY + 100);
         startingY = startingY++;
-        return;
-        beginShape();
-            for (let i = 0; i < graph.length; i++) {
-                let x = map(i, 0, graph.length-1, 10, width-10);
-                let y = map(graph[i], 0, stats.guys, height - startingY + 100, startingY);
-                
-                //first control point
-                if (i == 0) {
-                    splineVertex(x, y);
-                }
+        
+        if (graph.length > 1) {
+            beginShape();
+                for (let i = 0; i < graph.length; i++) {
+                    let x = map(i, 0, graph.length-1, 10, width-10);
+                    let y = map(graph[i], 0, stats.guys, height - startingY + 100, startingY);
+                    
+                    //first control point
+                    if (i == 0) {
+                        splineVertex(x, y);
+                    }
 
-                splineVertex(x, y);
-
-                //last control point
-                if (i == graph.length - 1) {
                     splineVertex(x, y);
+
+                    //last control point
+                    if (i == graph.length - 1) {
+                        splineVertex(x, y);
+                    }
                 }
-            }
-        endShape();
+            endShape();
+        }
+        
         startingY += 105;
         i++;
     }
