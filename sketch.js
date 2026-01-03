@@ -1,8 +1,15 @@
+const params = new URLSearchParams(window.location.search);
+const debug = params.get('debug');
+let numberOfGuys = params.get('guys') || null;
+
+
 let util = new Util();
 let guys = [];
 let diameter = 10;
 let temp = null;
 let humidity = null;
+let visibility = null; //this will at some point control senseDistance
+let senseDistanceMultiplier = null;
 let startTextSize = 15;
 let dominantColor = null;
 let stats = {
@@ -34,12 +41,12 @@ let config = {
     },
 };
 
-let numberOfGuys; // = util.randomNumber(0, 38);
+
 
 /*
+TODO: move the actually populating of guys out of loadWeather and into guys.populateGuys();
 TODO: make the boxes prettier!
 TODO: revisit how dominant color system works
-TODO: let one color be dominant / set the chance of a color being dominant as a percentage of a real world value. Pressure or something.
 TODO:  give each guy a small % chance of having a "dominant" color. Dominance means that upon collision you exert more of yourself upon the other guy.
 TODO: set upper and lower limits on the color space,  have them be based on temp and humidity.
     maybe with higher temps warmer colors have more dominance? 
@@ -82,6 +89,8 @@ function draw() {
         guy.move();
     }
 
+    const toRemove = new Set();
+
     for (let i = 0; i < guys.length; i++) {
         for (let j = i + 1; j < guys.length; j++) {
             if (guys[i].intersects(guys[j])) {
@@ -120,8 +129,23 @@ function draw() {
                     }
                 }
             }
+
+            if (guys[i].senses(guys[j])) {
+                //silently acknowledge
+                if (debug) {
+                    push();
+                        textSize(10);
+                        fill('white');
+                        text('!!', guys[i].x, guys[i].y+20);
+                        text('!!', guys[j].x, guys[j].y+20);
+                    pop();
+                }
+            }
         }
     }
+
+    //guys = guys.filter(g => !toRemove.has(g.id));
+
     if (frameCount % DOWNSAMPLE_RATE === 0) {
         stats.colorCountHistory.push(Object.keys(stats.colors).length);
 
@@ -142,19 +166,22 @@ async function loadWeather() {
         .then(r => r.json());
     humidity = Math.floor(h.temp);
 
-    numberOfGuys = temp;
+    visibility = 10;
+
+    numberOfGuys = debug && numberOfGuys ? numberOfGuys : temp;
     stats.guys = numberOfGuys;
 
-    console.log(temp, humidity);
-
     frameRate(temp);
+    i = 0;
     guys = Array.from({ length: numberOfGuys }, () => {
             const guy = new Guy({
+                id: i,
                 x: util.randomNumber(config.bounds.x.min, config.bounds.x.max),
                 y: util.randomNumber(config.bounds.y.min, config.bounds.y.max),
                 size: 10,
                 color: util.randomColor(temp, humidity),
-                hasDominantColor: util.chance(temp)
+                hasDominantColor: util.chance(temp),
+                senseDistance: util.chance(visibility) ? 5 + 5 * (visibility/10) : 5
             });
 
             const thisColor = util.getStringFromP5ColorObj(guy.color);
@@ -164,14 +191,18 @@ async function loadWeather() {
                 stats.dominantColors[thisColor] = (stats.dominantColors[thisColor] || 0 ) + 1;
                 guy.size = 15;
             }
-
+            i++;
             return guy;
         });
+        
+        stats.colorCountHistory.push(Object.keys(stats.colors).length);
+
     
     for (const guy of guys) {
         guy.drawMe();
     }
 }
+
 
 function drawEnvironment() {
     push();
@@ -224,16 +255,18 @@ function drawGraphs() {
     let startingY = (height / 2) + 20;
     let i = 0;
     for (let graph of [stats.colorCountHistory]) {
-        stroke(util.minBrightness(guys[i].color, 80));
+        stroke(util.minBrightness(guys[i].color, 100));
         noFill();
 
         line(10, startingY, width-10, startingY);
         line(10, startingY + 100, width-10, startingY + 100);
         startingY = startingY++;
+        return;
         beginShape();
             for (let i = 0; i < graph.length; i++) {
                 let x = map(i, 0, graph.length-1, 10, width-10);
                 let y = map(graph[i], 0, stats.guys, height - startingY + 100, startingY);
+                
                 //first control point
                 if (i == 0) {
                     splineVertex(x, y);

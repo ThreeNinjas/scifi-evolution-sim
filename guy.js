@@ -1,19 +1,38 @@
 class Guy {
   constructor(traits) {
+    this.id = traits.id;
     this.x = traits.x;
     this.y = traits.y;
     this.color = traits.color;
     this.size = traits.size;
     this.hasDominantColor = traits.hasDominantColor;
-    this.senseDistance = traits.senseDistance; //This should always be a percentage of their size, right? So always > this.size
+    this.senseDistance = traits.senseDistance || 5; //This should always be a percentage of their size, right? So always > this.size
   }
 
   drawMe() {
     push();
-    stroke(this.color);
-    fill(this.color);
-    circle(this.x, this.y, this.size);
+      stroke(this.color);
+      fill(this.color);
+      circle(this.x, this.y, this.size);
     pop();
+
+    if (debug) {
+      push();
+      fill('white');
+      textSize(10);
+      text(`${this.id},${this.calculateSensePerim()}`, this.x - 10, this.y);
+    pop();
+
+    push();
+      stroke('white');
+      noFill();
+      circle(this.x, this.y, this.calculateSensePerim())
+    pop();
+    }     
+  }
+
+  static getGuyById(id) {
+    return guys.find(g => g.id === id);
   }
 
   move() {
@@ -37,7 +56,15 @@ class Guy {
   }
 
   intersects(other) {
-    return dist(this.x, this.y, other.x, other.y) < diameter
+    return dist(this.x, this.y, other.x, other.y) < this.size;
+  }
+
+  senses(other) {
+    return dist(this.x, this.y, other.x, other.y) < this.calculateSensePerim();
+  }
+
+  calculateSensePerim() {
+    return this.size + (this.size * this.senseDistance)
   }
 
   dominance() {
