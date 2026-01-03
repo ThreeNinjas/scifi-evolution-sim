@@ -24,4 +24,12 @@ class Util {
     getStringFromP5ColorObj(thisColor) {
         return [red(thisColor), green(thisColor), blue(thisColor), alpha(thisColor)].join(',')
     }
+
+    minBrightness(c, min) {
+        let h = hue(c);
+        let s = saturation(c);
+        let b = max(brightness(c), min);
+
+        return color(h, s, b);
+    }
 }
