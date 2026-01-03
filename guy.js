@@ -5,6 +5,7 @@ class Guy {
     this.color = traits.color;
     this.size = traits.size;
     this.hasDominantColor = traits.hasDominantColor;
+    this.senseDistance = traits.senseDistance; //This should always be a percentage of their size, right? So always > this.size
   }
 
   drawMe() {
@@ -47,7 +48,7 @@ class Guy {
     if (a.hasDominantColor && b.hasDominantColor) {
       return 'both';
     }
-    
+
     if (a.hasDominantColor && !b.hasDominantColor) {
       return {
         dom: a,

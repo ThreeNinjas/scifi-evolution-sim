@@ -12,6 +12,10 @@ let stats = {
     colorCountHistory: [],
 };
 
+const MAX_HISTORY_LENGTH = 5000;
+const DOWNSAMPLE_RATE = 5;
+
+
 const serverURL =
     window.location.hostname === "127.0.0.1"
         ? "http://localhost:3000/"
@@ -115,12 +119,19 @@ function draw() {
                         stats.colors[newColor] = (stats.colors[newColor] || 0 ) + 1;
                     }
                 }
-                //updateStats(guys);
             }
         }
     }
+    if (frameCount % DOWNSAMPLE_RATE === 0) {
+        stats.colorCountHistory.push(Object.keys(stats.colors).length);
+        console.log(stats.colorCountHistory.length);
+
+        if (stats.colorCountHistory.length > MAX_HISTORY_LENGTH) {
+            stats.colorCountHistory = [];
+        }
+    }
     
-    
+    drawGraphs();
 }
 
 async function loadWeather() {
@@ -157,10 +168,6 @@ async function loadWeather() {
 
             return guy;
         });
-
-    console.log(guys);
-    console.log(stats);
-    console.log(Object.keys(stats.colors).length);
     
     for (const guy of guys) {
         guy.drawMe();
@@ -211,5 +218,38 @@ function updateStats(guys) {
             stats.dominantColors.push(colorString);
         }
     }
-    console.log(stats);
+}
+
+function drawGraphs() {
+    push();
+    let startingY = (height / 2) + 20;
+    let i = 0;
+    for (let graph of [stats.colorCountHistory]) {
+        stroke(util.minBrightness(guys[i].color, 80));
+        noFill();
+
+        line(10, startingY, width-10, startingY);
+        line(10, startingY + 100, width-10, startingY + 100);
+        startingY = startingY++;
+        beginShape();
+            for (let i = 0; i < graph.length; i++) {
+                let x = map(i, 0, graph.length-1, 10, width-10);
+                let y = map(graph[i], 0, stats.guys, height - startingY + 100, startingY);
+                //first control point
+                if (i == 0) {
+                    splineVertex(x, y);
+                }
+
+                splineVertex(x, y);
+
+                //last control point
+                if (i == graph.length - 1) {
+                    splineVertex(x, y);
+                }
+            }
+        endShape();
+        startingY += 105;
+        i++;
+    }
+    pop();
 }
