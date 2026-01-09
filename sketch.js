@@ -18,6 +18,7 @@ let stats = {
     colors: {},
     dominantColors: {},
     colorCountHistory: [],
+    numberOfFoodHistory: [],
 };
 
 const MAX_HISTORY_LENGTH = 2500;
@@ -25,9 +26,7 @@ const DOWNSAMPLE_RATE = 2;
 
 
 const serverURL =
-    window.location.hostname === "127.0.0.1"
-        ? "http://localhost:3000/"
-        : "http://199.19.74.165:3000/";
+    window.location.hostname === "127.0.0.1" ? "http://localhost:3000/" : "http://199.19.74.165:3000/";
 
 let config = {
     bounds: {
@@ -84,7 +83,10 @@ function draw() {
     text("GUYS: " + stats.guys, 20, height - 20);
     text("COLORS: " + Object.keys(stats.colors).length, 20, height - 40);
     text("DOMINANT COLORS: " + Object.keys(stats.dominantColors).length, 20, height - 60);
+    text("FOOD: " + Object.keys(forage.foodStorage).length, 20, height - 80);
     pop();
+
+    forage.drawMe();
 
     for (const guy of guys) {
         guy.move();
@@ -143,6 +145,12 @@ function draw() {
                 }
             }
         }
+
+        const foodToEat = guys[i].intersectsFood(forage.foodStorage);
+            
+        if (foodToEat !== null) {
+            forage.remove(foodToEat);
+        }
     }
 
     //guys = guys.filter(g => !toRemove.has(g.id));
@@ -153,19 +161,33 @@ function draw() {
         if (stats.colorCountHistory.length > MAX_HISTORY_LENGTH) {
             stats.colorCountHistory = [];
         }
+
+        stats.numberOfFoodHistory.push(forage.foodStorage.length);
+
+        if (stats.numberOfFoodHistory.length > MAX_HISTORY_LENGTH) {
+            stats.numberOfFoodHistory = [];
+        }
     }
     
     drawGraphs();
 }
 
 async function loadWeather() {
-    data = await fetch(`${serverURL}weather/guys`)
+    const url = `${serverURL}weather/guys`;
+    console.log(url);
+    data = await fetch(url)
         .then(r => r.json());
 
     visibility = 10;
 
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
+
+    forage = new Forage({
+        maxX: config.bounds.x.max,
+        maxY: config.bounds.y.max,
+        chanceOfFood: Math.floor(data.hum)
+    });
 
     frameRate(data.temp);
     i = 0;
@@ -175,7 +197,7 @@ async function loadWeather() {
                 x: util.randomNumber(config.bounds.x.min, config.bounds.x.max),
                 y: util.randomNumber(config.bounds.y.min, config.bounds.y.max),
                 size: 10,
-                color: util.randomColor(data.temp, data.humidity),
+                color: util.randomColor(data.temp, data.hum),
                 hasDominantColor: util.chance(data.temp * 0.25),
                 senseDistance: util.chance(visibility) ? 5 + 5 * (visibility/10) : 5
             });
@@ -250,19 +272,38 @@ function drawGraphs() {
     push();
     let startingY = (height / 2) + 20;
     let i = 0;
-    for (let graph of [stats.colorCountHistory]) {
-        stroke(util.minBrightness(guys[i].color, 100));
+    for (let graph of ['colorCountHistory', 'numberOfFoodHistory']) {
+        
+
+        let minY = 0;
+        let maxY = 0;
+        let color = '';
+
+        switch (graph) {
+            case 'colorCountHistory':
+                minY = Object.keys(stats.dominantColors).length;
+                maxY = stats.guys;
+                color = util.minBrightness(guys[i].color, 100);
+                break;
+            case 'numberOfFoodHistory':
+                minY = 0;
+                maxY = forage.chanceOfFood;
+                color = '#99cc33';
+                break;
+        }
+
+        stroke(color);
         noFill();
 
         line(10, startingY, width-10, startingY);
         line(10, startingY + 100, width-10, startingY + 100);
         startingY = startingY++;
         
-        if (graph.length > 1) {
+        if (stats[graph].length > 1) {
             beginShape();
-                for (let i = 0; i < graph.length; i++) {
-                    let x = map(i, 0, graph.length-1, 10, width-10);
-                    let y = map(graph[i], Object.keys(stats.dominantColors).length, stats.guys, startingY + 100, startingY);
+                for (let i = 0; i < stats[graph].length; i++) {
+                    let x = map(i, 0, stats[graph].length-1, 10, width-10);
+                    let y = map(stats[graph][i], minY, maxY, startingY + 100, startingY);
                     
                     //first control point
                     if (i == 0) {
@@ -272,7 +313,7 @@ function drawGraphs() {
                     splineVertex(x, y);
 
                     //last control point
-                    if (i == graph.length - 1) {
+                    if (i == stats[graph].length - 1) {
                         splineVertex(x, y);
                     }
                 }

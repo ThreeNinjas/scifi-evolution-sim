@@ -59,6 +59,15 @@ class Guy {
     return dist(this.x, this.y, other.x, other.y) < this.size;
   }
 
+  intersectsFood(foods) {
+    for (let food of foods) {
+        if (dist(this.x, this.y, food.x, food.y) < this.size) {
+            return food.id;
+        }
+    }
+    return null;
+  }
+
   senses(other) {
     return dist(this.x, this.y, other.x, other.y) < this.calculateSensePerim();
   }
