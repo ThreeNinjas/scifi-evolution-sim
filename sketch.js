@@ -6,6 +6,7 @@ let numberOfGuys = params.get('guys') || null;
 let util = new Util();
 let guys = [];
 let diameter = 10;
+let data = null;
 let temp = null;
 let humidity = null;
 let visibility = null; //this will at some point control senseDistance
@@ -19,8 +20,8 @@ let stats = {
     colorCountHistory: [],
 };
 
-const MAX_HISTORY_LENGTH = 5000;
-const DOWNSAMPLE_RATE = 5;
+const MAX_HISTORY_LENGTH = 2500;
+const DOWNSAMPLE_RATE = 2;
 
 
 const serverURL =
@@ -69,7 +70,7 @@ async function setup() {
 }
 
 function draw() {
-    if (temp === null || humidity === null) {
+    if (data === null) {
         loadingScreen();
         return;
     } 
@@ -158,20 +159,15 @@ function draw() {
 }
 
 async function loadWeather() {
-    const t = await fetch(`${serverURL}weather/current-temp`)
+    data = await fetch(`${serverURL}weather/guys`)
         .then(r => r.json());
-    temp = Math.floor(t.temp);
-
-    const h = await fetch(`${serverURL}weather/current-humidity`)
-        .then(r => r.json());
-    humidity = Math.floor(h.temp);
 
     visibility = 10;
 
-    numberOfGuys = debug && numberOfGuys ? numberOfGuys : temp;
+    numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 
-    frameRate(temp);
+    frameRate(data.temp);
     i = 0;
     guys = Array.from({ length: numberOfGuys }, () => {
             const guy = new Guy({
@@ -179,8 +175,8 @@ async function loadWeather() {
                 x: util.randomNumber(config.bounds.x.min, config.bounds.x.max),
                 y: util.randomNumber(config.bounds.y.min, config.bounds.y.max),
                 size: 10,
-                color: util.randomColor(temp, humidity),
-                hasDominantColor: util.chance(temp),
+                color: util.randomColor(data.temp, data.humidity),
+                hasDominantColor: util.chance(data.temp * 0.25),
                 senseDistance: util.chance(visibility) ? 5 + 5 * (visibility/10) : 5
             });
 
@@ -266,7 +262,7 @@ function drawGraphs() {
             beginShape();
                 for (let i = 0; i < graph.length; i++) {
                     let x = map(i, 0, graph.length-1, 10, width-10);
-                    let y = map(graph[i], 0, stats.guys, height - startingY + 100, startingY);
+                    let y = map(graph[i], Object.keys(stats.dominantColors).length, stats.guys, startingY + 100, startingY);
                     
                     //first control point
                     if (i == 0) {
