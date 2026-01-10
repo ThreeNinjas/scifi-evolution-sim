@@ -4,6 +4,7 @@ let numberOfGuys = params.get('guys') || null;
 
 
 let util = new Util();
+let c = new Config(); //maybe rename config below later....
 let guys = [];
 let diameter = 10;
 let data = null;
@@ -15,6 +16,7 @@ let startTextSize = 15;
 let dominantColor = null;
 let stats = {
     guys: 0,
+    colorCount: 0,
     colors: {},
     dominantColors: {},
     colorCountHistory: [],
@@ -41,7 +43,7 @@ let config = {
     },
 };
 
-
+const guysToRemove = new Set();
 
 /*
 TODO: move the actually populating of guys out of loadWeather and into guys.populateGuys();
@@ -81,7 +83,7 @@ function draw() {
     fill("white");
     textSize(15);
     text("GUYS: " + stats.guys, 20, height - 20);
-    text("COLORS: " + Object.keys(stats.colors).length, 20, height - 40);
+    text("COLORS: " + stats.colorCount, 20, height - 40);
     text("DOMINANT COLORS: " + Object.keys(stats.dominantColors).length, 20, height - 60);
     text("FOOD: " + Object.keys(forage.foodStorage).length, 20, height - 80);
     pop();
@@ -92,7 +94,7 @@ function draw() {
         guy.move();
     }
 
-    const toRemove = new Set();
+    guysToRemove.clear();
 
     for (let i = 0; i < guys.length; i++) {
         for (let j = i + 1; j < guys.length; j++) {
@@ -106,16 +108,21 @@ function draw() {
                         const oldColor = util.getStringFromP5ColorObj(dom.non.color);
                         
                         //decrement the stats array
-                        stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
                         //and delete it if the count is 0
-                        if (stats.colors[oldColor] <= 0) delete stats.colors[oldColor];
+                        stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
+                        if (stats.colors[oldColor] <= 0) {
+                            delete stats.colors[oldColor];
+                            stats.colorCount--;
+                        }
 
                         //update that color
                         dom.non.color = lerpColor(dom.dom.color, dom.non.color, 0.25);
 
                         //add the new one to the stats array
                         const newColor = util.getStringFromP5ColorObj(dom.non.color);
+                        if (stats.colors[newColor] === undefined) stats.colorCount++;
                         stats.colors[newColor] = (stats.colors[newColor] || 0) + 1;
+                        
                     }
                 } else {
                     let c1 = guys[i].color;
@@ -123,12 +130,16 @@ function draw() {
                     for (let guy of [guys[i], guys[j]]) {
                         const oldColor = util.getStringFromP5ColorObj(guy.color);
                         stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
-                        if (stats.colors[oldColor] <= 0) delete stats.colors[oldColor];
-                        
+                        if (stats.colors[oldColor] <= 0) {
+                            delete stats.colors[oldColor];
+                            stats.colorCount--;
+                        }
+
                         guy.color = lerpColor(c1, c2, 0.5);
 
                         const newColor = util.getStringFromP5ColorObj(guy.color);
-                        stats.colors[newColor] = (stats.colors[newColor] || 0 ) + 1;
+                        if (stats.colors[newColor] === undefined) stats.colorCount++;
+                        stats.colors[newColor] = (stats.colors[newColor] || 0) + 1;
                     }
                 }
             }
@@ -149,14 +160,14 @@ function draw() {
         const foodToEat = guys[i].intersectsFood(forage.foodStorage);
             
         if (foodToEat !== null) {
-            forage.remove(foodToEat);
+            guys[i].eat(foodToEat);
         }
     }
 
     //guys = guys.filter(g => !toRemove.has(g.id));
 
     if (frameCount % DOWNSAMPLE_RATE === 0) {
-        stats.colorCountHistory.push(Object.keys(stats.colors).length);
+        stats.colorCountHistory.push(stats.colorCount);
 
         if (stats.colorCountHistory.length > MAX_HISTORY_LENGTH) {
             stats.colorCountHistory = [];
@@ -203,7 +214,10 @@ async function loadWeather() {
             });
 
             const thisColor = util.getStringFromP5ColorObj(guy.color);
+            if (stats.colors[thisColor] === undefined) stats.colorCount++;
             stats.colors[thisColor] = (stats.colors[thisColor] || 0 ) + 1;
+
+            
 
             if (guy.hasDominantColor) {
                 stats.dominantColors[thisColor] = (stats.dominantColors[thisColor] || 0 ) + 1;
@@ -213,8 +227,8 @@ async function loadWeather() {
             return guy;
         });
         
-        stats.colorCountHistory.push(Object.keys(stats.colors).length);
-
+        stats.colorCountHistory.push(stats.colorCount);
+console.log(stats);
     
     for (const guy of guys) {
         guy.drawMe();

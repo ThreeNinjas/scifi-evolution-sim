@@ -5,6 +5,7 @@ class Forage {
         this.chanceOfFood = traits.chanceOfFood;
         this.numberOfFood = 0;
         this.foodStorage = [];
+        this.foodSize = 0.25;
 
         this.populateMe();
     }
@@ -24,10 +25,10 @@ class Forage {
 
     drawMe() {
         push();
-        fill('#99cc33');
-        stroke('#99cc33');
+        fill(c.foodColor);
+        stroke(c.foodColor);
         for (let i = 0; i < this.foodStorage.length; i++) {
-            rect(this.foodStorage[i].x, this.foodStorage[i].y, 0.25);
+            rect(this.foodStorage[i].x, this.foodStorage[i].y, this.foodSize);
         }
         pop();
     }

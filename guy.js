@@ -7,6 +7,9 @@ class Guy {
     this.size = traits.size;
     this.hasDominantColor = traits.hasDominantColor;
     this.senseDistance = traits.senseDistance || 5; //This should always be a percentage of their size, right? So always > this.size
+    
+    //acquired
+    this.stomachContents = 0;
   }
 
   drawMe() {
@@ -14,6 +17,12 @@ class Guy {
       stroke(this.color);
       fill(this.color);
       circle(this.x, this.y, this.size);
+
+      if (this.stomachContents > 0) {
+        stroke(c.foodColor);
+        fill(c.foodColor);
+        circle(this.x, this.y+1, this.stomachContents);
+      }
     pop();
 
     if (debug) {
@@ -66,6 +75,11 @@ class Guy {
         }
     }
     return null;
+  }
+
+  eat(foodToEat) {
+    forage.remove(foodToEat);
+    this.stomachContents += forage.foodSize;
   }
 
   senses(other) {
