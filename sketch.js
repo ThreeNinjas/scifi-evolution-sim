@@ -8,10 +8,7 @@ let c = new Config(); //maybe rename config below later....
 let guys = [];
 let diameter = 10;
 let data = null;
-let temp = null;
-let humidity = null;
-let visibility = null; //this will at some point control senseDistance
-let senseDistanceMultiplier = null;
+
 let startTextSize = 15;
 let dominantColor = null;
 let stats = {
@@ -21,11 +18,15 @@ let stats = {
     dominantColors: {},
     colorCountHistory: [],
     numberOfFoodHistory: [],
+    numberOfGuysHistory: [],
 };
 
 const MAX_HISTORY_LENGTH = 2500;
 const DOWNSAMPLE_RATE = 2;
 
+//environmentally dependent variables
+let DIGESTION_RATE_PER_FRAME = 0;
+let SENSE_DISTANCE_MULTIPLIER = null;
 
 const serverURL =
     window.location.hostname === "127.0.0.1" ? "http://localhost:3000/" : "http://199.19.74.165:3000/";
@@ -82,9 +83,7 @@ function draw() {
     noStroke();
     fill("white");
     textSize(15);
-    text("GUYS: " + stats.guys, 20, height - 20);
-    text("COLORS: " + stats.colorCount, 20, height - 40);
-    text("DOMINANT COLORS: " + Object.keys(stats.dominantColors).length, 20, height - 60);
+    text("GUYS: " + stats.guys, 20, height - 60);
     text("FOOD: " + Object.keys(forage.foodStorage).length, 20, height - 80);
     pop();
 
@@ -94,9 +93,19 @@ function draw() {
         guy.move();
     }
 
+    guys = guys.filter(g => !guysToRemove.has(g.id));
+
     guysToRemove.clear();
 
     for (let i = 0; i < guys.length; i++) {
+        if (guys[i].dead) {
+            guys[i].decayProgress += DIGESTION_RATE_PER_FRAME;
+
+            if (guys[i].decayProgress >= 1) {
+                //delete
+                guysToRemove.add(guys[i].id);
+            }
+        }
         for (let j = i + 1; j < guys.length; j++) {
             if (guys[i].intersects(guys[j])) {
                 //figure out who if either is dominant
@@ -156,16 +165,34 @@ function draw() {
                 }
             }
         }
+        guys[i].digestionProgress += DIGESTION_RATE_PER_FRAME;
+        if (guys[i].stomachContents > 0 && guys[i].dead == 0) {
+            if (guys[i].digestionProgress >= 1) {
+                guys[i].stomachContents -= forage.foodSize;
+                guys[i].digestionProgress -= 1;
+            }
+        } else {
+            if (guys[i].digestionProgress >= 1 && guys[i].dead == 0) {
+                guys[i].dead = 1;
+                stats.guys--;
+            }
+        }
 
-        const foodToEat = guys[i].intersectsFood(forage.foodStorage);
+        if (guys[i].isHungry()) {
+            const foodToEat = guys[i].intersectsFood(forage.foodStorage);
             
-        if (foodToEat !== null) {
-            guys[i].eat(foodToEat);
+            if (foodToEat !== null) {
+                guys[i].eat(foodToEat);
+            }
         }
     }
 
-    //guys = guys.filter(g => !toRemove.has(g.id));
-
+    forage.replenishProgress += forage.replenishRate;
+    if (forage.replenishProgress >= 1) {
+        forage.replenishProgress = 0;
+        forage.populateMe();
+    }
+    
     if (frameCount % DOWNSAMPLE_RATE === 0) {
         stats.colorCountHistory.push(stats.colorCount);
 
@@ -178,6 +205,12 @@ function draw() {
         if (stats.numberOfFoodHistory.length > MAX_HISTORY_LENGTH) {
             stats.numberOfFoodHistory = [];
         }
+
+        stats.numberOfGuysHistory.push(stats.guys);
+
+        if (stats.numberOfGuysHistory.length > MAX_HISTORY_LENGTH) {
+            stats.numberOfGuysHistory = [];
+        }
     }
     
     drawGraphs();
@@ -189,16 +222,22 @@ async function loadWeather() {
     data = await fetch(url)
         .then(r => r.json());
 
-    visibility = 10;
+    console.log(data);
 
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 
+    DIGESTION_RATE_PER_FRAME = Guy.getDigestionRate(data); 
+    console.log(DIGESTION_RATE_PER_FRAME);
+
     forage = new Forage({
         maxX: config.bounds.x.max,
         maxY: config.bounds.y.max,
-        chanceOfFood: Math.floor(data.hum)
+        chanceOfFood: Math.floor(data.hum),
+        replenishRate: Guy.getDigestionRate(data) * 1.05
     });
+    
+    console.log('replenishRate = ' + forage.replenishRate);
 
     frameRate(data.temp);
     i = 0;
@@ -207,10 +246,10 @@ async function loadWeather() {
                 id: i,
                 x: util.randomNumber(config.bounds.x.min, config.bounds.x.max),
                 y: util.randomNumber(config.bounds.y.min, config.bounds.y.max),
-                size: 10,
+                size: c.guys.size,
                 color: util.randomColor(data.temp, data.hum),
                 hasDominantColor: util.chance(data.temp * 0.25),
-                senseDistance: util.chance(visibility) ? 5 + 5 * (visibility/10) : 5
+                senseDistance: util.chance(data.vis) ? 5 + 5 * (data.vis/10) : 5
             });
 
             const thisColor = util.getStringFromP5ColorObj(guy.color);
@@ -227,8 +266,7 @@ async function loadWeather() {
             return guy;
         });
         
-        stats.colorCountHistory.push(stats.colorCount);
-console.log(stats);
+    stats.colorCountHistory.push(stats.colorCount);
     
     for (const guy of guys) {
         guy.drawMe();
@@ -259,34 +297,12 @@ function loadingScreen() {
     startTextSize++;
 }
 
-function emptyStats(currentNumberOfGuys) {
-    stats = {
-        guys: currentNumberOfGuys,
-        colors: [],
-        dominantColors: [],
-    };
-}
-
-function updateStats(guys) {
-    emptyStats(stats.guys);
-    for (guy of guys) {
-        //all colors
-        colorString = util.getStringFromP5ColorObj(guy.color);
-        if (!stats.colors.includes(colorString)) {
-            stats.colors.push(colorString);
-        }
-        //dominant colors
-        if (guy.hasDominantColor) {
-            stats.dominantColors.push(colorString);
-        }
-    }
-}
 
 function drawGraphs() {
     push();
     let startingY = (height / 2) + 20;
     let i = 0;
-    for (let graph of ['colorCountHistory', 'numberOfFoodHistory']) {
+    for (let graph of ['numberOfGuysHistory', 'numberOfFoodHistory']) {
         
 
         let minY = 0;
@@ -294,6 +310,11 @@ function drawGraphs() {
         let color = '';
 
         switch (graph) {
+            case 'numberOfGuysHistory':
+                minY = 0;
+                maxY = data.temp + 5;
+                color ='#ee1edcff'
+                break;
             case 'colorCountHistory':
                 minY = Object.keys(stats.dominantColors).length;
                 maxY = stats.guys;

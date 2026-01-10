@@ -3,16 +3,20 @@ class Forage {
         this.maxX = traits.maxX;
         this.maxY = traits.maxY;
         this.chanceOfFood = traits.chanceOfFood;
+        this.replenishRate = traits.replenishRate;
+
+        this.replenishProgress = 0;
         this.numberOfFood = 0;
         this.foodStorage = [];
         this.foodSize = 0.25;
+        
 
         this.populateMe();
     }
 
     populateMe() {
         for (let i = 0; i < this.chanceOfFood; i++) {
-            if (util.chance(this.chanceOfFood)) {
+            if (util.chance(this.chanceOfFood) && this.foodStorage.length < this.chanceOfFood) {
                 this.foodStorage.push({
                 id: i,
                 x: util.randomNumber(10, this.maxX),

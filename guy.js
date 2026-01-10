@@ -8,14 +8,19 @@ class Guy {
     this.hasDominantColor = traits.hasDominantColor;
     this.senseDistance = traits.senseDistance || 5; //This should always be a percentage of their size, right? So always > this.size
     
+    this.digestionProgress = 0;
+    this.starvationProgress = 0;
+
     //acquired
     this.stomachContents = 0;
+    this.dead = 0;
+    this.decayProgress = 0;
   }
 
   drawMe() {
     push();
-      stroke(this.color);
-      fill(this.color);
+      stroke(!this.dead ? this.color : c.guys.deadColor);
+      fill(!this.dead ? this.color : c.guys.deadColor);
       circle(this.x, this.y, this.size);
 
       if (this.stomachContents > 0) {
@@ -45,6 +50,9 @@ class Guy {
   }
 
   move() {
+    if (this.dead) {
+        return this.drawMe();
+    } 
     for (const key of ["x", "y"]) {
       switch (util.randomNumber(0, 2)) {
         case 0:
@@ -82,6 +90,14 @@ class Guy {
     this.stomachContents += forage.foodSize;
   }
 
+  isHungry() {
+    if (this.stomachContents > (this.size * 0.4)) {
+        return false;
+    }
+
+    return true;
+  }
+
   senses(other) {
     return dist(this.x, this.y, other.x, other.y) < this.calculateSensePerim();
   }
@@ -114,5 +130,9 @@ class Guy {
     }
 
     return false;
+  }
+
+  static getDigestionRate(data) {
+    return data.temp / (data.hum * 750);
   }
 }
