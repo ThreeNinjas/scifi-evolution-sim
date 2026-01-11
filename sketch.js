@@ -248,7 +248,6 @@ async function loadWeather() {
                 size: c.guys.size,
                 color: util.randomColor(data.temp, data.hum),
                 hasDominantColor: util.chance(data.temp * 0.25),
-                senseDistance: util.chance(data.vis) ? 5 + 5 * (data.vis/10) : 5
             });
 
             const thisColor = util.getStringFromP5ColorObj(guy.color);
@@ -264,7 +263,7 @@ async function loadWeather() {
             i++;
             return guy;
         });
-        console.log(Object.values(guys).map(guy => guy.digestionRate));
+        console.log(Object.values(guys).map(guy => guy.senseDistance));
     stats.colorCountHistory.push(stats.colorCount);
     
     for (const guy of guys) {
@@ -278,10 +277,27 @@ function drawEnvironment() {
     strokeWeight(2);
     stroke("white");
     fill(0);
-    rect(10, 10, width - 20, height / 2);
+    rect(10, 10, width - 20, height / 2, 26);
+    pop();
 
+    const spacing = 80;
+    //vertical
+    push();
+        stroke('#ffaa00cc');
+        for (let i = spacing; i < width; i += spacing) {
+            line(i, 10, i, width+10);
+        }
+
+        //horizontal
+        for (let i = spacing; i < height / 2; i += spacing) {
+            line(10, i, width-10, i);
+        }
+    pop();
+    
+    push();
     //the box is 380px wide
     stroke(0);
+    strokeWeight(3);
     const linewidth = 300;
     line(linewidth, 10, width - 10 - linewidth, 10);
     line(linewidth, 10 + height / 2, width - 10 - linewidth, 10 + height / 2);
