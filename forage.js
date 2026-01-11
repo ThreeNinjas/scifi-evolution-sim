@@ -27,6 +27,10 @@ class Forage {
         }
     }
 
+    replenish() {
+        
+    }
+
     drawMe() {
         push();
         fill(c.foodColor);

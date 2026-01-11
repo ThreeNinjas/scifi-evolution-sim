@@ -99,7 +99,7 @@ function draw() {
 
     for (let i = 0; i < guys.length; i++) {
         if (guys[i].dead) {
-            guys[i].decayProgress += DIGESTION_RATE_PER_FRAME;
+            guys[i].decayProgress += DIGESTION_RATE_PER_FRAME * (data.rain > 0 ? data.rain : data.vis);
 
             if (guys[i].decayProgress >= 1) {
                 //delete
@@ -165,7 +165,7 @@ function draw() {
                 }
             }
         }
-        guys[i].digestionProgress += DIGESTION_RATE_PER_FRAME;
+        guys[i].digestionProgress += guys[i].digestionRate;
         if (guys[i].stomachContents > 0 && guys[i].dead == 0) {
             if (guys[i].digestionProgress >= 1) {
                 guys[i].stomachContents -= forage.foodSize;
@@ -227,17 +227,16 @@ async function loadWeather() {
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 
-    DIGESTION_RATE_PER_FRAME = Guy.getDigestionRate(data); 
-    console.log(DIGESTION_RATE_PER_FRAME);
+    DIGESTION_RATE_PER_FRAME = Guy.getGlobalDigestionRate(); 
 
     forage = new Forage({
         maxX: config.bounds.x.max,
         maxY: config.bounds.y.max,
         chanceOfFood: Math.floor(data.hum),
-        replenishRate: Guy.getDigestionRate(data) * 1.05
+        replenishRate: Guy.getGlobalDigestionRate(data) * 1.005
     });
     
-    console.log('replenishRate = ' + forage.replenishRate);
+    
 
     frameRate(data.temp);
     i = 0;
@@ -265,7 +264,7 @@ async function loadWeather() {
             i++;
             return guy;
         });
-        
+        console.log(Object.values(guys).map(guy => guy.digestionRate));
     stats.colorCountHistory.push(stats.colorCount);
     
     for (const guy of guys) {
@@ -338,19 +337,19 @@ function drawGraphs() {
             beginShape();
                 for (let i = 0; i < stats[graph].length; i++) {
                     let x = map(i, 0, stats[graph].length-1, 10, width-10);
-                    let y = map(stats[graph][i], minY, maxY, startingY + 100, startingY);
-                    
+                    let y = map(stats[graph][i], minY, maxY, startingY + 100, startingY+5);
+                    vertex(x, y);
                     //first control point
-                    if (i == 0) {
-                        splineVertex(x, y);
-                    }
+                    // if (i == 0) {
+                    //     splineVertex(x, y);
+                    // }
 
-                    splineVertex(x, y);
+                    // splineVertex(x, y);
 
-                    //last control point
-                    if (i == stats[graph].length - 1) {
-                        splineVertex(x, y);
-                    }
+                    // //last control point
+                    // if (i == stats[graph].length - 1) {
+                    //     splineVertex(x, y);
+                    // }
                 }
             endShape();
         }

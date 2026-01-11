@@ -8,6 +8,7 @@ class Guy {
     this.hasDominantColor = traits.hasDominantColor;
     this.senseDistance = traits.senseDistance || 5; //This should always be a percentage of their size, right? So always > this.size
     
+    this.digestionRate = this.getDigestionRate();
     this.digestionProgress = 0;
     this.starvationProgress = 0;
 
@@ -110,6 +111,10 @@ class Guy {
     return this.hasDominantColor ? 0.5 + (temp/100) : 0.5;
   }
 
+  getDigestionRate() {
+    return Guy.getGlobalDigestionRate() * util.logNormalMultiplier();
+  }
+
   static whoIsDominant(a, b) {
     if (a.hasDominantColor && b.hasDominantColor) {
       return 'both';
@@ -132,7 +137,7 @@ class Guy {
     return false;
   }
 
-  static getDigestionRate(data) {
+  static getGlobalDigestionRate() {
     return data.temp / (data.hum * 750);
   }
 }
