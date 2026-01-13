@@ -51,4 +51,8 @@ class Forage {
         this.foodStorage.splice(i, 1);
         this.numberOfFood--;
     }
+
+    exists(id) {
+        return this.foodStorage.some(f => f.id === id);
+    }
 }

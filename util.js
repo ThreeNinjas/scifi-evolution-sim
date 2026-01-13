@@ -55,4 +55,22 @@ class Util {
         if (rawMultiplier > 1.5) return 1.5;
         return rawMultiplier;
     }
+
+    /**
+     * 
+     * Right skew means that most values will be on the smaller end of the range with a few larger values and a very few at the extremes.
+     * The idea is to simulate natural distributions of variation.
+     * A higher value for k produces more values closer to min
+     */
+    rightSkew(min, max, k = 3) {
+        return min + (max - min) * Math.pow(random(), k); 
+    }
+
+    /*
+    LogNormal simulates natural variation with rare extremes
+    */
+    logNormalBetween(min, max, median, sigma = 0.8) {
+        const mu = Math.log(median);
+        return constrain(Math.exp(randomGaussian(mu, sigma)), min, max);
+    }
 }
