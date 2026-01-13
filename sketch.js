@@ -5,7 +5,10 @@ let numberOfGuys = params.get('guys') || null;
 
 let util = new Util();
 let c = new Config(); //maybe rename config below later....
+
+/** @@type {Guy[]} */
 let guys = [];
+let forage;
 let diameter = 10;
 let data = null;
 
@@ -83,15 +86,16 @@ function draw() {
     noStroke();
     fill("white");
     textSize(15);
+    text("TIME INDEX: " + frameCount / 1000, 20, height - 40);
     text("GUYS: " + stats.guys, 20, height - 60);
-    text("FOOD: " + Object.keys(forage.foodStorage).length, 20, height - 80);
+    text("FOOD: " + forage.foodStorage.length, 20, height - 80);
     pop();
 
     forage.drawMe();
 
-    for (const guy of guys) {
-        guy.move();
-    }
+    // for (const guy of guys) {
+    //     guy.move();
+    // }
 
     guys = guys.filter(g => !guysToRemove.has(g.id));
 
@@ -99,13 +103,14 @@ function draw() {
 
     for (let i = 0; i < guys.length; i++) {
         if (guys[i].dead) {
-            guys[i].decayProgress += DIGESTION_RATE_PER_FRAME * (data.rain > 0 ? data.rain : data.vis);
+            guys[i].decayProgress += Guy.getGlobalDigestionRate() * (data.rain > 0 ? data.rain : data.vis);
 
             if (guys[i].decayProgress >= 1) {
                 //delete
                 guysToRemove.add(guys[i].id);
             }
         }
+
         for (let j = i + 1; j < guys.length; j++) {
             if (guys[i].intersects(guys[j])) {
                 //figure out who if either is dominant
@@ -159,12 +164,41 @@ function draw() {
                     push();
                         textSize(10);
                         fill('white');
-                        text('!!', guys[i].x, guys[i].y+20);
-                        text('!!', guys[j].x, guys[j].y+20);
+                        text('!!', guys[i].pos.x, guys[i].pos.y+20);
+                        text('!!', guys[j].pos.x, guys[j].pos.y+20);
                     pop();
                 }
             }
         }
+
+        if (!guys[i].dead) {
+            if (guys[i].isHungry()) {
+                const sensedFood = guys[i].sensesFood(forage.foodStorage);
+
+                if (sensedFood) {
+                    guys[i].seekFood(sensedFood);
+                    if (!guys[i].overRideMove) {
+                        guys[i].move();
+                    }
+                    if (guys[i].overRideMoveIntermittent) {
+                        if (!util.chance(data.hum)) {
+                            guys[i].move();
+                        }
+                    }
+                } else {
+                    guys[i].move();
+                }
+
+                const foodToEat = guys[i].intersectsFood(forage.foodStorage);
+                if (foodToEat !== null) {
+                    guys[i].eat(foodToEat);
+                }
+            } else {
+                guys[i].move();
+            }
+        }
+
+
         guys[i].digestionProgress += guys[i].digestionRate;
         if (guys[i].stomachContents > 0 && guys[i].dead == 0) {
             if (guys[i].digestionProgress >= 1) {
@@ -172,19 +206,14 @@ function draw() {
                 guys[i].digestionProgress -= 1;
             }
         } else {
-            if (guys[i].digestionProgress >= 1 && guys[i].dead == 0) {
+            if (guys[i].digestionProgress >= 1 && guys[i].dead == 0 && guys[i].stomachContents == 0) {
                 guys[i].dead = 1;
                 stats.guys--;
             }
         }
 
-        if (guys[i].isHungry()) {
-            const foodToEat = guys[i].intersectsFood(forage.foodStorage);
-            
-            if (foodToEat !== null) {
-                guys[i].eat(foodToEat);
-            }
-        }
+        
+        guys[i].drawMe();
     }
 
     forage.replenishProgress += forage.replenishRate;
@@ -223,11 +252,12 @@ async function loadWeather() {
         .then(r => r.json());
 
     console.log(data);
-
+    console.log(map(data.vis, 0.6, 10, 0, 10));
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 
     DIGESTION_RATE_PER_FRAME = Guy.getGlobalDigestionRate(); 
+    console.log('DR: ' + DIGESTION_RATE_PER_FRAME);
 
     forage = new Forage({
         maxX: config.bounds.x.max,
@@ -263,10 +293,12 @@ async function loadWeather() {
             i++;
             return guy;
         });
-        console.log(Object.values(guys).map(guy => guy.senseDistance));
+        
     stats.colorCountHistory.push(stats.colorCount);
     
     for (const guy of guys) {
+        
+        console.log(guy.velLimit);
         guy.drawMe();
     }
 }
@@ -318,8 +350,6 @@ function drawGraphs() {
     let startingY = (height / 2) + 20;
     let i = 0;
     for (let graph of ['numberOfGuysHistory', 'numberOfFoodHistory']) {
-        
-
         let minY = 0;
         let maxY = 0;
         let color = '';
@@ -347,7 +377,7 @@ function drawGraphs() {
 
         line(10, startingY, width-10, startingY);
         line(10, startingY + 100, width-10, startingY + 100);
-        startingY = startingY++;
+        startingY++;
         
         if (stats[graph].length > 1) {
             beginShape();
