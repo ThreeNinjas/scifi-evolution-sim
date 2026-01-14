@@ -216,6 +216,19 @@ class Guy {
   }
 
   static whoIsDominant(a, b) {
+    if (a.stomachContents > b.stomachContents) {
+        return {
+            dom: a,
+            non: b
+        }
+    }
+
+    if (b.stomachContents > a.stomachContents) 
+        return {
+            dom: b,
+            non: a
+        }
+
     if (a.hasDominantColor && b.hasDominantColor) {
       return 'both';
     }
