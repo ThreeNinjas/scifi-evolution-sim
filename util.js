@@ -73,4 +73,20 @@ class Util {
         const mu = Math.log(median);
         return constrain(Math.exp(randomGaussian(mu, sigma)), min, max);
     }
+
+    //more info on this at https://d3js.org/d3-random#randomNormal
+    //thanks to Jake Amphiuma for the heads up on the D3 library!
+    randomNormal(mu, sigma) {
+        const out = d3.randomNormal(mu, sigma);
+        return out();
+    }
+    
+    randomNormalBounded(mu, sigma, min, max) {
+        const gen = d3.randomNormal(mu, sigma);
+        for (let tries = 0; tries < 50; tries++) {
+            const v = gen();
+            if (v >= min && v <= max) return v;
+        }
+        return constrain(gen(), min, max);
+    }
 }

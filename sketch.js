@@ -24,6 +24,8 @@ let stats = {
     numberOfGuysHistory: [],
 };
 
+let graphAreaHeight = 275;
+
 const MAX_HISTORY_LENGTH = 2500;
 const DOWNSAMPLE_RATE = 2;
 
@@ -63,7 +65,19 @@ TODO: mutations
 
 TODO: graph
 */
-async function setup() {
+
+function genericFunction(mu, sigma) {
+    let out = d3.randomNormal(mu, sigma);
+    return out();
+}
+
+function test(haha) {
+    return haha;
+}
+
+console.log(test('dogs')); console.log(genericFunction(2, 3));
+
+async function setup() { 
     colorMode(HSB, 360, 100, 100);
     frameRate(60);
     createCanvas(400, 800);
@@ -81,15 +95,6 @@ function draw() {
     } 
     background(0);
     drawEnvironment();
-
-    push();
-    noStroke();
-    fill("white");
-    textSize(15);
-    text("TIME INDEX: " + frameCount / 1000, 20, height - 40);
-    text("GUYS: " + stats.guys, 20, height - 60);
-    text("FOOD: " + forage.foodStorage.length, 20, height - 80);
-    pop();
 
     forage.drawMe();
 
@@ -217,7 +222,7 @@ function draw() {
     }
 
     forage.replenishProgress += forage.replenishRate;
-    if (forage.replenishProgress >= 1) {
+    if (forage.replenishProgress >= 1 && forage.foodStorage.length < (forage.chanceOfFood * 0.10)) {
         forage.replenishProgress = 0;
         forage.populateMe();
     }
@@ -241,6 +246,8 @@ function draw() {
             stats.numberOfGuysHistory = [];
         }
     }
+
+    statsText();
     
     drawGraphs();
 }
@@ -252,12 +259,12 @@ async function loadWeather() {
         .then(r => r.json());
 
     console.log(data);
-    console.log(map(data.vis, 0.6, 10, 0, 10));
+    
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 
     DIGESTION_RATE_PER_FRAME = Guy.getGlobalDigestionRate(); 
-    console.log('DR: ' + DIGESTION_RATE_PER_FRAME);
+    console.log('digestion rate: ' + DIGESTION_RATE_PER_FRAME);
 
     forage = new Forage({
         maxX: config.bounds.x.max,
@@ -295,12 +302,12 @@ async function loadWeather() {
         });
         
     stats.colorCountHistory.push(stats.colorCount);
-    
+    let trait = [];
     for (const guy of guys) {
-        
-        console.log(guy.velLimit);
         guy.drawMe();
+        trait.push(guy.seekAccel);
     }
+    console.log(trait.join(','));
 }
 
 
@@ -344,12 +351,26 @@ function loadingScreen() {
     startTextSize++;
 }
 
+function statsText() {
+    let leftMargin = 10;
+    let startingY = (height / 2) + graphAreaHeight + 50;
+    push();
+        noStroke();
+        fill("white");
+        textSize(15);
+        text("TIME INDEX: " + frameCount / 1000, leftMargin, startingY);
+        text("GUYS: " + stats.guys, leftMargin, startingY + 20);
+        text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
+    pop();
+}
 
 function drawGraphs() {
     push();
     let startingY = (height / 2) + 20;
+    let graphs = ['numberOfGuysHistory', 'numberOfFoodHistory', 'histogram'];
+    
     let i = 0;
-    for (let graph of ['numberOfGuysHistory', 'numberOfFoodHistory']) {
+    for (let graph of graphs) {
         let minY = 0;
         let maxY = 0;
         let color = '';
@@ -370,38 +391,80 @@ function drawGraphs() {
                 maxY = forage.chanceOfFood;
                 color = '#99cc33';
                 break;
+            case 'histogram':
+                color = '#339cccff';
+                break;
         }
 
         stroke(color);
         noFill();
 
         line(10, startingY, width-10, startingY);
-        line(10, startingY + 100, width-10, startingY + 100);
+        line(10, startingY + (graphAreaHeight / graphs.length), width-10, startingY + (graphAreaHeight / graphs.length));
         startingY++;
-        
-        if (stats[graph].length > 1) {
-            beginShape();
-                for (let i = 0; i < stats[graph].length; i++) {
-                    let x = map(i, 0, stats[graph].length-1, 10, width-10);
-                    let y = map(stats[graph][i], minY, maxY, startingY + 100, startingY+5);
-                    vertex(x, y);
-                    //first control point
-                    // if (i == 0) {
-                    //     splineVertex(x, y);
-                    // }
+        if (graph != 'histogram') {
+            if (stats[graph].length > 1) {
+                beginShape();
+                    for (let i = 0; i < stats[graph].length; i++) {
+                        let x = map(i, 0, stats[graph].length-1, 10, width-10);
+                        let y = map(stats[graph][i], minY, maxY, startingY + (graphAreaHeight / graphs.length), startingY+5);
+                        vertex(x, y);
+                    }
+                endShape();
+            }
+        } else {
+            const sectionH = graphAreaHeight / graphs.length;
+            const x0 = 10;
+            const y0 = startingY + 5;
+            const w = width - 20;
+            const h = sectionH - 10;
 
-                    // splineVertex(x, y);
-
-                    // //last control point
-                    // if (i == stats[graph].length - 1) {
-                    //     splineVertex(x, y);
-                    // }
-                }
-            endShape();
+            drawHistogram(guys.map(g => g.senseDistance), x0, y0, w, h);
         }
         
-        startingY += 105;
+        startingY += (graphAreaHeight / graphs.length) + 5;
         i++;
+    }
+    pop();
+}
+
+function drawHistogram(values, x0, y0, w, h) {
+    push();
+    let bins = 10;
+    let minVal = min(values);
+    let maxVal = max(values);
+    let binSize = (maxVal - minVal) / bins;
+    let counts = Array(bins).fill(0);
+
+    for (let v of values) {
+        let index = floor((v - minVal) / binSize);
+        if (index === bins) index = bins - 1;
+        counts[index]++;
+    }
+
+    let maxCount = max(counts);
+    let barWidth = w / bins;
+
+    let labelH = 14;
+    let plotH = h - labelH;
+
+    textAlign(CENTER, TOP);
+    textSize(10);
+
+    for (let i = 0; i < bins; i++) {
+        let barHeight = map(counts[i], 0, maxCount, 0, plotH);
+        let x = x0 + i * barWidth;
+        let y = y0 + plotH - barHeight;
+
+        rect(x, y, barWidth - 2, barHeight);
+
+        let binStart = minVal + i * binSize;
+        let binEnd = binStart + binSize;
+        text(
+            `${binStart.toFixed(2)}–${binEnd.toFixed(2)}`,
+            x + barWidth / 2,
+            y0 + plotH + 2
+        );
     }
     pop();
 }

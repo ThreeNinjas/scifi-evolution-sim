@@ -15,13 +15,15 @@ class Guy {
     this.vel.mult(random(3));
     this.velLimit = !util.chance(99) ? 5 : random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
     this.noise = p5.Vector.random2D().setMag(0.1);
-    this.noiseRotate = random(-100, 100);
+    this.noiseRotate = util.randomNormal(50, 10);
     this.noiseMagnitude = util.rightSkew(0.5, 5, data.clouds > 0 ? map(data.clouds, 0, 100, 0.1, 3) : 1);
+    this.randomNormal = util.randomNormal(5, data.clouds/10);
+    this.randomNormalBounded = util.randomNormalBounded(5, 1, 0, 10);
 
     this.target = createVector(0,0);
     this.acc = createVector(0,0);
     //this.seekAccel = constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
-    this.seekAccel = util.rightSkew(0.5, data.vis, 1)
+    this.seekAccel = util.randomNormal(0.5, data.vis); // util.rightSkew(0.5, data.vis, 1)
     
     this.overRideMove = util.chance(data.hum) ? 0 : 1;
     this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
@@ -152,7 +154,6 @@ class Guy {
         this.halo = 0;
         this.isSeeking = 0;
     }
-    //this.drawMe();
   }
 
   intersects(other) {
