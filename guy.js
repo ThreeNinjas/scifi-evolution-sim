@@ -12,7 +12,7 @@ class Guy {
     //vectors
     this.pos = createVector(traits.x, traits.y);
     this.vel = p5.Vector.random2D();
-    this.vel.mult(random(3));
+    
     this.velLimit = !util.chance(99) ? 5 : random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
     this.noise = p5.Vector.random2D().setMag(0.1);
     this.noiseRotate = util.randomNormal(50, 10);
@@ -42,9 +42,7 @@ class Guy {
     push();
       stroke(!this.dead ? this.color : c.guys.deadColor);
 
-      if (this.halo) {
-        stroke('yellow');
-      }
+      
       fill(!this.dead ? this.color : c.guys.deadColor);
       circle(this.pos.x, this.pos.y, this.size);
 
@@ -52,6 +50,19 @@ class Guy {
         stroke(c.foodColor);
         fill(c.foodColor);
         circle(this.pos.x, this.pos.y+1, this.stomachContents);
+      }
+    pop();
+
+    push();
+      if (this.halo == 1) {
+        stroke('white');
+        noFill();
+        circle(this.pos.x, this.pos.y, this.size * 2);
+        textSize(14);
+        text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
+        text(`V:${this.vel.mag().toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 14);
+        text(`VL:${this.velLimit.toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 28);
+        text(`${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} -> ${this.target.x.toFixed(0)}, ${this.target.y.toFixed(0)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 42);
       }
     pop();
 
@@ -63,9 +74,8 @@ class Guy {
     pop();
 
     push();
-      stroke('white');
       noFill();
-      circle(this.pos.x, this.pos.y, this.calculateSensePerim())
+      circle(this.pos.x, this.pos.y, this.calculateSensePerim());
     pop();
     }     
   }
@@ -151,7 +161,6 @@ class Guy {
             this.vel.y = 0;
         }
     } else {
-        this.halo = 0;
         this.isSeeking = 0;
     }
   }
@@ -163,7 +172,6 @@ class Guy {
   sensesFood(foods) {
     for (let food of foods) {
         if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.calculateSensePerim()) {
-            //this.halo = 1;
             this.isSeeking = 1;
             return {x: food.x, y: food.y, id: food.id}
         }
@@ -184,8 +192,9 @@ class Guy {
   eat(foodToEat) {
     forage.remove(foodToEat);
     this.stomachContents += forage.foodSize;
-    this.halo = 0;
     this.isSeeking = 0;
+
+    this.vel.setMag(0);
   }
 
   isHungry() {

@@ -249,6 +249,12 @@ function mousePressed() {
             selectedHistogram = i;
         }
     }
+
+    for (const [i, guy] of Object.entries(guys)) {
+        if (dist(mouseX, mouseY, guy.pos.x, guy.pos.y) <= guy.size / 2) {
+            guy.halo = !guy.halo;
+        }
+    }
 }
 
 async function loadWeather() {
