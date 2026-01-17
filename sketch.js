@@ -125,7 +125,7 @@ function draw() {
                         // }
 
                         //update that color
-                        dom.non.color = lerpColor(dom.dom.color, dom.non.color, 0.25);
+                        //dom.non.color = lerpColor(dom.dom.color, dom.non.color, 0.25);
 
                         //add the new one to the stats array
                         // const newColor = util.getStringFromP5ColorObj(dom.non.color);
@@ -227,6 +227,10 @@ function draw() {
         if (stats.numberOfGuysHistory.length > MAX_HISTORY_LENGTH) {
             stats.numberOfGuysHistory = [];
         }
+    }
+
+    if (frameCount % 200 === 0) {
+        selectedHistogram = floor(random(4));
     }
 
     statsText();
@@ -471,7 +475,7 @@ function drawHistogram() {
     let color = histogramButtonBoxes[selectedHistogram].color;
     const sectionH = graphAreaHeight / 3;
             const x0 = 10;
-            const y0 = 618 + 5;
+            const y0 = 618 + 2;
             const w = width - 20;
             const h = sectionH - 10;
 

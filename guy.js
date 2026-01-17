@@ -55,14 +55,18 @@ class Guy {
 
     push();
       if (this.halo == 1) {
-        stroke('white');
+        stroke('#339cccff');
         noFill();
         circle(this.pos.x, this.pos.y, this.size * 2);
         textSize(14);
         text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
         text(`V:${this.vel.mag().toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 14);
         text(`VL:${this.velLimit.toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 28);
-        text(`${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} -> ${this.target.x.toFixed(0)}, ${this.target.y.toFixed(0)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 42);
+        text(`${this.overRideMove}, ${this.overRideMoveIntermittent}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 42);
+
+        if (this.isSeeking == 1) {
+            line(this.pos.x, this.pos.y, this.target.x, this.target.y);
+        }
       }
     pop();
 
@@ -195,6 +199,8 @@ class Guy {
     this.isSeeking = 0;
 
     this.vel.setMag(0);
+    this.target.x = 0;
+    this.target.y = 0;
   }
 
   isHungry() {
