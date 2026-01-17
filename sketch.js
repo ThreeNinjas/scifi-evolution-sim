@@ -1,7 +1,7 @@
 const params = new URLSearchParams(window.location.search);
 const debug = params.get('debug');
 let numberOfGuys = params.get('guys') || null;
-
+let font;
 
 let util = new Util();
 let c = new Config(); //maybe rename config below later....
@@ -16,13 +16,11 @@ let startTextSize = 15;
 let dominantColor = null;
 let stats = {
     guys: 0,
-    colorCount: 0,
-    colors: {},
-    dominantColors: {},
-    colorCountHistory: [],
     numberOfFoodHistory: [],
     numberOfGuysHistory: [],
 };
+
+let graphAreaHeight = 275;
 
 const MAX_HISTORY_LENGTH = 2500;
 const DOWNSAMPLE_RATE = 2;
@@ -49,6 +47,9 @@ let config = {
 
 const guysToRemove = new Set();
 
+let histogramButtonBoxes;
+let selectedHistogram = 0;
+
 /*
 TODO: move the actually populating of guys out of loadWeather and into guys.populateGuys();
 TODO: make the boxes prettier!
@@ -63,7 +64,9 @@ TODO: mutations
 
 TODO: graph
 */
-async function setup() {
+
+async function setup() { 
+    font = await loadFont("/assets/Antonio-Regular.ttf");
     colorMode(HSB, 360, 100, 100);
     frameRate(60);
     createCanvas(400, 800);
@@ -75,21 +78,13 @@ async function setup() {
 }
 
 function draw() {
-    if (data === null) {
+    if (data === null || !font) {
         loadingScreen();
         return;
     } 
+    textFont(font);
     background(0);
     drawEnvironment();
-
-    push();
-    noStroke();
-    fill("white");
-    textSize(15);
-    text("TIME INDEX: " + frameCount / 1000, 20, height - 40);
-    text("GUYS: " + stats.guys, 20, height - 60);
-    text("FOOD: " + forage.foodStorage.length, 20, height - 80);
-    pop();
 
     forage.drawMe();
 
@@ -119,41 +114,39 @@ function draw() {
                     if (dom != 'both') {
                         //dom.non is changing his color, soooooo
                         //make a note of his current color
-                        const oldColor = util.getStringFromP5ColorObj(dom.non.color);
+                        // const oldColor = util.getStringFromP5ColorObj(dom.non.color);
                         
                         //decrement the stats array
                         //and delete it if the count is 0
-                        stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
-                        if (stats.colors[oldColor] <= 0) {
-                            delete stats.colors[oldColor];
-                            stats.colorCount--;
-                        }
+                        // stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
+                        // if (stats.colors[oldColor] <= 0) {
+                        //     delete stats.colors[oldColor];
+                        //     stats.colorCount--;
+                        // }
 
                         //update that color
-                        dom.non.color = lerpColor(dom.dom.color, dom.non.color, 0.25);
+                        //dom.non.color = lerpColor(dom.dom.color, dom.non.color, 0.25);
 
                         //add the new one to the stats array
-                        const newColor = util.getStringFromP5ColorObj(dom.non.color);
-                        if (stats.colors[newColor] === undefined) stats.colorCount++;
-                        stats.colors[newColor] = (stats.colors[newColor] || 0) + 1;
+                        // const newColor = util.getStringFromP5ColorObj(dom.non.color);
+                        // if (stats.colors[newColor] === undefined) stats.colorCount++;
+                        // stats.colors[newColor] = (stats.colors[newColor] || 0) + 1;
                         
                     }
                 } else {
-                    let c1 = guys[i].color;
-                    let c2 = guys[j].color;
                     for (let guy of [guys[i], guys[j]]) {
-                        const oldColor = util.getStringFromP5ColorObj(guy.color);
-                        stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
-                        if (stats.colors[oldColor] <= 0) {
-                            delete stats.colors[oldColor];
-                            stats.colorCount--;
-                        }
+                        // const oldColor = util.getStringFromP5ColorObj(guy.color);
+                        // stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
+                        // if (stats.colors[oldColor] <= 0) {
+                        //     delete stats.colors[oldColor];
+                        //     stats.colorCount--;
+                        // }
 
-                        guy.color = lerpColor(c1, c2, 0.5);
+                        guy.color = lerpColor(guys[i].color, guys[j].color, 0.5);
 
-                        const newColor = util.getStringFromP5ColorObj(guy.color);
-                        if (stats.colors[newColor] === undefined) stats.colorCount++;
-                        stats.colors[newColor] = (stats.colors[newColor] || 0) + 1;
+                        // const newColor = util.getStringFromP5ColorObj(guy.color);
+                        // if (stats.colors[newColor] === undefined) stats.colorCount++;
+                        // stats.colors[newColor] = (stats.colors[newColor] || 0) + 1;
                     }
                 }
             }
@@ -217,18 +210,12 @@ function draw() {
     }
 
     forage.replenishProgress += forage.replenishRate;
-    if (forage.replenishProgress >= 1) {
+    if (forage.replenishProgress >= 1 && forage.foodStorage.length < (forage.chanceOfFood * 0.10)) {
         forage.replenishProgress = 0;
         forage.populateMe();
     }
     
     if (frameCount % DOWNSAMPLE_RATE === 0) {
-        stats.colorCountHistory.push(stats.colorCount);
-
-        if (stats.colorCountHistory.length > MAX_HISTORY_LENGTH) {
-            stats.colorCountHistory = [];
-        }
-
         stats.numberOfFoodHistory.push(forage.foodStorage.length);
 
         if (stats.numberOfFoodHistory.length > MAX_HISTORY_LENGTH) {
@@ -241,8 +228,37 @@ function draw() {
             stats.numberOfGuysHistory = [];
         }
     }
+
+    if (frameCount % 200 === 0) {
+        selectedHistogram = floor(random(4));
+    }
+
+    statsText();
     
     drawGraphs();
+
+    histogramButtons();
+
+    drawHistogram(0);
+}
+
+function mousePressed() { 
+    for (const [i, box] of Object.entries(histogramButtonBoxes)) {
+        if (
+            mouseX >= box.x &&
+            mouseX <= box.x + box.w &&
+            mouseY >= box.y &&
+            mouseY <= box.y + box.h
+        ) {
+            selectedHistogram = i;
+        }
+    }
+
+    for (const [i, guy] of Object.entries(guys)) {
+        if (dist(mouseX, mouseY, guy.pos.x, guy.pos.y) <= guy.size / 2) {
+            guy.halo = !guy.halo;
+        }
+    }
 }
 
 async function loadWeather() {
@@ -252,12 +268,12 @@ async function loadWeather() {
         .then(r => r.json());
 
     console.log(data);
-    console.log(map(data.vis, 0.6, 10, 0, 10));
+    
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 
     DIGESTION_RATE_PER_FRAME = Guy.getGlobalDigestionRate(); 
-    console.log('DR: ' + DIGESTION_RATE_PER_FRAME);
+    console.log('digestion rate: ' + DIGESTION_RATE_PER_FRAME);
 
     forage = new Forage({
         maxX: config.bounds.x.max,
@@ -280,34 +296,32 @@ async function loadWeather() {
                 hasDominantColor: util.chance(data.temp * 0.25),
             });
 
-            const thisColor = util.getStringFromP5ColorObj(guy.color);
-            if (stats.colors[thisColor] === undefined) stats.colorCount++;
-            stats.colors[thisColor] = (stats.colors[thisColor] || 0 ) + 1;
+            // const thisColor = util.getStringFromP5ColorObj(guy.color);
+            // if (stats.colors[thisColor] === undefined) stats.colorCount++;
+            // stats.colors[thisColor] = (stats.colors[thisColor] || 0 ) + 1;
 
             
 
             if (guy.hasDominantColor) {
-                stats.dominantColors[thisColor] = (stats.dominantColors[thisColor] || 0 ) + 1;
+                //stats.dominantColors[thisColor] = (stats.dominantColors[thisColor] || 0 ) + 1;
                 guy.size = 15;
             }
             i++;
             return guy;
         });
         
-    stats.colorCountHistory.push(stats.colorCount);
-    
     for (const guy of guys) {
-        
-        console.log(guy.velLimit);
         guy.drawMe();
     }
+
+    
 }
 
 
 function drawEnvironment() {
     push();
     strokeWeight(2);
-    stroke("white");
+    stroke("#cc99ff");
     fill(0);
     rect(10, 10, width - 20, height / 2, 26);
     pop();
@@ -344,12 +358,73 @@ function loadingScreen() {
     startTextSize++;
 }
 
+function statsText() {
+    let leftMargin = 10;
+    let startingY = (height / 2) + graphAreaHeight + 50;
+    push();
+        noStroke();
+        fill("#ddbbff");
+        textSize(15);
+        text("TIME INDEX: " + frameCount / 1000, leftMargin, startingY);
+        text("GUYS: " + stats.guys, leftMargin, startingY + 20);
+        text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
+        text("REPLENISH: " + forage.replenishRate.toFixed(3), leftMargin, startingY + 60);
+
+        let middleMargin = leftMargin + 110;
+        text(`GDR: ${Guy.getGlobalDigestionRate().toFixed(3)}`, middleMargin, startingY);
+        text(`TMP: ${data.temp}`, middleMargin, startingY + 20);
+        text(`HUM: ${data.hum}`, middleMargin, startingY + 40);
+        text(`VIS: ${data.vis}`, middleMargin, startingY + 60);
+    pop();
+}
+
+function histogramButtons() { 
+  let x = 390;
+  let startingY = (height / 2) + graphAreaHeight + 50;
+
+  push();
+  textSize(15);
+  textAlign(RIGHT);
+
+  const makeBox = (trait, label, color, y) => {
+    const w = textWidth(label);
+    const a = textAscent();
+    const d = textDescent();
+    return {
+      trait,
+      label,
+      color,
+      x: x - w,
+      y: y - a,
+      w,
+      h: a + d
+    };
+  };
+
+  histogramButtonBoxes = [
+    makeBox("senseDistance", "SENSE_DIST", "#339cccff", startingY),
+    makeBox("velLimit", "VEL_LIMIT", "#aaaaff", startingY + 20),
+    makeBox("digestionProgress", "DIG_PROG", "#cc2233", startingY + 40),
+    makeBox("noiseMagnitude", "NOISE_MAG", "#99aa22", startingY + 60),
+  ];
+
+  noStroke();
+  fill('#339cccff'); text("SENSE_DIST", x, startingY);
+  fill('#aaaaff'); text("VEL_LIMIT",   x, startingY + 20);
+  fill('#cc2233'); text("DIG_PROG",    x, startingY + 40);
+  fill('#99aa22'); text("NOISE_MAG",    x, startingY + 60);
+
+  pop();
+}
+
 
 function drawGraphs() {
     push();
     let startingY = (height / 2) + 20;
+    let graphs = ['numberOfGuysHistory', 'numberOfFoodHistory', 'histogram'];
+    
     let i = 0;
-    for (let graph of ['numberOfGuysHistory', 'numberOfFoodHistory']) {
+    for (let graph of graphs) {
         let minY = 0;
         let maxY = 0;
         let color = '';
@@ -360,15 +435,13 @@ function drawGraphs() {
                 maxY = data.temp + 5;
                 color ='#ee1edcff'
                 break;
-            case 'colorCountHistory':
-                minY = Object.keys(stats.dominantColors).length;
-                maxY = stats.guys;
-                color = util.minBrightness(guys[i].color, 100);
-                break;
             case 'numberOfFoodHistory':
                 minY = 0;
                 maxY = forage.chanceOfFood;
                 color = '#99cc33';
+                break;
+            case 'histogram':
+                color = '#339cccff';
                 break;
         }
 
@@ -376,32 +449,80 @@ function drawGraphs() {
         noFill();
 
         line(10, startingY, width-10, startingY);
-        line(10, startingY + 100, width-10, startingY + 100);
+        line(10, startingY + (graphAreaHeight / graphs.length), width-10, startingY + (graphAreaHeight / graphs.length));
         startingY++;
-        
-        if (stats[graph].length > 1) {
-            beginShape();
-                for (let i = 0; i < stats[graph].length; i++) {
-                    let x = map(i, 0, stats[graph].length-1, 10, width-10);
-                    let y = map(stats[graph][i], minY, maxY, startingY + 100, startingY+5);
-                    vertex(x, y);
-                    //first control point
-                    // if (i == 0) {
-                    //     splineVertex(x, y);
-                    // }
-
-                    // splineVertex(x, y);
-
-                    // //last control point
-                    // if (i == stats[graph].length - 1) {
-                    //     splineVertex(x, y);
-                    // }
-                }
-            endShape();
+        if (graph != 'histogram') {
+            if (stats[graph].length > 1) {
+                beginShape();
+                    for (let i = 0; i < stats[graph].length; i++) {
+                        let x = map(i, 0, stats[graph].length-1, 10, width-10);
+                        let y = map(stats[graph][i], minY, maxY, startingY + (graphAreaHeight / graphs.length), startingY+5);
+                        vertex(x, y);
+                    }
+                endShape();
+            }
+        } else {
+            
         }
         
-        startingY += 105;
+        startingY += (graphAreaHeight / graphs.length) + 5;
         i++;
+    }
+    pop();
+}
+
+function drawHistogram() { 
+    let color = histogramButtonBoxes[selectedHistogram].color;
+    const sectionH = graphAreaHeight / 3;
+            const x0 = 10;
+            const y0 = 618 + 2;
+            const w = width - 20;
+            const h = sectionH - 10;
+
+    histogram = guys.map(g => g[histogramButtonBoxes[selectedHistogram].trait])
+    push();
+    stroke(color);
+        noFill();
+    let bins = 10;
+    let minVal = min(histogram);
+    let maxVal = max(histogram);
+    let binSize = (maxVal - minVal) / bins;
+    let counts = Array(bins).fill(0);
+
+    for (let v of histogram) {
+        let index = floor((v - minVal) / binSize);
+        if (index === bins) index = bins - 1;
+        counts[index]++;
+    }
+
+    let maxCount = max(counts);
+    let barWidth = w / bins;
+
+    let labelH = 14;
+    let plotH = h - labelH;
+
+    textAlign(CENTER, TOP);
+    textSize(7);
+
+    for (let i = 0; i < bins; i++) {
+        let barHeight = map(counts[i], 0, maxCount, 0, plotH);
+        let x = x0 + i * barWidth;
+        let y = y0 + plotH - barHeight;
+
+        rect(x, y, barWidth - 2, barHeight);
+
+        let binStart = minVal + i * binSize;
+        let binEnd = binStart + binSize;
+        text(
+            `${binStart.toFixed(4)}`,
+            x + barWidth / 2,
+            y0 + plotH + 2
+        );
+        text(
+            `${binEnd.toFixed(4)}`,
+            x + barWidth / 2,
+            y0 + plotH + 9
+        );
     }
     pop();
 }

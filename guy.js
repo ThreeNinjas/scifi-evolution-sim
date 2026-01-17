@@ -12,16 +12,18 @@ class Guy {
     //vectors
     this.pos = createVector(traits.x, traits.y);
     this.vel = p5.Vector.random2D();
-    this.vel.mult(random(3));
+    
     this.velLimit = !util.chance(99) ? 5 : random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
     this.noise = p5.Vector.random2D().setMag(0.1);
-    this.noiseRotate = random(-100, 100);
+    this.noiseRotate = util.randomNormal(50, 10);
     this.noiseMagnitude = util.rightSkew(0.5, 5, data.clouds > 0 ? map(data.clouds, 0, 100, 0.1, 3) : 1);
+    this.randomNormal = util.randomNormal(5, data.clouds/10);
+    this.randomNormalBounded = util.randomNormalBounded(5, 1, 0, 10);
 
     this.target = createVector(0,0);
     this.acc = createVector(0,0);
     //this.seekAccel = constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
-    this.seekAccel = util.rightSkew(0.5, data.vis, 1)
+    this.seekAccel = util.randomNormal(0.5, data.vis); // util.rightSkew(0.5, data.vis, 1)
     
     this.overRideMove = util.chance(data.hum) ? 0 : 1;
     this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
@@ -40,9 +42,7 @@ class Guy {
     push();
       stroke(!this.dead ? this.color : c.guys.deadColor);
 
-      if (this.halo) {
-        stroke('yellow');
-      }
+      
       fill(!this.dead ? this.color : c.guys.deadColor);
       circle(this.pos.x, this.pos.y, this.size);
 
@@ -50,6 +50,23 @@ class Guy {
         stroke(c.foodColor);
         fill(c.foodColor);
         circle(this.pos.x, this.pos.y+1, this.stomachContents);
+      }
+    pop();
+
+    push();
+      if (this.halo == 1) {
+        stroke('#339cccff');
+        noFill();
+        circle(this.pos.x, this.pos.y, this.size * 2);
+        textSize(14);
+        text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
+        text(`V:${this.vel.mag().toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 14);
+        text(`VL:${this.velLimit.toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 28);
+        text(`${this.overRideMove}, ${this.overRideMoveIntermittent}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 42);
+
+        if (this.isSeeking == 1) {
+            line(this.pos.x, this.pos.y, this.target.x, this.target.y);
+        }
       }
     pop();
 
@@ -61,9 +78,8 @@ class Guy {
     pop();
 
     push();
-      stroke('white');
       noFill();
-      circle(this.pos.x, this.pos.y, this.calculateSensePerim())
+      circle(this.pos.x, this.pos.y, this.calculateSensePerim());
     pop();
     }     
   }
@@ -149,10 +165,8 @@ class Guy {
             this.vel.y = 0;
         }
     } else {
-        this.halo = 0;
         this.isSeeking = 0;
     }
-    //this.drawMe();
   }
 
   intersects(other) {
@@ -162,7 +176,6 @@ class Guy {
   sensesFood(foods) {
     for (let food of foods) {
         if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.calculateSensePerim()) {
-            //this.halo = 1;
             this.isSeeking = 1;
             return {x: food.x, y: food.y, id: food.id}
         }
@@ -183,8 +196,11 @@ class Guy {
   eat(foodToEat) {
     forage.remove(foodToEat);
     this.stomachContents += forage.foodSize;
-    this.halo = 0;
     this.isSeeking = 0;
+
+    this.vel.setMag(0);
+    this.target.x = 0;
+    this.target.y = 0;
   }
 
   isHungry() {
