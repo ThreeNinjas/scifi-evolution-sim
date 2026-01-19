@@ -49,6 +49,7 @@ const guysToRemove = new Set();
 
 let histogramButtonBoxes;
 let selectedHistogram = 0;
+let automatedHistogramSelection = true;
 
 /*
 TODO: move the actually populating of guys out of loadWeather and into guys.populateGuys();
@@ -59,7 +60,7 @@ TODO: set upper and lower limits on the color space,  have them be based on temp
     maybe with higher temps warmer colors have more dominance? 
     maybe pressure makes the dominant colors more dominant
 TODO: other real world data variables: size, speed (increment by more than 1?), ability to kill
-TODO: food
+TODO: create a trait that allows guys to override the tendency to switch between different foods
 TODO: mutations
 
 TODO: graph
@@ -96,20 +97,22 @@ function draw() {
 
     guysToRemove.clear();
 
-    for (let i = 0; i < guys.length; i++) {
-        if (guys[i].dead) {
-            guys[i].decayProgress += Guy.getGlobalDigestionRate() * (data.rain > 0 ? data.rain : data.vis);
+    for (let guy of guys) {
+        guy.mateTargets = [];
+        if (guy.dead) {
+            guy.decayProgress += Guy.getGlobalDigestionRate() * (data.rain > 0 ? data.rain : data.vis);
 
-            if (guys[i].decayProgress >= 1) {
+            if (guy.decayProgress >= 1) {
                 //delete
-                guysToRemove.add(guys[i].id);
+                guysToRemove.add(guy.id);
             }
         }
 
-        for (let j = i + 1; j < guys.length; j++) {
-            if (guys[i].intersects(guys[j])) {
+        for (let otherGuy of guys) {
+            if (otherGuy === guy) continue;
+            if (guy.intersects(otherGuy)) {
                 //figure out who if either is dominant
-                let dom = Guy.whoIsDominant(guys[i], guys[j]);
+                let dom = Guy.whoIsDominant(guy, otherGuy);
                 if (dom) {
                     if (dom != 'both') {
                         //dom.non is changing his color, soooooo
@@ -134,7 +137,7 @@ function draw() {
                         
                     }
                 } else {
-                    for (let guy of [guys[i], guys[j]]) {
+                    for (let g of [guy, otherGuy]) {
                         // const oldColor = util.getStringFromP5ColorObj(guy.color);
                         // stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
                         // if (stats.colors[oldColor] <= 0) {
@@ -142,7 +145,7 @@ function draw() {
                         //     stats.colorCount--;
                         // }
 
-                        guy.color = lerpColor(guys[i].color, guys[j].color, 0.5);
+                        //g.color = lerpColor(g.color, otherGuy.color, 0.5);
 
                         // const newColor = util.getStringFromP5ColorObj(guy.color);
                         // if (stats.colors[newColor] === undefined) stats.colorCount++;
@@ -151,62 +154,69 @@ function draw() {
                 }
             }
 
-            if (guys[i].senses(guys[j])) {
-                //silently acknowledge
+            if (guy.senses(otherGuy) && guy.isHorny && otherGuy.isHorny) {
+                guy.mateTargets.push(otherGuy);
+            
                 if (debug) {
                     push();
                         textSize(10);
                         fill('white');
-                        text('!!', guys[i].pos.x, guys[i].pos.y+20);
-                        text('!!', guys[j].pos.x, guys[j].pos.y+20);
+                        text('!!', guy.pos.x, guy.pos.y+20);
+                        text('!!', otherGuy.pos.x, otherGuy.pos.y+20);
                     pop();
                 }
             }
         }
 
-        if (!guys[i].dead) {
-            if (guys[i].isHungry()) {
-                const sensedFood = guys[i].sensesFood(forage.foodStorage);
+        for (let mt of guy.mateTargets) {
+            guy.arrow(mt);
+        }
+
+        if (!guy.dead) {
+            if (guy.isHungry()) {
+                guy.isHorny = 0;
+                const sensedFood = guy.sensesFood(forage.foodStorage);
 
                 if (sensedFood) {
-                    guys[i].seekFood(sensedFood);
-                    if (!guys[i].overRideMove) {
-                        guys[i].move();
+                    guy.seekFood(sensedFood);
+                    if (!guy.overRideMove) {
+                        guy.move();
                     }
-                    if (guys[i].overRideMoveIntermittent) {
+                    if (guy.overRideMoveIntermittent) {
                         if (!util.chance(data.hum)) {
-                            guys[i].move();
+                            guy.move();
                         }
                     }
                 } else {
-                    guys[i].move();
+                    guy.move();
                 }
 
-                const foodToEat = guys[i].intersectsFood(forage.foodStorage);
+                const foodToEat = guy.intersectsFood(forage.foodStorage);
                 if (foodToEat !== null) {
-                    guys[i].eat(foodToEat);
+                    guy.eat(foodToEat);
                 }
             } else {
-                guys[i].move();
+                guy.move();
+                guy.isHorny = 1;
             }
         }
 
 
-        guys[i].digestionProgress += guys[i].digestionRate;
-        if (guys[i].stomachContents > 0 && guys[i].dead == 0) {
-            if (guys[i].digestionProgress >= 1) {
-                guys[i].stomachContents -= forage.foodSize;
-                guys[i].digestionProgress -= 1;
+        guy.digestionProgress += guy.digestionRate;
+        if (guy.stomachContents > 0 && guy.dead == 0) {
+            if (guy.digestionProgress >= 1) {
+                guy.stomachContents -= forage.foodSize;
+                guy.digestionProgress -= 1;
             }
         } else {
-            if (guys[i].digestionProgress >= 1 && guys[i].dead == 0 && guys[i].stomachContents == 0) {
-                guys[i].dead = 1;
+            if (guy.digestionProgress >= 1 && guy.dead == 0 && guy.stomachContents == 0) {
+                guy.dead = 1;
                 stats.guys--;
             }
         }
 
         
-        guys[i].drawMe();
+        guy.drawMe();
     }
 
     forage.replenishProgress += forage.replenishRate;
@@ -229,8 +239,11 @@ function draw() {
         }
     }
 
-    if (frameCount % 200 === 0) {
-        selectedHistogram = floor(random(4));
+    if (frameCount % 200 === 0 && automatedHistogramSelection) {
+        selectedHistogram++;
+        if (selectedHistogram > 3) {
+            selectedHistogram = 0;
+        }
     }
 
     statsText();
@@ -251,6 +264,7 @@ function mousePressed() {
             mouseY <= box.y + box.h
         ) {
             selectedHistogram = i;
+            automatedHistogramSelection = false;
         }
     }
 
@@ -281,8 +295,6 @@ async function loadWeather() {
         chanceOfFood: Math.floor(data.hum),
         replenishRate: Guy.getGlobalDigestionRate(data) * 1.005
     });
-    
-    
 
     frameRate(data.temp);
     i = 0;
@@ -371,7 +383,8 @@ function statsText() {
         text("REPLENISH: " + forage.replenishRate.toFixed(3), leftMargin, startingY + 60);
 
         let middleMargin = leftMargin + 110;
-        text(`GDR: ${Guy.getGlobalDigestionRate().toFixed(3)}`, middleMargin, startingY);
+        
+        text(`GDR: ${(Guy.getGlobalDigestionRate()*10000).toFixed(3)}`, middleMargin, startingY);
         text(`TMP: ${data.temp}`, middleMargin, startingY + 20);
         text(`HUM: ${data.hum}`, middleMargin, startingY + 40);
         text(`VIS: ${data.vis}`, middleMargin, startingY + 60);

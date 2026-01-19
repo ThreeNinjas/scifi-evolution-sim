@@ -1,41 +1,44 @@
 class Guy {
   constructor(traits) {
+    //genes
     this.id = traits.id;
     this.color = traits.color;
     this.size = traits.size;
     this.hasDominantColor = traits.hasDominantColor;
     this.senseDistance = this.getSenseDistance(); //This should always be a percentage of their size, right? So always > this.size
-
-    this.halo = 0;
-    this.isSeeking = 0;
+    this.overRideMove = util.chance(data.hum) ? 0 : 1;
+    this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
+    this.digestionRate = this.getDigestionRate();
+    
 
     //vectors
     this.pos = createVector(traits.x, traits.y);
     this.vel = p5.Vector.random2D();
-    
     this.velLimit = !util.chance(99) ? 5 : random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
+    
     this.noise = p5.Vector.random2D().setMag(0.1);
     this.noiseRotate = util.randomNormal(50, 10);
-    this.noiseMagnitude = util.rightSkew(0.5, 5, data.clouds > 0 ? map(data.clouds, 0, 100, 0.1, 3) : 1);
+    this.noiseMagnitude = util.randomNormalBounded(1, 1, 0, 10); //util.rightSkew(0.5, 5, data.clouds > 0 ? map(data.clouds, 0, 100, 0.1, 3) : 1);
+    
     this.randomNormal = util.randomNormal(5, data.clouds/10);
     this.randomNormalBounded = util.randomNormalBounded(5, 1, 0, 10);
 
     this.target = createVector(0,0);
     this.acc = createVector(0,0);
     //this.seekAccel = constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
-    this.seekAccel = util.randomNormal(0.5, data.vis); // util.rightSkew(0.5, data.vis, 1)
-    
-    this.overRideMove = util.chance(data.hum) ? 0 : 1;
-    this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
-    
-    this.digestionRate = this.getDigestionRate();
-    this.digestionProgress = 0;
-    this.starvationProgress = 0;
+    this.seekAccel = util.randomNormal(0.5, data.vis); 
 
-    //acquired
+    //acquired / stative
     this.stomachContents = 0;
     this.dead = 0;
     this.decayProgress = 0;
+    this.isHorny = 0;
+    this.halo = 0;
+    this.isSeeking = 0;
+    this.digestionProgress = 0;
+    this.starvationProgress = 0;
+
+    this.mateTargets = [];
   }
 
   drawMe() {
@@ -45,6 +48,13 @@ class Guy {
       
       fill(!this.dead ? this.color : c.guys.deadColor);
       circle(this.pos.x, this.pos.y, this.size);
+
+      if (this.isHorny == 1) {
+        strokeWeight(1);
+        stroke('white');
+        noFill();
+        circle(this.pos.x, this.pos.y, this.size + 5);
+      }
 
       if (this.stomachContents > 0) {
         stroke(c.foodColor);
@@ -79,9 +89,35 @@ class Guy {
 
     push();
       noFill();
+      stroke('white')
       circle(this.pos.x, this.pos.y, this.calculateSensePerim());
     pop();
     }     
+  }
+
+  arrow(otherGuy) {
+    this.target.x = otherGuy.pos.x;
+    this.target.y = otherGuy.pos.y;
+    stroke(this.color);
+
+    line(this.pos.x, this.pos.y, otherGuy.pos.x, otherGuy.pos.y);
+
+    const d = p5.Vector.sub(this.target, this.pos);
+    const angle = atan2(d.y, d.x);
+    const sourceRadius = this.size;
+    const padding = 6;
+    const tipDistanceFromSource = sourceRadius + padding;
+    const back = createVector(d.x, d.y).setMag(dist(this.pos.x, this.pos.y, this.target.x, this.target.y) - tipDistanceFromSource);
+    const tip = p5.Vector.sub(this.target, back);
+
+    push();
+        stroke('#ff3cd1ff');
+        strokeWeight(2);
+        translate(tip.x, tip.y);
+        rotate(angle);
+        line(0, 0, -4, -6);
+        line(0, 0, -4, 6);
+    pop();
   }
 
   static getGuyById(id) {
@@ -169,10 +205,6 @@ class Guy {
     }
   }
 
-  intersects(other) {
-    return dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y) < this.size;
-  }
-
   sensesFood(foods) {
     for (let food of foods) {
         if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.calculateSensePerim()) {
@@ -182,6 +214,14 @@ class Guy {
     }
 
     return null;
+  }
+
+  senses(other) {
+    return dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y) < this.calculateSensePerim();
+  }
+
+  intersects(other) {
+    return dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y) < this.size;
   }
 
   intersectsFood(foods) {
@@ -209,10 +249,6 @@ class Guy {
     }
 
     return true;
-  }
-
-  senses(other) {
-    return dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y) < this.calculateSensePerim();
   }
 
   calculateSensePerim() {

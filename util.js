@@ -3,18 +3,22 @@ class Util {
         return Math.floor(Math.random() * (y -x + 1)) + x;
     }
 
-    randomColor(min = 0, max = 360) {
-        if (min > max) {
-            const tmp = min;
-            min = max;
-            max = tmp;
-        }
-
+    randomColor(temp = 95, hum = 100) {
         return color(
-            util.randomNumber(0, 360),     // hue 0 - 360
-            util.randomNumber(0, max),    // saturation 0 - 100
-            util.randomNumber(min, map(max, 0, 100, 0, 100))  // brightness 0 - 100
+            util.randomNumber(0, map(temp, 17, 95, 0, 360)),     // hue 0 - 360
+            util.randomNumber(0, hum),    // saturation 0 - 100
+            100  // brightness 0 - 100
         );
+    }
+
+    closestColorIndex(target, colors) {
+        let bestI = -1;
+        let bestD = Infinity;
+        for (let i = 0; i < colors.length; i++) {
+            const d = hsbDistance(target, colors[i], 2, 1, 0);
+            if (d < bestD) { bestD = d; bestI = i; }
+        }
+        return bestI;
     }
 
     chance(chance) {
