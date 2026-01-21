@@ -3,22 +3,36 @@ class Util {
         return Math.floor(Math.random() * (y -x + 1)) + x;
     }
 
-    randomColor(min = 0, max = 360) {
-        if (min > max) {
-            const tmp = min;
-            min = max;
-            max = tmp;
-        }
-
+    randomColor(temp = 95, hum = 100) {
         return color(
-            util.randomNumber(0, 360),     // hue 0 - 360
-            util.randomNumber(0, max),    // saturation 0 - 100
-            util.randomNumber(min, map(max, 0, 100, 0, 100))  // brightness 0 - 100
+            util.randomNumber(0, map(temp, 17, 95, 0, 360)),     // hue 0 - 360
+            util.randomNumber(0, hum),    // saturation 0 - 100
+            100  // brightness 0 - 100
         );
     }
 
-    chance(chance) {
-        return util.randomNumber(0, 100) <= chance;
+    closestGuyByColor(targetColor, guys) {
+        let bestGuy = null;
+        let bestDist = Infinity;
+
+        const h1 = hue(targetColor);
+
+        for (const guy of guys) {
+            const h2 = hue(guy.color);
+            const d = abs(h1 - h2);
+            const dist = min(d, 360 - d);
+
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestGuy = guy;
+            }
+        }
+
+        return bestGuy;
+    }
+
+    chance(chance, mult = 100) {
+        return util.randomNumber(1, mult) <= chance;
     }
 
     getStringFromP5ColorObj(thisColor) {
@@ -76,6 +90,10 @@ class Util {
 
     //more info on this at https://d3js.org/d3-random#randomNormal
     //thanks to Jake Amphiuma for the heads up on the D3 library!
+    /*
+    The expected value of the generated numbers is mu, with the given standard deviation sigma. If mu is not specified, it defaults to 0; 
+    if sigma is not specified, it defaults to 1.
+    */
     randomNormal(mu, sigma) {
         const out = d3.randomNormal(mu, sigma);
         return out();
@@ -88,5 +106,9 @@ class Util {
             if (v >= min && v <= max) return v;
         }
         return constrain(gen(), min, max);
+    }
+
+    coinToss(a, b) {
+        return random() < 0.5 ? a : b;
     }
 }
