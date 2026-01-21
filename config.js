@@ -2,15 +2,20 @@ class Config {
     constructor() {
         this.foodColor = '#99cc33';
         this.guys = {
+            mutationRate: data.hum,
             size: 10,
-            deadColor: '#272a3aff',
+            colors: {
+                dead: '#272a3aff',
+                horny: '#ff3cd1ff',
+                hungry: '#339cccaa',
+            },
             traits: {
                 binary: [
                 'overRideMove',
                 'overRideMoveIntermittent',
+                'resolute',
             ], value: [
                 'size',
-                'color',
                 'senseDistance',
                 'digestionRate',
                 'velLimit',

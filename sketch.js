@@ -4,7 +4,7 @@ let numberOfGuys = params.get('guys') || null;
 let font;
 
 let util = new Util();
-let c = new Config(); //maybe rename config below later....
+let c; //maybe rename config below later....
 
 /** @@type {Guy[]} */
 let guys = [];
@@ -62,7 +62,7 @@ TODO: set upper and lower limits on the color space,  have them be based on temp
     maybe pressure makes the dominant colors more dominant
 TODO: other real world data variables: size, speed (increment by more than 1?), ability to kill
 TODO: create a trait that allows guys to override the tendency to switch between different foods
-TODO: mutations
+TODO: bar graphs that show number of horny guys, and how long til food is replenished
 
 TODO: graph
 */
@@ -99,6 +99,7 @@ function draw() {
     guysToRemove.clear();
 
     for (let guy of guys) {
+        let sensedFood;
         guy.potentialMates = [];
         if (guy.dead) {
             guy.decayProgress += Guy.getGlobalDigestionRate() * (data.rain > 0 ? data.rain : data.vis);
@@ -189,7 +190,7 @@ function draw() {
             if (guy.isHungry()) {
                 //drawPing(guy);
                 guy.isHorny = 0;
-                const sensedFood = guy.sensesFood(forage.foodStorage);
+                sensedFood = guy.sensesFood(forage.foodStorage);
 
                 if (sensedFood) {
                     guy.seekFood(sensedFood);
@@ -239,6 +240,9 @@ function draw() {
 
         
         guy.drawMe();
+        if (sensedFood) {
+            guy.arrow(sensedFood);
+        }
     }
 
     forage.replenishProgress += forage.replenishRate;
@@ -304,7 +308,7 @@ async function loadWeather() {
         .then(r => r.json());
 
     console.log(data);
-    
+    c = new Config();
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 

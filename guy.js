@@ -12,6 +12,7 @@ class Guy {
     this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
     this.digestionRate = this.getDigestionRate();
     
+    this.resolute = util.chance(1); //if this is true, guy won't change its mind about food targets
 
     //vectors
     this.pos = createVector(util.randomNumber(config.bounds.x.min, config.bounds.x.max), util.randomNumber(config.bounds.y.min, config.bounds.y.max));
@@ -47,10 +48,10 @@ class Guy {
 
   drawMe() {
     push();
-      stroke(!this.dead ? this.color : c.guys.deadColor);
+      stroke(!this.dead ? this.color : c.guys.colors.dead);
 
       
-      fill(!this.dead ? this.color : c.guys.deadColor);
+      fill(!this.dead ? this.color : c.guys.colors.dead);
       circle(this.pos.x, this.pos.y, this.size);
 
       if (this.isHorny == 1) {
@@ -85,7 +86,7 @@ class Guy {
                 `VL:${this.velLimit.toFixed(4)}`, 
                 `NM:${this.noiseMagnitude.toFixed(4)}`,
                 `SA:${this.seekAccel.toFixed(4)}`,
-                `${this.overRideMove}, ${this.overRideMoveIntermittent}`,
+                `${this.overRideMove}, ${this.overRideMoveIntermittent}, ${this.resolute}`,
             ];
 
             for (let datum of data) {
@@ -119,12 +120,16 @@ class Guy {
     }     
   }
 
-  arrow(otherGuy) {
-    this.target.x = otherGuy.pos.x;
-    this.target.y = otherGuy.pos.y;
-    stroke(this.color);
+  arrow(target) {
+    const isGuy = target && target.pos !== undefined;
 
-    line(this.pos.x, this.pos.y, otherGuy.pos.x, otherGuy.pos.y);
+    if (isGuy) {
+        this.target.x = target.pos.x;
+        this.target.y = target.pos.y;
+
+        stroke(this.color);
+        line(this.pos.x, this.pos.y, target.pos.x, target.pos.y);
+    } 
 
     const d = p5.Vector.sub(this.target, this.pos);
     const angle = atan2(d.y, d.x);
@@ -135,12 +140,22 @@ class Guy {
     const tip = p5.Vector.sub(this.target, back);
 
     push();
-        stroke('#ff3cd1ff');
+        if (isGuy) {
+            stroke(c.guys.colors.horny);
+        } else {
+            stroke(c.guys.colors.hungry);
+        }
+        
         strokeWeight(2);
         translate(tip.x, tip.y);
         rotate(angle);
-        line(0, 0, -4, -6);
-        line(0, 0, -4, 6);
+        if (isGuy) {
+            line(0, 0, -4, -6);
+            line(0, 0, -4, 6);
+        } else {
+            line(0, 0, -4, -4);
+            line(0, 0, -4, 4);
+        }
     pop();
   }
 
@@ -199,9 +214,15 @@ class Guy {
 
   seekFood(food) {
     if (forage.exists(food.id)) {
-        this.target.x = food.x;
-        this.target.y = food.y;
-
+        if (this.target.x == 0 && this.target.y == 0) {
+            this.target.x = food.x;
+            this.target.y = food.y;
+        } else if (!this.resolute) {
+            this.target.x = food.x;
+            this.target.y = food.y;
+        }
+        
+        
         this.acc.set(this.target).sub(this.pos);
         this.acc.setMag(this.seekAccel);
 
@@ -282,6 +303,7 @@ class Guy {
   businessTime(mate, guys) {
     //TODO: make babies small! let them grow into sexual maturity
     let mutation = false;
+    let mutatedTraits = [];
     if (this.id < mate.id) return;
 
     const parentA = Guy.biggerId(this, mate);
@@ -291,24 +313,33 @@ class Guy {
 
     for (const trait of c.guys.traits.binary) {
         child[trait] = util.coinToss(parentA, parentB)[trait];
-        if (util.chance(1, 1000)) {
+        if (util.chance(1, c.guys.mutationRate)) {
+            mutation = true;
+            mutatedTraits.push(trait);
+
             child[trait] = !child[trait]
         }
     }
 
     for (const trait of c.guys.traits.value) {
         child[trait] = util.coinToss(parentA, parentB)[trait];
-        if (util.chance(1, 100)) {
+        if (util.chance(1, c.guys.mutationRate)) {
             mutation = true;
+            mutatedTraits.push(trait);
             const sign = util.chance(1, 2) ? 1: -1;
             const percent = Math.abs(util.randomNormal(0, 0.03));
             child[trait] += 1 + sign * percent;
         }
     }
 
+    child.color = parentA.hasDominantColor ? parentA.color : (parentB.hasDominantColor ? parentB.color : util.coinToss(parentA, parentB).color);
+
     if (mutation) {
         console.log('mutation!');
+        console.log(parentA);
+        console.log(parentB);
         console.log(child);
+        console.log(mutatedTraits);
     }
 
     child.pos.x = this.pos.x + 10;
