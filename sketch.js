@@ -8,6 +8,7 @@ let c = new Config(); //maybe rename config below later....
 
 /** @@type {Guy[]} */
 let guys = [];
+/** @@type {Forage[]} */
 let forage;
 let diameter = 10;
 let data = null;
@@ -98,7 +99,7 @@ function draw() {
     guysToRemove.clear();
 
     for (let guy of guys) {
-        guy.mateTargets = [];
+        guy.potentialMates = [];
         if (guy.dead) {
             guy.decayProgress += Guy.getGlobalDigestionRate() * (data.rain > 0 ? data.rain : data.vis);
 
@@ -154,8 +155,20 @@ function draw() {
                 }
             }
 
-            if (guy.senses(otherGuy) && guy.isHorny && otherGuy.isHorny) {
-                guy.mateTargets.push(otherGuy);
+            if (guy.senses(otherGuy) && guy.isHorny && otherGuy.isHorny && !guy.isSeeking && !guy.mate) {
+                guy.potentialMates.push(otherGuy);
+                guy.mateTimer++;
+
+                if (!guy.isSeeking && guy.mateTimer > 100) {
+                    guy.mate = util.closestGuyByColor(guy.color, guy.potentialMates);
+                    if (guy.mate) {
+                        guy.target.x = guy.mate.pos.x;
+                        guy.target.y = guy.mate.pos.y;
+                        guy.isSeeking = 1;
+                    }
+                    
+                    guy.mateTimer = 0;
+                }
             
                 if (debug) {
                     push();
@@ -168,12 +181,13 @@ function draw() {
             }
         }
 
-        for (let mt of guy.mateTargets) {
+        for (let mt of guy.potentialMates) {
             guy.arrow(mt);
         }
 
         if (!guy.dead) {
             if (guy.isHungry()) {
+                //drawPing(guy);
                 guy.isHorny = 0;
                 const sensedFood = guy.sensesFood(forage.foodStorage);
 
@@ -189,6 +203,7 @@ function draw() {
                     }
                 } else {
                     guy.move();
+                    guy.mate = null;
                 }
 
                 const foodToEat = guy.intersectsFood(forage.foodStorage);
@@ -196,7 +211,14 @@ function draw() {
                     guy.eat(foodToEat);
                 }
             } else {
-                guy.move();
+                if (guy.isSeeking && guy.mate && !guy.mate.dead) {
+                    guy.seekMate(guy.mate, guys);
+                    //guy.arrow(guy.mate);
+                } else {
+                   guy.move(); 
+                   guy.mate = null;
+                }
+                
                 guy.isHorny = 1;
             }
         }
@@ -287,7 +309,6 @@ async function loadWeather() {
     stats.guys = numberOfGuys;
 
     DIGESTION_RATE_PER_FRAME = Guy.getGlobalDigestionRate(); 
-    console.log('digestion rate: ' + DIGESTION_RATE_PER_FRAME);
 
     forage = new Forage({
         maxX: config.bounds.x.max,
@@ -299,14 +320,7 @@ async function loadWeather() {
     frameRate(data.temp);
     i = 0;
     guys = Array.from({ length: numberOfGuys }, () => {
-            const guy = new Guy({
-                id: i,
-                x: util.randomNumber(config.bounds.x.min, config.bounds.x.max),
-                y: util.randomNumber(config.bounds.y.min, config.bounds.y.max),
-                size: c.guys.size,
-                color: util.randomColor(data.temp, data.hum),
-                hasDominantColor: util.chance(data.temp * 0.25),
-            });
+            const guy = new Guy();
 
             // const thisColor = util.getStringFromP5ColorObj(guy.color);
             // if (stats.colors[thisColor] === undefined) stats.colorCount++;
@@ -380,7 +394,7 @@ function statsText() {
         text("TIME INDEX: " + frameCount / 1000, leftMargin, startingY);
         text("GUYS: " + stats.guys, leftMargin, startingY + 20);
         text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
-        text("REPLENISH: " + forage.replenishRate.toFixed(3), leftMargin, startingY + 60);
+        text(`RPL: ${(forage.replenishRate*10000).toFixed(3)}`, leftMargin, startingY + 60);
 
         let middleMargin = leftMargin + 110;
         
@@ -445,7 +459,7 @@ function drawGraphs() {
         switch (graph) {
             case 'numberOfGuysHistory':
                 minY = 0;
-                maxY = data.temp + 5;
+                maxY = data.temp > guys.length ? Math.floor(data.temp) : guys.length;
                 color ='#ee1edcff'
                 break;
             case 'numberOfFoodHistory':
@@ -537,5 +551,28 @@ function drawHistogram() {
             y0 + plotH + 9
         );
     }
+    pop();
+}
+
+function drawPing(guy) {
+    if (guy.senseDistance <= 0) {
+        return;
+    }
+    const start = guy.size;
+    //const end = guy.senseDistance * 2;
+    const end = guy.senseDistance;
+    const t = constrain((guy.pingSize - start) / (end - start), 0, 1);
+    const alpha = Math.floor(255 * (1 - t));
+    const hexAlpha = alpha.toString(16).padStart(2, '0');
+
+    const colorStub = guy.isHorny ? '#ff3cd1' : '#339ccc'
+    push();
+        noFill();
+        stroke(`${colorStub}${hexAlpha}`);
+        circle(guy.pos.x, guy.pos.y, guy.pingSize);
+        guy.pingSize += guy.pingSize * 0.025;
+        if (guy.pingSize >= end) {
+            guy.pingSize = guy.size;
+        }
     pop();
 }

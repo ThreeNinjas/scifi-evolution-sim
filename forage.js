@@ -18,7 +18,7 @@ class Forage {
         for (let i = 0; i < this.chanceOfFood; i++) {
             if (util.chance(this.chanceOfFood) && this.foodStorage.length < this.chanceOfFood) {
                 this.foodStorage.push({
-                id: i,
+                id: `${frameCount}-${i}`,
                 x: util.randomNumber(10, this.maxX),
                 y: util.randomNumber(10, this.maxY),
             });

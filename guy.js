@@ -1,10 +1,12 @@
+let NEXT_ID = 0;
 class Guy {
   constructor(traits) {
     //genes
-    this.id = traits.id;
-    this.color = traits.color;
-    this.size = traits.size;
-    this.hasDominantColor = traits.hasDominantColor;
+    this.id = NEXT_ID++;
+    this.color = util.randomColor(data.temp, data.hum);
+    this.size = c.guys.size;
+    this.pingSize = this.size;
+    this.hasDominantColor = util.chance(data.temp * 0.25);
     this.senseDistance = this.getSenseDistance(); //This should always be a percentage of their size, right? So always > this.size
     this.overRideMove = util.chance(data.hum) ? 0 : 1;
     this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
@@ -12,7 +14,7 @@ class Guy {
     
 
     //vectors
-    this.pos = createVector(traits.x, traits.y);
+    this.pos = createVector(util.randomNumber(config.bounds.x.min, config.bounds.x.max), util.randomNumber(config.bounds.y.min, config.bounds.y.max));
     this.vel = p5.Vector.random2D();
     this.velLimit = !util.chance(99) ? 5 : random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
     
@@ -38,7 +40,9 @@ class Guy {
     this.digestionProgress = 0;
     this.starvationProgress = 0;
 
-    this.mateTargets = [];
+    this.potentialMates = [];
+    this.mateTimer = 0;
+    this.mate = undefined;
   }
 
   drawMe() {
@@ -50,10 +54,10 @@ class Guy {
       circle(this.pos.x, this.pos.y, this.size);
 
       if (this.isHorny == 1) {
-        strokeWeight(1);
-        stroke('white');
+        strokeWeight(0.5);
+        stroke('#cc2233');
         noFill();
-        circle(this.pos.x, this.pos.y, this.size + 5);
+        circle(this.pos.x, this.pos.y, this.size);
       }
 
       if (this.stomachContents > 0) {
@@ -61,37 +65,57 @@ class Guy {
         fill(c.foodColor);
         circle(this.pos.x, this.pos.y+1, this.stomachContents);
       }
-    pop();
-
-    push();
-      if (this.halo == 1) {
-        stroke('#339cccff');
-        noFill();
-        circle(this.pos.x, this.pos.y, this.size * 2);
-        textSize(14);
-        text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
-        text(`V:${this.vel.mag().toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 14);
-        text(`VL:${this.velLimit.toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 28);
-        text(`${this.overRideMove}, ${this.overRideMoveIntermittent}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 42);
-
-        if (this.isSeeking == 1) {
-            line(this.pos.x, this.pos.y, this.target.x, this.target.y);
-        }
+      if (!this.dead) {
+        drawPing(this);
       }
     pop();
 
-    if (debug) {
-      push();
-      fill('white');
-      textSize(10);
-      text(`${this.id},${this.calculateSensePerim()}`, this.pos.x - 10, this.pos.y);
-    pop();
+    if (this.halo == 1) {
+        push();
+            stroke('#339cccff');
+            noFill();
+            circle(this.pos.x, this.pos.y, this.size * 2);
+            textSize(14);
+            let startY = this.pos.y + (this.size * 2);
 
-    push();
-      noFill();
-      stroke('white')
-      circle(this.pos.x, this.pos.y, this.calculateSensePerim());
-    pop();
+            let data = [
+                `DP:${this.digestionProgress.toFixed(4)}`,
+                `SP:${this.calculateSensePerim().toFixed(4)}`,
+                `V:${this.vel.mag().toFixed(4)}`,
+                `VL:${this.velLimit.toFixed(4)}`, 
+                `NM:${this.noiseMagnitude.toFixed(4)}`,
+                `SA:${this.seekAccel.toFixed(4)}`,
+                `${this.overRideMove}, ${this.overRideMoveIntermittent}`,
+            ];
+
+            for (let datum of data) {
+                text(datum, this.pos.x-10, startY);
+                startY += 14;
+            }
+            // text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
+            // text(`SP:${this.calculateSensePerim().toFixed(4)}`, this.pos.x-10, (this.pos.y + this.size * 2) + 14);
+            // text(`V:${this.vel.mag().toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 28);
+            // text(`VL:${this.velLimit.toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 42);
+            // text(`${this.overRideMove}, ${this.overRideMoveIntermittent}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 56);
+
+            if (this.isSeeking == 1) {
+                line(this.pos.x, this.pos.y, this.target.x, this.target.y);
+            }
+        pop();
+    }
+
+    if (debug) {
+        push();
+            fill('white');
+            textSize(10);
+            text(`${this.id},${this.calculateSensePerim()}`, this.pos.x - 10, this.pos.y);
+        pop();
+
+        push();
+        noFill();
+        stroke('white')
+        circle(this.pos.x, this.pos.y, this.calculateSensePerim());
+        pop();
     }     
   }
 
@@ -104,8 +128,8 @@ class Guy {
 
     const d = p5.Vector.sub(this.target, this.pos);
     const angle = atan2(d.y, d.x);
-    const sourceRadius = this.size;
-    const padding = 6;
+    const sourceRadius = this.size / 2;
+    const padding = 4;
     const tipDistanceFromSource = sourceRadius + padding;
     const back = createVector(d.x, d.y).setMag(dist(this.pos.x, this.pos.y, this.target.x, this.target.y) - tipDistanceFromSource);
     const tip = p5.Vector.sub(this.target, back);
@@ -205,6 +229,107 @@ class Guy {
     }
   }
 
+  seekMate(mate, guys) {
+    if (!mate.isHorny) {
+        this.resetHorniness();
+        return;
+    }
+    if (!this.overRideMove) {
+        this.move();
+    }
+
+    if (this.overRideMoveIntermittent) {
+        if (util.coinToss(1, 2) == 1) {
+            this.move();
+        }
+    }
+    this.arrow(mate);
+
+    this.acc.set(this.target).sub(this.pos);
+    this.acc.setMag(this.seekAccel);
+
+    this.noise.rotate(this.noiseRotate);
+        this.noise.setMag(this.noiseMagnitude);
+        this.acc.add(this.noise);
+
+    this.vel.add(this.acc);
+    this.vel.limit(this.velLimit);
+
+    this.pos.add(this.vel);
+    this.pos.x = constrain(this.pos.x, config.bounds.x.min, config.bounds.x.max);
+    this.pos.y = constrain(this.pos.y, config.bounds.y.min, config.bounds.y.max);
+    if (this.pos.x == config.bounds.x.min || this.pos.x == config.bounds.x.max) {
+        this.vel.x = 0;
+    }
+
+    if (this.pos.y == config.bounds.y.min || this.pos.y == config.bounds.y.max) {
+        this.vel.y = 0;
+    }
+
+    if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= 5) {
+        if (mate && dist(this.pos.x, this.pos.y, mate.pos.x, mate.pos.y) <= 5) {
+            this.businessTime(mate, guys);
+        } else if (mate) {
+            this.target.x = mate.pos.x;
+            this.target.y = mate.pos.y;
+        } else {
+            this.isSeeking = 0;
+            this.mate = null;
+        }
+    }
+  }
+
+  businessTime(mate, guys) {
+    //TODO: make babies small! let them grow into sexual maturity
+    let mutation = false;
+    if (this.id < mate.id) return;
+
+    const parentA = Guy.biggerId(this, mate);
+    const parentB = Guy.smallerId(this, mate);
+
+    const child = new Guy();
+
+    for (const trait of c.guys.traits.binary) {
+        child[trait] = util.coinToss(parentA, parentB)[trait];
+        if (util.chance(1, 1000)) {
+            child[trait] = !child[trait]
+        }
+    }
+
+    for (const trait of c.guys.traits.value) {
+        child[trait] = util.coinToss(parentA, parentB)[trait];
+        if (util.chance(1, 100)) {
+            mutation = true;
+            const sign = util.chance(1, 2) ? 1: -1;
+            const percent = Math.abs(util.randomNormal(0, 0.03));
+            child[trait] += 1 + sign * percent;
+        }
+    }
+
+    if (mutation) {
+        console.log('mutation!');
+        console.log(child);
+    }
+
+    child.pos.x = this.pos.x + 10;
+    child.pos.y = this.pos.y + 10;
+    
+    stats.guys++;
+    
+    this.resetHorniness(mate);
+    guys.push(child);
+    return;
+  }
+
+  resetHorniness(mate = null) {
+    for (let guy of [this, mate].filter(Boolean)) {
+        guy.isSeeking = 0;
+        guy.isHorny = 0;
+        guy.stomachContents = guy.stomachContents / 4;
+        guy.mate = null;
+    }
+  }
+
   sensesFood(foods) {
     for (let food of foods) {
         if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.calculateSensePerim()) {
@@ -252,7 +377,7 @@ class Guy {
   }
 
   calculateSensePerim() {
-    return this.size + (this.size * this.senseDistance)
+    return this.size + (this.senseDistance * (this.size / 2));
   }
 
   dominance() {
@@ -264,7 +389,7 @@ class Guy {
   }
 
   getSenseDistance() {
-    return Guy.getGlobalSenseDistance() * util.logNormalMultiplier();
+    return util.randomNormal(Guy.getGlobalSenseDistance(this.size), data.vis * 2);
   }
 
   static whoIsDominant(a, b) {
@@ -306,7 +431,15 @@ class Guy {
     return data.temp / (data.hum * 750);
   }
 
-  static getGlobalSenseDistance() {
-    return util.chance(data.vis) ? 5 + 5 * (data.vis/10) : 5
+  static getGlobalSenseDistance(size) {
+    return size * 2;
+  }
+
+  static biggerId(a, b) {
+    return a.id > b.id ? a : b;
+  }
+
+  static smallerId(a, b) {
+    return a.id < b.id ? a : b;
   }
 }

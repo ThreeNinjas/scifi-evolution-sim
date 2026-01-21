@@ -11,18 +11,28 @@ class Util {
         );
     }
 
-    closestColorIndex(target, colors) {
-        let bestI = -1;
-        let bestD = Infinity;
-        for (let i = 0; i < colors.length; i++) {
-            const d = hsbDistance(target, colors[i], 2, 1, 0);
-            if (d < bestD) { bestD = d; bestI = i; }
+    closestGuyByColor(targetColor, guys) {
+        let bestGuy = null;
+        let bestDist = Infinity;
+
+        const h1 = hue(targetColor);
+
+        for (const guy of guys) {
+            const h2 = hue(guy.color);
+            const d = abs(h1 - h2);
+            const dist = min(d, 360 - d);
+
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestGuy = guy;
+            }
         }
-        return bestI;
+
+        return bestGuy;
     }
 
-    chance(chance) {
-        return util.randomNumber(0, 100) <= chance;
+    chance(chance, mult = 100) {
+        return util.randomNumber(1, mult) <= chance;
     }
 
     getStringFromP5ColorObj(thisColor) {
@@ -80,6 +90,10 @@ class Util {
 
     //more info on this at https://d3js.org/d3-random#randomNormal
     //thanks to Jake Amphiuma for the heads up on the D3 library!
+    /*
+    The expected value of the generated numbers is mu, with the given standard deviation sigma. If mu is not specified, it defaults to 0; 
+    if sigma is not specified, it defaults to 1.
+    */
     randomNormal(mu, sigma) {
         const out = d3.randomNormal(mu, sigma);
         return out();
@@ -92,5 +106,9 @@ class Util {
             if (v >= min && v <= max) return v;
         }
         return constrain(gen(), min, max);
+    }
+
+    coinToss(a, b) {
+        return random() < 0.5 ? a : b;
     }
 }
