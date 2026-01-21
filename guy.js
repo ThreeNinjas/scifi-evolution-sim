@@ -62,8 +62,8 @@ class Guy {
       }
 
       if (this.stomachContents > 0) {
-        stroke(c.foodColor);
-        fill(c.foodColor);
+        stroke(c.forage.color);
+        fill(c.forage.color);
         circle(this.pos.x, this.pos.y+1, this.stomachContents);
       }
       if (!this.dead) {
@@ -315,8 +315,12 @@ class Guy {
         child[trait] = util.coinToss(parentA, parentB)[trait];
         if (util.chance(1, c.guys.mutationRate)) {
             mutation = true;
-            mutatedTraits.push(trait);
-
+            mutatedTraits.push({
+                trait,
+                mom: parentA[trait],
+                dad: parentB[trait],
+                baby: child[trait]
+            });
             child[trait] = !child[trait]
         }
     }
@@ -325,13 +329,21 @@ class Guy {
         child[trait] = util.coinToss(parentA, parentB)[trait];
         if (util.chance(1, c.guys.mutationRate)) {
             mutation = true;
-            mutatedTraits.push(trait);
+            mutatedTraits.push({
+                trait,
+                mom: parentA[trait],
+                dad: parentB[trait],
+                baby: child[trait]
+            });
             const sign = util.chance(1, 2) ? 1: -1;
             const percent = Math.abs(util.randomNormal(0, 0.03));
             child[trait] += 1 + sign * percent;
         }
     }
 
+    if (util.chance(1, 1000)) {
+        child.color = util.randomColor();
+    }
     child.color = parentA.hasDominantColor ? parentA.color : (parentB.hasDominantColor ? parentB.color : util.coinToss(parentA, parentB).color);
 
     if (mutation) {

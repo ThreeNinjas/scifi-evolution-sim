@@ -279,6 +279,8 @@ function draw() {
     histogramButtons();
 
     drawHistogram(0);
+
+    drawBars();
 }
 
 function mousePressed() { 
@@ -577,6 +579,72 @@ function drawPing(guy) {
         guy.pingSize += guy.pingSize * 0.025;
         if (guy.pingSize >= end) {
             guy.pingSize = guy.size;
+        }
+    pop();
+}
+
+function drawBars() {
+    push();
+        translate(200, 712);
+
+        //food replenish
+        stroke(c.forage.color);
+        noFill();
+        rect(0, 0, 100, 20);
+        fill(c.forage.color);
+        let forageProgress = map(forage.replenishProgress, 0, 1, 0, 100)
+        rect(0, 0, forageProgress < 100 ? forageProgress : 100, 20);
+
+        //food eaten
+        let cutoff = forage.chanceOfFood * 0.10;
+        let percentOfThreshold = ((forage.chanceOfFood - forage.foodStorage.length) / (forage.chanceOfFood - cutoff)) * 100;
+        percentOfThreshold = constrain(percentOfThreshold, 0, 100);
+
+        stroke(c.guys.colors.hungry);
+        noFill();
+        rect(0, 27, 100, 20);
+        fill(c.guys.colors.hungry);
+        rect(0, 27, percentOfThreshold, 20);
+
+        
+        if (percentOfThreshold > 90 && forageProgress > 90) {
+            if (Math.floor(millis() / 400) % 2 === 0) { 
+            push();
+                
+                fill(c.guys.colors.gold);
+                stroke(c.guys.colors.gold);
+
+                //right top
+                strokeWeight(2);
+                line(-12, -1, -7, -1);
+                //right vert
+                strokeWeight(3);
+                line(-12, 0, -12, 47);
+                //right bottom
+                strokeWeight(2);
+                line(-12, 48, -7, 48);
+
+                //left top
+                strokeWeight(2);
+                line(107, -1, 112, -1);
+                //left vert
+                strokeWeight(3);
+                line(113, 0, 113, 47);
+                //left bottom
+                strokeWeight(2);
+                line(108, 48, 113, 48);
+                pop();
+            }
+        } 
+
+        //horny
+        stroke(c.guys.colors.horny);
+        noFill();
+        rect(0, 54, 100, 20);
+        fill(c.guys.colors.horny);
+        let hornyGuys = map(guys.filter(g => g.isHorny === 1).length, 0, guys.length, 0, 100);
+        if (hornyGuys > 0) {
+            rect(0, 54, hornyGuys, 20);
         }
     pop();
 }

@@ -33,8 +33,8 @@ class Forage {
 
     drawMe() {
         push();
-        fill(c.foodColor);
-        stroke(c.foodColor);
+        fill(c.forage.color);
+        stroke(c.forage.color);
         for (let i = 0; i < this.foodStorage.length; i++) {
             rect(this.foodStorage[i].x, this.foodStorage[i].y, this.foodSize);
         }

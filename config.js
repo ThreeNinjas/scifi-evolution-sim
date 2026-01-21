@@ -1,6 +1,8 @@
 class Config {
     constructor() {
-        this.foodColor = '#99cc33';
+        this.forage = {
+            color: '#99cc33',
+        };
         this.guys = {
             mutationRate: data.hum,
             size: 10,
@@ -8,6 +10,7 @@ class Config {
                 dead: '#272a3aff',
                 horny: '#ff3cd1ff',
                 hungry: '#339cccaa',
+                gold: '#ffaa00',
             },
             traits: {
                 binary: [
