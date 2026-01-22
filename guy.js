@@ -11,13 +11,13 @@ class Guy {
     this.overRideMove = util.chance(data.hum) ? 0 : 1;
     this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
     this.digestionRate = this.getDigestionRate();
-    
-    this.resolute = util.chance(1); //if this is true, guy won't change its mind about food targets
+    this.smartFoodFinder = util.coinToss(0, 1);
+    this.resolute = util.chance(10); //if this is true, guy won't change its mind about food targets
 
     //vectors
     this.pos = createVector(util.randomNumber(config.bounds.x.min, config.bounds.x.max), util.randomNumber(config.bounds.y.min, config.bounds.y.max));
     this.vel = p5.Vector.random2D();
-    this.velLimit = !util.chance(99) ? 5 : random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
+    this.velLimit = !util.chance(99) ? 5 : util.randomNormal(0.001, 0.25); // random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
     
     this.noise = p5.Vector.random2D().setMag(0.1);
     this.noiseRotate = util.randomNormal(50, 10);
@@ -28,7 +28,6 @@ class Guy {
 
     this.target = createVector(0,0);
     this.acc = createVector(0,0);
-    //this.seekAccel = constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
     this.seekAccel = util.randomNormal(0.5, data.vis); 
 
     //acquired / stative
@@ -44,6 +43,7 @@ class Guy {
     this.potentialMates = [];
     this.mateTimer = 0;
     this.mate = undefined;
+    this.mutationPackage = [];
   }
 
   drawMe() {
@@ -78,18 +78,27 @@ class Guy {
             circle(this.pos.x, this.pos.y, this.size * 2);
             textSize(14);
             let startY = this.pos.y + (this.size * 2);
+            let haloData = [];
+            if (this.mutationPackage.length > 0) {
+                for (let datum of this.mutationPackage) {
+                    haloData.push(`::${datum.trait}::`);
+                    haloData.push(`A: ${datum.mom}`);
+                    haloData.push(`B: ${datum.dad}`);
+                    haloData.push(`C: ${datum.baby}`);
+                }
+            } else {
+                haloData = [
+                    `DP:${this.digestionProgress.toFixed(4)}`,
+                    `SP:${this.calculateSensePerim().toFixed(4)}`,
+                    `V:${this.vel.mag().toFixed(4)}`,
+                    `VL:${this.velLimit.toFixed(4)}`, 
+                    `NM:${this.noiseMagnitude.toFixed(4)}`,
+                    `SA:${this.seekAccel.toFixed(4)}`,
+                    `${this.overRideMove}, ${this.overRideMoveIntermittent}, ${this.resolute}`,
+                ];
+            }
 
-            let data = [
-                `DP:${this.digestionProgress.toFixed(4)}`,
-                `SP:${this.calculateSensePerim().toFixed(4)}`,
-                `V:${this.vel.mag().toFixed(4)}`,
-                `VL:${this.velLimit.toFixed(4)}`, 
-                `NM:${this.noiseMagnitude.toFixed(4)}`,
-                `SA:${this.seekAccel.toFixed(4)}`,
-                `${this.overRideMove}, ${this.overRideMoveIntermittent}, ${this.resolute}`,
-            ];
-
-            for (let datum of data) {
+            for (let datum of haloData) {
                 text(datum, this.pos.x-10, startY);
                 startY += 14;
             }
@@ -222,14 +231,11 @@ class Guy {
             this.target.y = food.y;
         }
         
-        
         this.acc.set(this.target).sub(this.pos);
         this.acc.setMag(this.seekAccel);
 
         //this.noise.rotate(random(-0.25, 0.25));
-        this.noise.rotate(this.noiseRotate);
-        this.noise.setMag(this.noiseMagnitude);
-        this.acc.add(this.noise);
+       g
 
         this.vel.add(this.acc);
         this.vel.limit(this.velLimit);
@@ -247,6 +253,8 @@ class Guy {
         }
     } else {
         this.isSeeking = 0;
+        this.target.x = 0;
+        this.target.y = 0;
     }
   }
 
@@ -303,7 +311,6 @@ class Guy {
   businessTime(mate, guys) {
     //TODO: make babies small! let them grow into sexual maturity
     let mutation = false;
-    let mutatedTraits = [];
     if (this.id < mate.id) return;
 
     const parentA = Guy.biggerId(this, mate);
@@ -314,30 +321,32 @@ class Guy {
     for (const trait of c.guys.traits.binary) {
         child[trait] = util.coinToss(parentA, parentB)[trait];
         if (util.chance(1, c.guys.mutationRate)) {
+            child[trait] = !child[trait]
+            child.halo = 1;
             mutation = true;
-            mutatedTraits.push({
+            child.mutationPackage.push({
                 trait,
                 mom: parentA[trait],
                 dad: parentB[trait],
                 baby: child[trait]
             });
-            child[trait] = !child[trait]
         }
     }
 
     for (const trait of c.guys.traits.value) {
         child[trait] = util.coinToss(parentA, parentB)[trait];
         if (util.chance(1, c.guys.mutationRate)) {
-            mutation = true;
-            mutatedTraits.push({
-                trait,
-                mom: parentA[trait],
-                dad: parentB[trait],
-                baby: child[trait]
-            });
             const sign = util.chance(1, 2) ? 1: -1;
             const percent = Math.abs(util.randomNormal(0, 0.03));
             child[trait] += 1 + sign * percent;
+            child.halo = 1;
+            mutation = true;
+            child.mutationPackage.push({
+                trait,
+                mom: parentA[trait].toFixed(3),
+                dad: parentB[trait].toFixed(3),
+                baby: child[trait].toFixed(3)
+            });
         }
     }
 
@@ -348,10 +357,7 @@ class Guy {
 
     if (mutation) {
         console.log('mutation!');
-        console.log(parentA);
-        console.log(parentB);
-        console.log(child);
-        console.log(mutatedTraits);
+        console.log(child.mutationPackage);
     }
 
     child.pos.x = this.pos.x + 10;
@@ -374,12 +380,24 @@ class Guy {
   }
 
   sensesFood(foods) {
+    let potentialFoods = [];
     for (let food of foods) {
         if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.calculateSensePerim()) {
             this.isSeeking = 1;
-            return {x: food.x, y: food.y, id: food.id}
+            //
+            if (this.smartFoodFinder) {
+                potentialFoods.push({x: food.x, y: food.y, id: food.id, dist: dist(this.pos.x, this.pos.y, food.x, food.y)});
+            } else {
+                return {x: food.x, y: food.y, id: food.id}
+            }
+            
         }
     }
+
+    if (potentialFoods.length > 0) {
+        return potentialFoods.reduce((a, b) => a.dist < b.dist ? a : b);
+
+    } 
 
     return null;
   }
@@ -420,7 +438,7 @@ class Guy {
   }
 
   calculateSensePerim() {
-    return this.size + (this.senseDistance * (this.size / 2));
+    return this.size + (this.senseDistance);
   }
 
   dominance() {
@@ -432,7 +450,7 @@ class Guy {
   }
 
   getSenseDistance() {
-    return util.randomNormal(Guy.getGlobalSenseDistance(this.size), data.vis * 2);
+    return util.randomNormal(Guy.getGlobalSenseDistance(this.size), data.vis * data.vis);
   }
 
   static whoIsDominant(a, b) {

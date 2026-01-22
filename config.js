@@ -17,6 +17,7 @@ class Config {
                 'overRideMove',
                 'overRideMoveIntermittent',
                 'resolute',
+                'smartFoodFinder',
             ], value: [
                 'size',
                 'senseDistance',

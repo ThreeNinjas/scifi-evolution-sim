@@ -54,17 +54,9 @@ let automatedHistogramSelection = true;
 
 /*
 TODO: move the actually populating of guys out of loadWeather and into guys.populateGuys();
-TODO: make the boxes prettier!
-TODO: revisit how dominant color system works
-TODO:  give each guy a small % chance of having a "dominant" color. Dominance means that upon collision you exert more of yourself upon the other guy.
-TODO: set upper and lower limits on the color space,  have them be based on temp and humidity.
-    maybe with higher temps warmer colors have more dominance? 
-    maybe pressure makes the dominant colors more dominant
 TODO: other real world data variables: size, speed (increment by more than 1?), ability to kill
-TODO: create a trait that allows guys to override the tendency to switch between different foods
-TODO: bar graphs that show number of horny guys, and how long til food is replenished
-
-TODO: graph
+TODO: implement quadtree
+TODO: visual indicators of certain traits
 */
 
 async function setup() { 
@@ -98,6 +90,10 @@ function draw() {
 
     guysToRemove.clear();
 
+    if (guys.length <= 1) {
+        window.location.reload();
+    }
+
     for (let guy of guys) {
         let sensedFood;
         guy.potentialMates = [];
@@ -112,50 +108,6 @@ function draw() {
 
         for (let otherGuy of guys) {
             if (otherGuy === guy) continue;
-            if (guy.intersects(otherGuy)) {
-                //figure out who if either is dominant
-                let dom = Guy.whoIsDominant(guy, otherGuy);
-                if (dom) {
-                    if (dom != 'both') {
-                        //dom.non is changing his color, soooooo
-                        //make a note of his current color
-                        // const oldColor = util.getStringFromP5ColorObj(dom.non.color);
-                        
-                        //decrement the stats array
-                        //and delete it if the count is 0
-                        // stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
-                        // if (stats.colors[oldColor] <= 0) {
-                        //     delete stats.colors[oldColor];
-                        //     stats.colorCount--;
-                        // }
-
-                        //update that color
-                        //dom.non.color = lerpColor(dom.dom.color, dom.non.color, 0.25);
-
-                        //add the new one to the stats array
-                        // const newColor = util.getStringFromP5ColorObj(dom.non.color);
-                        // if (stats.colors[newColor] === undefined) stats.colorCount++;
-                        // stats.colors[newColor] = (stats.colors[newColor] || 0) + 1;
-                        
-                    }
-                } else {
-                    for (let g of [guy, otherGuy]) {
-                        // const oldColor = util.getStringFromP5ColorObj(guy.color);
-                        // stats.colors[oldColor] = (stats.colors[oldColor] || 0) - 1;
-                        // if (stats.colors[oldColor] <= 0) {
-                        //     delete stats.colors[oldColor];
-                        //     stats.colorCount--;
-                        // }
-
-                        //g.color = lerpColor(g.color, otherGuy.color, 0.5);
-
-                        // const newColor = util.getStringFromP5ColorObj(guy.color);
-                        // if (stats.colors[newColor] === undefined) stats.colorCount++;
-                        // stats.colors[newColor] = (stats.colors[newColor] || 0) + 1;
-                    }
-                }
-            }
-
             if (guy.senses(otherGuy) && guy.isHorny && otherGuy.isHorny && !guy.isSeeking && !guy.mate) {
                 guy.potentialMates.push(otherGuy);
                 guy.mateTimer++;
@@ -561,7 +513,7 @@ function drawHistogram() {
 }
 
 function drawPing(guy) {
-    if (guy.senseDistance <= 0) {
+    if (guy.senseDistance <= 0 || guy.isSeeking) {
         return;
     }
     const start = guy.size;
