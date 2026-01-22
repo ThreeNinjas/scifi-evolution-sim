@@ -95,6 +95,17 @@ function draw() {
     }
 
     for (let guy of guys) {
+        if (guy.size < guy.adultSize) {
+            guy.growthProgress += guy.growthRate;
+
+            if (!guy.isHungry() && guy.growthProgress >= 1) {
+                guy.size++;
+                guy.growthProgress--;
+                guy.senseDistance = guy.getSenseDistance();
+                guy.halo = 1;
+            }
+        }
+
         let sensedFood;
         guy.potentialMates = [];
         if (guy.dead) {
@@ -172,12 +183,12 @@ function draw() {
                    guy.mate = null;
                 }
                 
-                guy.isHorny = 1;
+                guy.isHorny = guy.isSexuallyMature();
             }
         }
 
 
-        guy.digestionProgress += guy.digestionRate;
+        guy.digestionProgress += guy.isSexuallyMature() ? guy.digestionRate : guy.digestionRate / 4;
         if (guy.stomachContents > 0 && guy.dead == 0) {
             if (guy.digestionProgress >= 1) {
                 guy.stomachContents -= forage.foodSize;
@@ -283,13 +294,6 @@ async function loadWeather() {
             // const thisColor = util.getStringFromP5ColorObj(guy.color);
             // if (stats.colors[thisColor] === undefined) stats.colorCount++;
             // stats.colors[thisColor] = (stats.colors[thisColor] || 0 ) + 1;
-
-            
-
-            if (guy.hasDominantColor) {
-                //stats.dominantColors[thisColor] = (stats.dominantColors[thisColor] || 0 ) + 1;
-                guy.size = 15;
-            }
             i++;
             return guy;
         });
@@ -457,60 +461,75 @@ function drawGraphs() {
 }
 
 function drawHistogram() { 
-    let color = histogramButtonBoxes[selectedHistogram].color;
-    const sectionH = graphAreaHeight / 3;
-            const x0 = 10;
-            const y0 = 618 + 2;
-            const w = width - 20;
-            const h = sectionH - 10;
+  let color = histogramButtonBoxes[selectedHistogram].color;
+  const sectionH = graphAreaHeight / 3;
+  const x0 = 10;
+  const y0 = 618 + 2;
+  const w = width - 20;
+  const h = sectionH - 10;
 
-    histogram = guys.map(g => g[histogramButtonBoxes[selectedHistogram].trait])
-    push();
-    stroke(color);
-        noFill();
-    let bins = 10;
-    let minVal = min(histogram);
-    let maxVal = max(histogram);
-    let binSize = (maxVal - minVal) / bins;
-    let counts = Array(bins).fill(0);
+  const trait = histogramButtonBoxes[selectedHistogram].trait;
+  const values = guys.map(g => g[trait]).filter(v => Number.isFinite(v));
+  if (values.length === 0) return;
 
-    for (let v of histogram) {
-        let index = floor((v - minVal) / binSize);
-        if (index === bins) index = bins - 1;
-        counts[index]++;
+  push();
+  stroke(color);
+  noFill();
+
+  const bins = 10;
+  const minVal = min(values);
+  const maxVal = max(values);
+  const range = maxVal - minVal;
+
+  let counts = Array(bins).fill(0);
+
+  if (range === 0) {
+    counts[0] = values.length;
+  } else {
+    const binSize = range / bins;
+    for (let v of values) {
+      let index = floor((v - minVal) / binSize);
+      index = constrain(index, 0, bins - 1);
+      counts[index]++;
     }
+  }
 
-    let maxCount = max(counts);
-    let barWidth = w / bins;
+  const maxCount = max(counts);
+  if (!Number.isFinite(maxCount) || maxCount <= 0) return;
 
-    let labelH = 14;
-    let plotH = h - labelH;
+  const barWidth = w / bins;
+  const labelH = 14;
+  const plotH = h - labelH;
 
-    textAlign(CENTER, TOP);
-    textSize(7);
+  textAlign(CENTER, TOP);
+  textSize(7);
 
-    for (let i = 0; i < bins; i++) {
-        let barHeight = map(counts[i], 0, maxCount, 0, plotH);
-        let x = x0 + i * barWidth;
-        let y = y0 + plotH - barHeight;
+  const binSizeForLabels = range === 0 ? 0 : range / bins;
 
-        rect(x, y, barWidth - 2, barHeight);
+  for (let i = 0; i < bins; i++) {
+    const barHeight = map(counts[i], 0, maxCount, 0, plotH);
+    const x = x0 + i * barWidth;
+    const y = y0 + plotH - barHeight;
 
-        let binStart = minVal + i * binSize;
-        let binEnd = binStart + binSize;
-        text(
-            `${binStart.toFixed(4)}`,
-            x + barWidth / 2,
-            y0 + plotH + 2
-        );
-        text(
-            `${binEnd.toFixed(4)}`,
-            x + barWidth / 2,
-            y0 + plotH + 9
-        );
+    rect(x, y, barWidth - 2, barHeight);
+
+    const binStart = minVal + i * binSizeForLabels;
+    const binEnd = binStart + binSizeForLabels;
+
+    if (range === 0) {
+      if (i === 0) {
+        text(`${minVal.toFixed(4)}`, x + barWidth / 2, y0 + plotH + 2);
+        text(`${maxVal.toFixed(4)}`, x + barWidth / 2, y0 + plotH + 9);
+      }
+    } else {
+      text(`${binStart.toFixed(4)}`, x + barWidth / 2, y0 + plotH + 2);
+      text(`${binEnd.toFixed(4)}`, x + barWidth / 2, y0 + plotH + 9);
     }
-    pop();
+  }
+
+  pop();
 }
+
 
 function drawPing(guy) {
     if (guy.senseDistance <= 0 || guy.isSeeking) {

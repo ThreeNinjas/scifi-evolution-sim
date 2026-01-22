@@ -19,13 +19,15 @@ class Config {
                 'resolute',
                 'smartFoodFinder',
             ], value: [
-                'size',
-                'senseDistance',
+                'adultSize',
                 'digestionRate',
-                'velLimit',
-                'noiseRotate',
+                'growthRate',
                 'noiseMagnitude',
+                'noiseRotate',
+                'senseDistance',
                 'seekAccel',
+                'size',
+                'velLimit',
             ]
             }
         };
@@ -43,4 +45,19 @@ class Config {
  * avoidDanger: if you sense a guy who is a carnivor or competitor killer, you run away
  * aposematic: make other guys think you will kill them so they avoid you
  * monogamousX: once you mate with a guy, you stick with that guy and mate again when the chance arrives
+ */
+
+ /**
+ * How growth will work:
+ * Each guy will have a growth rate that will function like the other rates, ie digestion.
+ * At birth it will be 3px
+ * Each time growthProgress reaches 1, if/when its stomach is full, its size will increase by growthRate
+ * When size == adultSize - (adultSize * 0.10) it is sexually mature
+ * But will continue to grow until it reaches adultSize
+ * 
+ * New traits to implement:
+ * growthRate - x
+ * adultSize - x
+ * growthProgress - x
+ * isSexuallyMature() - x
  */

@@ -3,32 +3,37 @@ class Guy {
   constructor(traits) {
     //genes
     this.id = NEXT_ID++;
-    this.color = util.randomColor(data.temp, data.hum);
-    this.size = c.guys.size;
+
+    //developmental
+    this.adultSize = constrain(Math.abs(Math.floor(util.randomNormal(10, data.clouds/10))), 5, 100);
+    this.size = 5; //this.adultSize;
     this.pingSize = this.size;
-    this.hasDominantColor = util.chance(data.temp * 0.25);
+    let globalDigestionRate = Guy.getGlobalDigestionRate();
+    this.growthRate = Math.abs(util.randomNormal(globalDigestionRate - (globalDigestionRate * (data.clouds/100)), 0.0005));
+
+    //heritable - value
+    this.color = util.randomColor(data.temp, data.hum);
     this.senseDistance = this.getSenseDistance(); //This should always be a percentage of their size, right? So always > this.size
+    this.digestionRate = this.getDigestionRate();
+    
+    //heritable - boolean
+    this.hasDominantColor = util.chance(data.temp * 0.25);
     this.overRideMove = util.chance(data.hum) ? 0 : 1;
     this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
-    this.digestionRate = this.getDigestionRate();
     this.smartFoodFinder = util.coinToss(0, 1);
     this.resolute = util.chance(10); //if this is true, guy won't change its mind about food targets
+
+    //heritable - vectors
+    this.velLimit = !util.chance(99) ? 5 : util.randomNormal(0.001, 0.25); // random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
+    this.noise = p5.Vector.random2D().setMag(0.1);
+    this.noiseRotate = util.randomNormal(50, 10);
+    this.noiseMagnitude = util.randomNormalBounded(1, 1, 0, 10); //util.rightSkew(0.5, 5, data.clouds > 0 ? map(data.clouds, 0, 100, 0.1, 3) : 1);
+    this.seekAccel = util.randomNormal(0.5, data.vis); 
 
     //vectors
     this.pos = createVector(util.randomNumber(config.bounds.x.min, config.bounds.x.max), util.randomNumber(config.bounds.y.min, config.bounds.y.max));
     this.vel = p5.Vector.random2D();
-    this.velLimit = !util.chance(99) ? 5 : util.randomNormal(0.001, 0.25); // random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
-    
-    this.noise = p5.Vector.random2D().setMag(0.1);
-    this.noiseRotate = util.randomNormal(50, 10);
-    this.noiseMagnitude = util.randomNormalBounded(1, 1, 0, 10); //util.rightSkew(0.5, 5, data.clouds > 0 ? map(data.clouds, 0, 100, 0.1, 3) : 1);
-    
-    this.randomNormal = util.randomNormal(5, data.clouds/10);
-    this.randomNormalBounded = util.randomNormalBounded(5, 1, 0, 10);
-
-    this.target = createVector(0,0);
     this.acc = createVector(0,0);
-    this.seekAccel = util.randomNormal(0.5, data.vis); 
 
     //acquired / stative
     this.stomachContents = 0;
@@ -39,12 +44,18 @@ class Guy {
     this.isSeeking = 0;
     this.digestionProgress = 0;
     this.starvationProgress = 0;
+    this.growthProgress = 0;
 
+    this.target = createVector(0,0);
+    
     this.potentialMates = [];
     this.mateTimer = 0;
     this.mate = undefined;
-    this.mutationPackage = [];
+    this.mutationPackage = [];   
   }
+
+
+ 
 
   drawMe() {
     push();
@@ -235,7 +246,7 @@ class Guy {
         this.acc.setMag(this.seekAccel);
 
         //this.noise.rotate(random(-0.25, 0.25));
-       g
+       
 
         this.vel.add(this.acc);
         this.vel.limit(this.velLimit);
@@ -437,6 +448,10 @@ class Guy {
     return true;
   }
 
+  isSexuallyMature() {
+    return this.size >= this.adultSize - (this.adultSize * 0.1);
+  }
+
   calculateSensePerim() {
     return this.size + (this.senseDistance);
   }
@@ -449,9 +464,9 @@ class Guy {
     return Guy.getGlobalDigestionRate() * util.logNormalMultiplier();
   }
 
-  getSenseDistance() {
-    return util.randomNormal(Guy.getGlobalSenseDistance(this.size), data.vis * data.vis);
-  }
+    getSenseDistance(){
+        return Math.max(0, util.randomNormal(Guy.getGlobalSenseDistance(this.size), data.vis * data.vis));
+    }
 
   static whoIsDominant(a, b) {
     if (a.stomachContents > b.stomachContents) {
