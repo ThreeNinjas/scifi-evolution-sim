@@ -101,8 +101,9 @@ function draw() {
             if (!guy.isHungry() && guy.growthProgress >= 1) {
                 guy.size++;
                 guy.growthProgress--;
-                guy.senseDistance = guy.getSenseDistance();
-                guy.halo = 1;
+                guy.senseDistance = guy.senseDistanceG();
+                //guy.halo = 1;
+                //console.log(`size: ${guy.size}, senseDistance: ${guy.senseDistance}`);
             }
         }
 
@@ -262,6 +263,11 @@ function mousePressed() {
     for (const [i, guy] of Object.entries(guys)) {
         if (dist(mouseX, mouseY, guy.pos.x, guy.pos.y) <= guy.size / 2) {
             guy.halo = !guy.halo;
+            
+            if (guy.halo) {
+                console.log(guy, guy.calculateSensePerim(), guy.isHungry(), guy.isHorny);
+                console.log(guy, `sensePerim: ${guy.calculateSensePerim()}, hungry: ${guy.isHungry()}, horny: ${guy.isHorny}`);
+            }
         }
     }
 }
@@ -420,8 +426,8 @@ function drawGraphs() {
 
         switch (graph) {
             case 'numberOfGuysHistory':
-                minY = 0;
-                maxY = data.temp > guys.length ? Math.floor(data.temp) : guys.length;
+                minY = guys.length <= data.temp ? 0 : Math.floor(data.temp);
+                maxY = guys.length <= data.temp ? Math.floor(data.temp) : guys.length;
                 color ='#ee1edcff'
                 break;
             case 'numberOfFoodHistory':
@@ -532,12 +538,13 @@ function drawHistogram() {
 
 
 function drawPing(guy) {
-    if (guy.senseDistance <= 0 || guy.isSeeking) {
+    if (guy.senseDistance <= 0 || guy.isSeeking || !guy.isHungry()) {
         return;
     }
     const start = guy.size;
     //const end = guy.senseDistance * 2;
-    const end = guy.senseDistance;
+    //const end = guy.senseDistance;
+    const end = guy.calculateSensePerim();
     const t = constrain((guy.pingSize - start) / (end - start), 0, 1);
     const alpha = Math.floor(255 * (1 - t));
     const hexAlpha = alpha.toString(16).padStart(2, '0');
@@ -613,7 +620,7 @@ function drawBars() {
         noFill();
         rect(0, 54, 100, 20);
         fill(c.guys.colors.horny);
-        let hornyGuys = map(guys.filter(g => g.isHorny === 1).length, 0, guys.length, 0, 100);
+        let hornyGuys = map(guys.filter(g => g.isHorny).length, 0, guys.length, 0, 100);
         if (hornyGuys > 0) {
             rect(0, 54, hornyGuys, 20);
         }

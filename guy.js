@@ -6,6 +6,7 @@ class Guy {
 
     //developmental
     this.adultSize = constrain(Math.abs(Math.floor(util.randomNormal(10, data.clouds/10))), 5, 100);
+    console.log(this.adultSize);
     this.size = 5; //this.adultSize;
     this.pingSize = this.size;
     let globalDigestionRate = Guy.getGlobalDigestionRate();
@@ -13,7 +14,7 @@ class Guy {
 
     //heritable - value
     this.color = util.randomColor(data.temp, data.hum);
-    this.senseDistance = this.getSenseDistance(); //This should always be a percentage of their size, right? So always > this.size
+    this.senseDistanceMultiplier = util.randomNormal(1, 0.5);
     this.digestionRate = this.getDigestionRate();
     
     //heritable - boolean
@@ -45,6 +46,7 @@ class Guy {
     this.digestionProgress = 0;
     this.starvationProgress = 0;
     this.growthProgress = 0;
+    this.senseDistance = this.senseDistanceG(); //This should always be a percentage of their size, right? So always > this.size
 
     this.target = createVector(0,0);
     
@@ -77,14 +79,14 @@ class Guy {
         fill(c.forage.color);
         circle(this.pos.x, this.pos.y+1, this.stomachContents);
       }
-      if (!this.dead) {
+      if (!this.dead && this.isHungry()) {
         drawPing(this);
       }
     pop();
 
     if (this.halo == 1) {
         push();
-            stroke('#339cccff');
+            stroke('#ffdf27ff');
             noFill();
             circle(this.pos.x, this.pos.y, this.size * 2);
             textSize(14);
@@ -110,7 +112,7 @@ class Guy {
             }
 
             for (let datum of haloData) {
-                text(datum, this.pos.x-10, startY);
+                //text(datum, this.pos.x-10, startY);
                 startY += 14;
             }
             // text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
@@ -349,7 +351,7 @@ class Guy {
         if (util.chance(1, c.guys.mutationRate)) {
             const sign = util.chance(1, 2) ? 1: -1;
             const percent = Math.abs(util.randomNormal(0, 0.03));
-            child[trait] += 1 + sign * percent;
+            child[trait] *= 1 + sign * percent;
             child.halo = 1;
             mutation = true;
             child.mutationPackage.push({
@@ -455,6 +457,17 @@ class Guy {
   calculateSensePerim() {
     return this.size + (this.senseDistance);
   }
+
+  senseDistanceG(size = this.size, vis = data.vis) {
+        // how far a guy *could* sense based on size alone
+        const sizeSense = 150 * Math.pow(size, 0.30103);
+
+        // visibility effect: 0 → none, higher → asymptotically stronger
+        const visEffect = vis / (vis + 1);
+
+        // final sense distance
+        return (size + sizeSense * visEffect) * this.senseDistanceMultiplier;
+    }
 
   dominance() {
     return this.hasDominantColor ? 0.5 + (data.temp/100) : 0.5;

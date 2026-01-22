@@ -24,7 +24,7 @@ class Config {
                 'growthRate',
                 'noiseMagnitude',
                 'noiseRotate',
-                'senseDistance',
+                'senseDistanceMultiplier',
                 'seekAccel',
                 'size',
                 'velLimit',
