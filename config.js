@@ -11,6 +11,7 @@ class Config {
                 horny: '#ff3cd1ff',
                 hungry: '#339cccaa',
                 gold: '#ffaa00',
+                orbiters: []
             },
             traits: {
                 binary: [
@@ -26,11 +27,20 @@ class Config {
                 'noiseRotate',
                 'senseDistanceMultiplier',
                 'seekAccel',
-                'size',
                 'velLimit',
             ]
             }
         };
+        for (let value of this.guys.traits.value) {
+            this.guys.colors.orbiters.push(util.randomColor());
+        }
+        console.log(this.guys);
+        console.log(this.guys.traits.value.indexOf('seekAccel'));
+        
+    }
+
+    getOrbiterColor(trait) {
+        return this.guys.colors.orbiters[this.guys.traits.value.indexOf(trait)];
     }
 }
 
