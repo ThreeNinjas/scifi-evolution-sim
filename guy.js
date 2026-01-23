@@ -5,8 +5,7 @@ class Guy {
     this.id = NEXT_ID++;
 
     //developmental
-    this.adultSize = constrain(Math.abs(Math.floor(util.randomNormal(10, data.clouds/10))), 5, 100);
-    console.log(this.adultSize);
+    this.adultSize = constrain(Math.abs(Math.floor(util.randomNormal(12, data.clouds/10))), 5, 100);
     this.size = 5; //this.adultSize;
     this.pingSize = this.size;
     let globalDigestionRate = Guy.getGlobalDigestionRate();
@@ -47,6 +46,7 @@ class Guy {
     this.starvationProgress = 0;
     this.growthProgress = 0;
     this.senseDistance = this.senseDistanceG(); //This should always be a percentage of their size, right? So always > this.size
+    this.orbiters = [];
 
     this.target = createVector(0,0);
     
@@ -56,11 +56,12 @@ class Guy {
     this.mutationPackage = [];   
   }
 
-
- 
-
   drawMe() {
     push();
+        if (this.orbiters.length > 0) {
+            this.orbiter();
+        }
+        
       stroke(!this.dead ? this.color : c.guys.colors.dead);
 
       
@@ -79,7 +80,8 @@ class Guy {
         fill(c.forage.color);
         circle(this.pos.x, this.pos.y+1, this.stomachContents);
       }
-      if (!this.dead && this.isHungry()) {
+      if (!this.dead && this.senseDistance >0  && 
+            ((this.isHungry() && !this.isSeeking) || (this.isHungry() && this.target.x == 0)|| (this.isHorny && !this.isSeeking))) {
         drawPing(this);
       }
     pop();
@@ -181,6 +183,23 @@ class Guy {
     pop();
   }
 
+  orbiter() {
+    for (let i = 0; i < this.orbiters.length; i++) {
+        push();
+        translate(this.pos.x, this.pos.y);
+        strokeWeight(this.size * 0.2);
+        stroke(this.orbiters[i].color);
+
+        let r = this.size * this.orbiters[i].rMultiplier;
+        let x = r * cos(this.orbiters[i].angle);
+        let y = r * sin(this.orbiters[i].angle);
+        point(x, y);
+        this.orbiters[i].angle += this.orbiters[i].delta;
+    pop();
+    }
+    
+  }
+
   static getGuyById(id) {
     return guys.find(g => g.id === id);
   }
@@ -266,8 +285,7 @@ class Guy {
         }
     } else {
         this.isSeeking = 0;
-        this.target.x = 0;
-        this.target.y = 0;
+        this.target = null;
     }
   }
 
@@ -323,20 +341,21 @@ class Guy {
 
   businessTime(mate, guys) {
     //TODO: make babies small! let them grow into sexual maturity
-    let mutation = false;
+    let mutationHappened = false;
     if (this.id < mate.id) return;
 
     const parentA = Guy.biggerId(this, mate);
     const parentB = Guy.smallerId(this, mate);
 
     const child = new Guy();
+    child.mutationPackage = [...parentA.mutationPackage, ...parentB.mutationPackage];
 
     for (const trait of c.guys.traits.binary) {
         child[trait] = util.coinToss(parentA, parentB)[trait];
         if (util.chance(1, c.guys.mutationRate)) {
             child[trait] = !child[trait]
-            child.halo = 1;
-            mutation = true;
+            //child.halo = 1;
+            mutationHappened = true;
             child.mutationPackage.push({
                 trait,
                 mom: parentA[trait],
@@ -349,16 +368,28 @@ class Guy {
     for (const trait of c.guys.traits.value) {
         child[trait] = util.coinToss(parentA, parentB)[trait];
         if (util.chance(1, c.guys.mutationRate)) {
+            let mutation = {
+                original: child[trait],
+                mutated: 0,
+                percentChange: 0,
+            };
             const sign = util.chance(1, 2) ? 1: -1;
             const percent = Math.abs(util.randomNormal(0, 0.03));
             child[trait] *= 1 + sign * percent;
-            child.halo = 1;
-            mutation = true;
-            child.mutationPackage.push({
-                trait,
-                mom: parentA[trait].toFixed(3),
-                dad: parentB[trait].toFixed(3),
-                baby: child[trait].toFixed(3)
+            mutation.mutated = child[trait];
+            mutation.percentChange = util.percentChange(mutation.original, mutation.mutated);
+            mutationHappened = true;
+            child.mutationPackage.push(mutation);
+        }
+    }
+
+    for (const thisMutation of child.mutationPackage) {
+        if ('percentChange' in thisMutation) {
+            child.orbiters.push({
+                angle: 0,
+                delta: thisMutation.percentChange / 100,
+                color: c.getOrbiterColor(trait),
+                rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
             });
         }
     }
@@ -367,11 +398,6 @@ class Guy {
         child.color = util.randomColor();
     }
     child.color = parentA.hasDominantColor ? parentA.color : (parentB.hasDominantColor ? parentB.color : util.coinToss(parentA, parentB).color);
-
-    if (mutation) {
-        console.log('mutation!');
-        console.log(child.mutationPackage);
-    }
 
     child.pos.x = this.pos.x + 10;
     child.pos.y = this.pos.y + 10;

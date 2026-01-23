@@ -111,4 +111,22 @@ class Util {
     coinToss(a, b) {
         return random() < 0.5 ? a : b;
     }
+
+    percentChange(a, b) {
+        return ((b -a) / a) * 100;
+    }
+
+    percentToColor(pct) {
+        const maxPct = 10; // visual scaling, tweak freely
+        const t = constrain(pct / maxPct, -1, 1);
+
+        const hue = t < 0
+            ? map(t, -1, 0, 0, 60)     // reds → yellows
+            : map(t, 0, 1, 60, 120);  // yellows → greens
+
+        const sat = 80;
+        const bri = 100;
+
+        return color(hue, sat, bri);
+    }
 }

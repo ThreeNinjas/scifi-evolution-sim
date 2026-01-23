@@ -152,7 +152,6 @@ function draw() {
 
         if (!guy.dead) {
             if (guy.isHungry()) {
-                //drawPing(guy);
                 guy.isHorny = 0;
                 sensedFood = guy.sensesFood(forage.foodStorage);
 
@@ -169,6 +168,8 @@ function draw() {
                 } else {
                     guy.move();
                     guy.mate = null;
+                    guy.target.x = 0;
+                    guy.target.y = 0;
                 }
 
                 const foodToEat = guy.intersectsFood(forage.foodStorage);
@@ -399,14 +400,14 @@ function histogramButtons() {
   histogramButtonBoxes = [
     makeBox("senseDistance", "SENSE_DIST", "#339cccff", startingY),
     makeBox("velLimit", "VEL_LIMIT", "#aaaaff", startingY + 20),
-    makeBox("digestionProgress", "DIG_PROG", "#cc2233", startingY + 40),
+    makeBox("digestionRate", "DIG_RATE", "#cc2233", startingY + 40),
     makeBox("noiseMagnitude", "NOISE_MAG", "#99aa22", startingY + 60),
   ];
 
   noStroke();
   fill('#339cccff'); text("SENSE_DIST", x, startingY);
   fill('#aaaaff'); text("VEL_LIMIT",   x, startingY + 20);
-  fill('#cc2233'); text("DIG_PROG",    x, startingY + 40);
+  fill('#cc2233'); text("DIG_RATE",    x, startingY + 40);
   fill('#99aa22'); text("NOISE_MAG",    x, startingY + 60);
 
   pop();
@@ -414,57 +415,68 @@ function histogramButtons() {
 
 
 function drawGraphs() {
-    push();
-    let startingY = (height / 2) + 20;
-    let graphs = ['numberOfGuysHistory', 'numberOfFoodHistory', 'histogram'];
-    
-    let i = 0;
-    for (let graph of graphs) {
-        let minY = 0;
-        let maxY = 0;
-        let color = '';
+  push();
+  let startingY = (height / 2) + 20;
+  let graphs = ['numberOfGuysHistory', 'numberOfFoodHistory', 'histogram'];
 
-        switch (graph) {
-            case 'numberOfGuysHistory':
-                minY = guys.length <= data.temp ? 0 : Math.floor(data.temp);
-                maxY = guys.length <= data.temp ? Math.floor(data.temp) : guys.length;
-                color ='#ee1edcff'
-                break;
-            case 'numberOfFoodHistory':
-                minY = 0;
-                maxY = forage.chanceOfFood;
-                color = '#99cc33';
-                break;
-            case 'histogram':
-                color = '#339cccff';
-                break;
-        }
+  for (let graph of graphs) {
+    let minY = 0;
+    let maxY = 0;
+    let color = '';
 
-        stroke(color);
-        noFill();
-
-        line(10, startingY, width-10, startingY);
-        line(10, startingY + (graphAreaHeight / graphs.length), width-10, startingY + (graphAreaHeight / graphs.length));
-        startingY++;
-        if (graph != 'histogram') {
-            if (stats[graph].length > 1) {
-                beginShape();
-                    for (let i = 0; i < stats[graph].length; i++) {
-                        let x = map(i, 0, stats[graph].length-1, 10, width-10);
-                        let y = map(stats[graph][i], minY, maxY, startingY + (graphAreaHeight / graphs.length), startingY+5);
-                        vertex(x, y);
-                    }
-                endShape();
-            }
+    switch (graph) {
+      case 'numberOfGuysHistory':
+        if (guys.length <= data.temp) {
+          minY = 0;
+          maxY = Math.floor(data.temp);
         } else {
-            
+          minY = Math.floor(data.temp);
+          maxY = guys.length;
         }
-        
-        startingY += (graphAreaHeight / graphs.length) + 5;
-        i++;
+        color = '#ee1edcff';
+        break;
+
+      case 'numberOfFoodHistory':
+        minY = 0;
+        maxY = forage.chanceOfFood;
+        color = '#99cc33';
+        break;
+
+      case 'histogram':
+        color = '#339cccff';
+        break;
     }
-    pop();
+
+    stroke(color);
+    noFill();
+
+    const sectionH = graphAreaHeight / graphs.length;
+    const yBottom = startingY + sectionH;
+    const yTop = startingY + 5;
+
+    line(10, startingY, width - 10, startingY);
+    line(10, yBottom, width - 10, yBottom);
+
+    startingY++;
+
+    if (graph != 'histogram') {
+      if (stats[graph].length > 1) {
+        beginShape();
+        for (let i = 0; i < stats[graph].length; i++) {
+          let x = map(i, 0, stats[graph].length - 1, 10, width - 10);
+          let y = map(stats[graph][i], minY, maxY, yBottom, yTop, true);
+          vertex(x, y);
+        }
+        endShape();
+      }
+    }
+
+    startingY += sectionH + 5;
+  }
+
+  pop();
 }
+
 
 function drawHistogram() { 
   let color = histogramButtonBoxes[selectedHistogram].color;
@@ -538,8 +550,8 @@ function drawHistogram() {
 
 
 function drawPing(guy) {
-    if (guy.senseDistance <= 0 || guy.isSeeking || !guy.isHungry()) {
-        return;
+    if (guy.senseDistance <= 0 || guy.isSeeking || (!guy.isHungry() && !guy.isHorny) ) {
+       // return;
     }
     const start = guy.size;
     //const end = guy.senseDistance * 2;
