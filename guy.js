@@ -363,7 +363,10 @@ class Guy {
     mate.offspringCount++;
 
     const child = new Guy();
-    child.mutationPackage = [...parentA.mutationPackage, ...parentB.mutationPackage];
+    child.mutationPackage = {
+        binary: [],
+        value: []
+    };
 
     for (const trait of c.guys.traits.binary) {
         child[trait] = util.coinToss(parentA, parentB)[trait];
@@ -371,7 +374,7 @@ class Guy {
             child[trait] = !child[trait]
             //child.halo = 1;
             mutationHappened = true;
-            child.mutationPackage.push({
+            child.mutationPackage.binary.push({
                 trait,
                 mom: parentA[trait],
                 dad: parentB[trait],
@@ -396,35 +399,26 @@ class Guy {
             mutation.percentChange = util.percentChange(mutation.original, mutation.mutated);
             mutationHappened = true;
 
-            child.mutationPackage = child.mutationPackage.filter(
-                m => m.trait !== trait || !('percentChange' in m)
-            );
-
-            child.mutationPackage.push(mutation);
+            child.mutationPackage.value.push(mutation);
         }
     }
-
-    const latestValueMutations = new Map();
-    const preservedMutations = [];
-
-    for (const m of child.mutationPackage) {
-        if ('percentChange' in m) {
-            latestValueMutations.set(m.trait, m);
-        } else {
-            preservedMutations.push(m);
-        }
-    }
-
-    child.mutationPackage = [...preservedMutations, ...latestValueMutations.values()];
-
-    child.orbiters = [];
-    for (const m of latestValueMutations.values()) {
+    
+    for (const m of child.mutationPackage.value) {
         child.orbiters.push({
+            trait: m.trait,
             angle: 0,
             delta: m.percentChange / 100,
             color: c.getOrbiterColor(m.trait),
             rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
         });
+    }
+
+    for (const orbiterArray of [parentA.orbiters, parentB.orbiters]) {
+        for (const o of orbiterArray) {
+            if (!child.orbiters.some(c => c.trait === o.trait)) {
+                child.orbiters.push({...o});
+            }
+        }
     }
 
     if (util.chance(1, 1000)) {
