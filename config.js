@@ -63,19 +63,3 @@ class Config {
  * to implement:
  * when a guy dies with food in its stomach its body becomes food as it decays
  */
-
- /**
- * How growth will work:
- * Each guy will have a growth rate that will function like the other rates, ie digestion.
- * At birth it will be 3px
- * Each time growthProgress reaches 1, if/when its stomach is full, its size will increase by growthRate
- * When size == adultSize - (adultSize * 0.10) it is sexually mature
- * But will continue to grow until it reaches adultSize
- * 
- * New traits to implement:
- * growthRate - x
- * adultSize - x
- * growthProgress - x
- * isSexuallyMature() - x
- * 
- */

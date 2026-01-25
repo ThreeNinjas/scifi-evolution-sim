@@ -11,17 +11,13 @@ class Guy {
     
     //heritable - value
     this.adultSize = constrain(Math.abs(Math.floor(util.randomNormal(12, data.clouds/10))), 5, 100);
-
-    this.size = 5 >= this.adultSize * 0.9 ? this.adultSize * 0.6 : 5;
-    this.pingSize = this.size;
-    
-
     this.growthRate = Math.abs(util.randomNormal(globalDigestionRate - (globalDigestionRate * (data.clouds/100)), 0.0005));
     this.color = util.randomColor(data.temp, data.hum);
     this.senseDistanceMultiplier = util.randomNormal(1, 0.5);
     this.digestionRate = this.getDigestionRate();
     this.lifeSpan = util.randomNormal(data.temp, data.vis);
     this.childrenAllowed = Math.abs(Math.floor(util.randomNormal(data.temp / 5, data.vis)));
+    this.preference = util.chance(1, data.temp) ? c.guys.traits.value[util.randomNumber(0, c.guys.traits.value.length - 1)] : null;
     
     //heritable - boolean
     this.hasDominantColor = util.chance(data.temp * 0.25);
@@ -43,6 +39,8 @@ class Guy {
     this.acc = createVector(0,0);
 
     //acquired / stative
+    this.size = 5 >= this.adultSize * 0.9 ? this.adultSize * 0.6 : 5;
+    this.pingSize = this.size;
     this.birthday = getTimeIndex();
     this.stomachContents = 0;
     this.dead = 0;
