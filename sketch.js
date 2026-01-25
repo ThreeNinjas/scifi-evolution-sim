@@ -255,6 +255,8 @@ function draw() {
         }
     }
 
+    drawMasking();
+
     statsText();
     
     drawGraphs();
@@ -395,13 +397,81 @@ function getTimeIndex() {
     return frameCount / 1000;
 }
 
-function statsText() {
+function drawMasking() {
     push();
-        stroke('black');
-        fill('black');
-        rect(0, height/2 + 15, width, height/2);
-    pop();
+        let maskColor = 'black';
 
+        //rectanble over the stats area
+        stroke(maskColor);
+        fill(maskColor);
+        rect(0, height/2 + 12, width, height/2);
+
+        //lines covering the top board area, outside the environment
+        stroke(maskColor);
+        fill(maskColor);
+        rect(0, 0, 8, height/2 +15);
+        rect(width - 8, 0, 8, height/2 + 15);
+        rect(0, 0, width, 8);
+
+
+        //alllll the rest of this is to mask the rounded corners where the above lines could not reach lol
+        const x = 10 - 1;
+        const y = 10 - 1;
+        const w = (width - 20) + 2;
+        const h = (height / 2) + 2;
+        const r = 26 - 4;
+        const steps = 24;
+
+        let cx, cy, a;
+
+        cx = x + r; cy = y + r;
+        beginShape();
+        vertex(x, y);
+        vertex(x + r, y);
+        for (let i = 0; i <= steps; i++) {
+        a = (3 * Math.PI / 2) - (i * (Math.PI / 2) / steps);
+        vertex(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        }
+        vertex(x, y + r);
+        endShape(CLOSE);
+
+        cx = x + w - r; cy = y + r;
+        beginShape();
+        vertex(x + w, y);
+        vertex(x + w - r, y);
+        for (let i = 0; i <= steps; i++) {
+        a = (3 * Math.PI / 2) + (i * (Math.PI / 2) / steps);
+        vertex(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        }
+        vertex(x + w, y + r);
+        endShape(CLOSE);
+
+        cx = x + r; cy = y + h - r;
+        beginShape();
+        vertex(x, y + h);
+        vertex(x, y + h - r);
+        for (let i = 0; i <= steps; i++) {
+        a = Math.PI - (i * (Math.PI / 2) / steps);
+        vertex(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        }
+        vertex(x + r, y + h);
+        endShape(CLOSE);
+
+        cx = x + w - r; cy = y + h - r;
+        beginShape();
+        vertex(x + w, y + h);
+        vertex(x + w - r, y + h);
+        for (let i = 0; i <= steps; i++) {
+        a = (Math.PI / 2) - (i * (Math.PI / 2) / steps);
+        vertex(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        }
+        vertex(x + w, y + h - r);
+        endShape(CLOSE);
+
+    pop();
+}
+
+function statsText() {
     let leftMargin = 10;
     let startingY = (height / 2) + graphAreaHeight + 50;
     push();
@@ -682,7 +752,9 @@ function drawBars() {
 
         let percentSexuallyMature = map(guys.filter(g => g.isSexuallyMature() == true).length, 0, guys.length, 0, 100);
         if (percentSexuallyMature > 0) {
-            stroke(c.guys.colors.hornyVar3);
+            //stroke(c.guys.colors.hornyVar3);
+            stroke('black');
+            strokeWeight(1);
             fill(c.guys.colors.hornyVar3);
             rect(0, 54 + (20 - 5) / 2, percentSexuallyMature, 5);
         }
