@@ -2,6 +2,7 @@ class Config {
     constructor() {
         this.forage = {
             color: '#99cc33',
+            colorVar2: '#99ccaa'
         };
         this.guys = {
             mutationRate: data.hum,
@@ -9,6 +10,8 @@ class Config {
             colors: {
                 dead: '#272a3aff',
                 horny: '#ff3cd1ff',
+                hornyVar2: '#ff3cd1aa',
+                hornyVar3: '#f25ecfff',
                 hungry: '#339cccaa',
                 gold: '#ffaa00',
                 orbiters: []
@@ -28,15 +31,14 @@ class Config {
                 'senseDistanceMultiplier',
                 'seekAccel',
                 'velLimit',
+                'lifeSpan',
+                'childrenAllowed',
             ]
             }
         };
         for (let value of this.guys.traits.value) {
             this.guys.colors.orbiters.push(util.randomColor());
         }
-        console.log(this.guys);
-        console.log(this.guys.traits.value.indexOf('seekAccel'));
-        
     }
 
     getOrbiterColor(trait) {
@@ -54,7 +56,12 @@ class Config {
  * carnivore: when food is scarce and starvation is imminent, eat another guy (which will take you to full right away)
  * avoidDanger: if you sense a guy who is a carnivor or competitor killer, you run away
  * aposematic: make other guys think you will kill them so they avoid you
- * monogamousX: once you mate with a guy, you stick with that guy and mate again when the chance arrives
+ * monogamous: once you mate with a guy, you stick with that guy and mate again when the chance arrives
+ * preference: pick a preference from the list of heritable traits
+ * preferenceDirection: more of that trait or less
+ * 
+ * to implement:
+ * when a guy dies with food in its stomach its body becomes food as it decays
  */
 
  /**
@@ -70,4 +77,5 @@ class Config {
  * adultSize - x
  * growthProgress - x
  * isSexuallyMature() - x
+ * 
  */

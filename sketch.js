@@ -1,7 +1,14 @@
 const params = new URLSearchParams(window.location.search);
 const debug = params.get('debug');
 let numberOfGuys = params.get('guys') || null;
+let globalMaxGuys = 0;
 let font;
+
+const mutationBeep = new Audio('/assets/computer_work_beep.mp3');
+mutationBeep.preload = 'auto';
+
+const deathBeep = new Audio('/assets/computerbeep_39.mp3');
+deathBeep.preload = 'auto';
 
 let util = new Util();
 let c; //maybe rename config below later....
@@ -94,7 +101,20 @@ function draw() {
         window.location.reload();
     }
 
+    if (guys.length > globalMaxGuys) {
+        globalMaxGuys = guys.length;
+    }
+
     for (let guy of guys) {
+        if (getTimeIndex() - guy.birthday >= guy.lifeSpan || guy.offspringCount > guy.childrenAllowed) {
+            guy.dead = 1;
+            guy.halo = 1;
+
+            if (!guy.deathNoisePlayed) {
+                stats.guys--;
+                guy.deathNoisePlayed = 1;
+            }
+        }
         if (guy.size < guy.adultSize) {
             guy.growthProgress += guy.growthRate;
 
@@ -102,8 +122,6 @@ function draw() {
                 guy.size++;
                 guy.growthProgress--;
                 guy.senseDistance = guy.senseDistanceG();
-                //guy.halo = 1;
-                //console.log(`size: ${guy.size}, senseDistance: ${guy.senseDistance}`);
             }
         }
 
@@ -249,6 +267,24 @@ function draw() {
 }
 
 function mousePressed() { 
+    // mutationBeep.play().then(() => {
+    //     mutationBeep.pause();
+    //     mutationBeep.currentTime = 0;
+    //   }).catch(() => {});
+
+    // deathBeep.play().then(() => {
+    //     deathBeep.pause();
+    //     mutationBeep.currentTime = 0;
+    // }).catch(() => {});
+
+    let sounds = [mutationBeep, deathBeep];
+    for (let sound of sounds) { 
+        sound.play().then(() => {
+            sound.pause();
+            sound.currentTime = 0;
+        }).catch(() => {})
+    }
+
     for (const [i, box] of Object.entries(histogramButtonBoxes)) {
         if (
             mouseX >= box.x &&
@@ -268,12 +304,14 @@ function mousePressed() {
             if (guy.halo) {
                 console.log(guy, guy.calculateSensePerim(), guy.isHungry(), guy.isHorny);
                 console.log(guy, `sensePerim: ${guy.calculateSensePerim()}, hungry: ${guy.isHungry()}, horny: ${guy.isHorny}`);
+                console.log(`size: ${guy.size}, adultSize: ${guy.adultSize}, sexually mature: ${guy.isSexuallyMature()}`);
             }
         }
     }
 }
 
 async function loadWeather() {
+    //mutationBeep = loadSound('/assets/computer_work_beep.mp3');
     const url = `${serverURL}weather/guys`;
     console.log(url);
     data = await fetch(url)
@@ -304,7 +342,7 @@ async function loadWeather() {
             i++;
             return guy;
         });
-        
+    globalMaxGuys = guys.length;
     for (const guy of guys) {
         guy.drawMe();
     }
@@ -353,15 +391,25 @@ function loadingScreen() {
     startTextSize++;
 }
 
+function getTimeIndex() {
+    return frameCount / 1000;
+}
+
 function statsText() {
+    push();
+        stroke('black');
+        fill('black');
+        rect(0, height/2 + 15, width, height/2);
+    pop();
+
     let leftMargin = 10;
     let startingY = (height / 2) + graphAreaHeight + 50;
     push();
         noStroke();
         fill("#ddbbff");
         textSize(15);
-        text("TIME INDEX: " + frameCount / 1000, leftMargin, startingY);
-        text("GUYS: " + stats.guys, leftMargin, startingY + 20);
+        text("TIME INDEX: " + getTimeIndex(), leftMargin, startingY);
+        text("GUYS: " + guys.length, leftMargin, startingY + 20);
         text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
         text(`RPL: ${(forage.replenishRate*10000).toFixed(3)}`, leftMargin, startingY + 60);
 
@@ -426,13 +474,8 @@ function drawGraphs() {
 
     switch (graph) {
       case 'numberOfGuysHistory':
-        if (guys.length <= data.temp) {
-          minY = 0;
-          maxY = Math.floor(data.temp);
-        } else {
-          minY = Math.floor(data.temp);
-          maxY = guys.length;
-        }
+        minY = 0;
+        maxY = globalMaxGuys;
         color = '#ee1edcff';
         break;
 
@@ -550,8 +593,8 @@ function drawHistogram() {
 
 
 function drawPing(guy) {
-    if (guy.senseDistance <= 0 || guy.isSeeking || (!guy.isHungry() && !guy.isHorny) ) {
-       // return;
+    if (!guy.isHorny && forage.foodStorage.length == 0 && millis() - guy.lastPing < 80000) {
+       return;
     }
     const start = guy.size;
     //const end = guy.senseDistance * 2;
@@ -581,7 +624,7 @@ function drawBars() {
         stroke(c.forage.color);
         noFill();
         rect(0, 0, 100, 20);
-        fill(c.forage.color);
+        fill(c.forage.colorVar2);
         let forageProgress = map(forage.replenishProgress, 0, 1, 0, 100)
         rect(0, 0, forageProgress < 100 ? forageProgress : 100, 20);
 
@@ -628,13 +671,20 @@ function drawBars() {
         } 
 
         //horny
-        stroke(c.guys.colors.horny);
+        stroke(c.guys.colors.hornyVar2);
         noFill();
         rect(0, 54, 100, 20);
-        fill(c.guys.colors.horny);
+        fill(c.guys.colors.hornyVar2);
         let hornyGuys = map(guys.filter(g => g.isHorny).length, 0, guys.length, 0, 100);
         if (hornyGuys > 0) {
             rect(0, 54, hornyGuys, 20);
+        }
+
+        let percentSexuallyMature = map(guys.filter(g => g.isSexuallyMature() == true).length, 0, guys.length, 0, 100);
+        if (percentSexuallyMature > 0) {
+            stroke(c.guys.colors.hornyVar3);
+            fill(c.guys.colors.hornyVar3);
+            rect(0, 54 + (20 - 5) / 2, percentSexuallyMature, 5);
         }
     pop();
 }
