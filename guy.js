@@ -5,16 +5,23 @@ class Guy {
     this.id = NEXT_ID++;
 
     //developmental
-    this.adultSize = constrain(Math.abs(Math.floor(util.randomNormal(12, data.clouds/10))), 5, 100);
-    this.size = 5; //this.adultSize;
-    this.pingSize = this.size;
+    
+    
     let globalDigestionRate = Guy.getGlobalDigestionRate();
-    this.growthRate = Math.abs(util.randomNormal(globalDigestionRate - (globalDigestionRate * (data.clouds/100)), 0.0005));
-
+    
     //heritable - value
+    this.adultSize = constrain(Math.abs(Math.floor(util.randomNormal(12, data.clouds/10))), 5, 100);
+
+    this.size = 5 >= this.adultSize * 0.9 ? this.adultSize * 0.6 : 5;
+    this.pingSize = this.size;
+    
+
+    this.growthRate = Math.abs(util.randomNormal(globalDigestionRate - (globalDigestionRate * (data.clouds/100)), 0.0005));
     this.color = util.randomColor(data.temp, data.hum);
     this.senseDistanceMultiplier = util.randomNormal(1, 0.5);
     this.digestionRate = this.getDigestionRate();
+    this.lifeSpan = util.randomNormal(data.temp, data.vis);
+    this.childrenAllowed = Math.abs(Math.floor(util.randomNormal(data.temp / 5, data.vis)));
     
     //heritable - boolean
     this.hasDominantColor = util.chance(data.temp * 0.25);
@@ -36,6 +43,7 @@ class Guy {
     this.acc = createVector(0,0);
 
     //acquired / stative
+    this.birthday = getTimeIndex();
     this.stomachContents = 0;
     this.dead = 0;
     this.decayProgress = 0;
@@ -47,6 +55,8 @@ class Guy {
     this.growthProgress = 0;
     this.senseDistance = this.senseDistanceG(); //This should always be a percentage of their size, right? So always > this.size
     this.orbiters = [];
+    this.offspringCount = 0;
+    this.deathNoisePlayed = 0;
 
     this.target = createVector(0,0);
     
@@ -123,9 +133,9 @@ class Guy {
             // text(`VL:${this.velLimit.toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 42);
             // text(`${this.overRideMove}, ${this.overRideMoveIntermittent}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 56);
 
-            if (this.isSeeking == 1) {
-                line(this.pos.x, this.pos.y, this.target.x, this.target.y);
-            }
+            // if (this.isSeeking == 1) {
+            //     line(this.pos.x, this.pos.y, this.target.x, this.target.y);
+            // }
         pop();
     }
 
@@ -186,9 +196,11 @@ class Guy {
   orbiter() {
     for (let i = 0; i < this.orbiters.length; i++) {
         push();
+        let orbiterSize = this.size * 0.2 >= 2 ? this.size * 0.2 : 2;
         translate(this.pos.x, this.pos.y);
-        strokeWeight(this.size * 0.2);
-        stroke(this.orbiters[i].color);
+        strokeWeight(orbiterSize);
+        const col = this.orbiters[i].color;
+        stroke(red(col), green(col), blue(col), alpha(col));
 
         let r = this.size * this.orbiters[i].rMultiplier;
         let x = r * cos(this.orbiters[i].angle);
@@ -347,6 +359,9 @@ class Guy {
     const parentA = Guy.biggerId(this, mate);
     const parentB = Guy.smallerId(this, mate);
 
+    this.offspringCount++;
+    mate.offspringCount++;
+
     const child = new Guy();
     child.mutationPackage = [...parentA.mutationPackage, ...parentB.mutationPackage];
 
@@ -369,45 +384,71 @@ class Guy {
         child[trait] = util.coinToss(parentA, parentB)[trait];
         if (util.chance(1, c.guys.mutationRate)) {
             let mutation = {
+                trait,
                 original: child[trait],
                 mutated: 0,
                 percentChange: 0,
             };
-            const sign = util.chance(1, 2) ? 1: -1;
+            const sign = util.chance(1, 2) ? 1 : -1;
             const percent = Math.abs(util.randomNormal(0, 0.03));
             child[trait] *= 1 + sign * percent;
             mutation.mutated = child[trait];
             mutation.percentChange = util.percentChange(mutation.original, mutation.mutated);
             mutationHappened = true;
+
+            child.mutationPackage = child.mutationPackage.filter(
+                m => m.trait !== trait || !('percentChange' in m)
+            );
+
             child.mutationPackage.push(mutation);
         }
     }
 
-    for (const thisMutation of child.mutationPackage) {
-        if ('percentChange' in thisMutation) {
-            child.orbiters.push({
-                angle: 0,
-                delta: thisMutation.percentChange / 100,
-                color: c.getOrbiterColor(trait),
-                rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
-            });
+    const latestValueMutations = new Map();
+    const preservedMutations = [];
+
+    for (const m of child.mutationPackage) {
+        if ('percentChange' in m) {
+            latestValueMutations.set(m.trait, m);
+        } else {
+            preservedMutations.push(m);
         }
+    }
+
+    child.mutationPackage = [...preservedMutations, ...latestValueMutations.values()];
+
+    child.orbiters = [];
+    for (const m of latestValueMutations.values()) {
+        child.orbiters.push({
+            angle: 0,
+            delta: m.percentChange / 100,
+            color: c.getOrbiterColor(m.trait),
+            rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
+        });
     }
 
     if (util.chance(1, 1000)) {
         child.color = util.randomColor();
     }
-    child.color = parentA.hasDominantColor ? parentA.color : (parentB.hasDominantColor ? parentB.color : util.coinToss(parentA, parentB).color);
+    child.color = parentA.hasDominantColor
+        ? parentA.color
+        : (parentB.hasDominantColor ? parentB.color : util.coinToss(parentA, parentB).color);
 
     child.pos.x = this.pos.x + 10;
     child.pos.y = this.pos.y + 10;
-    
+
     stats.guys++;
-    
+
     this.resetHorniness(mate);
     guys.push(child);
+
+    if (mutationHappened) {
+        // mutationBeep.currentTime = 0;
+        // mutationBeep.play().catch(() => {});
+    }
     return;
-  }
+}
+
 
   resetHorniness(mate = null) {
     for (let guy of [this, mate].filter(Boolean)) {
@@ -505,6 +546,10 @@ class Guy {
 
     getSenseDistance(){
         return Math.max(0, util.randomNormal(Guy.getGlobalSenseDistance(this.size), data.vis * data.vis));
+    }
+
+    age() {
+        return getTimeIndex() - this.birthday;
     }
 
   static whoIsDominant(a, b) {
