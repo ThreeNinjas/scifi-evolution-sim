@@ -147,7 +147,8 @@ function draw() {
                 guy.mateTimer++;
 
                 if (!guy.isSeeking && guy.mateTimer > 100) {
-                    guy.mate = util.closestGuyByColor(guy.color, guy.potentialMates);
+                    //guy.mate = util.closestGuyByColor(guy.color, guy.potentialMates);
+                    guy.mate = guy.chooseMate(guy.color, guy.potentialMates);
                     if (guy.mate) {
                         guy.target.x = guy.mate.pos.x;
                         guy.target.y = guy.mate.pos.y;

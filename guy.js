@@ -4,9 +4,6 @@ class Guy {
     //genes
     this.id = NEXT_ID++;
 
-    //developmental
-    
-    
     let globalDigestionRate = Guy.getGlobalDigestionRate();
     
     //heritable - value
@@ -19,7 +16,9 @@ class Guy {
     this.childrenAllowed = Math.abs(Math.floor(util.randomNormal(data.temp / 5, data.vis)));
 
     //heritable - special cases
-    this.preference = util.chance(1, data.temp) ? c.guys.traits.value[util.randomNumber(0, c.guys.traits.value.length - 1)] : null;
+    //there's a 1 in temperature chance that guy will have a preference of some random trait
+    this.preference = Guy.getPreference();
+    this.preferenceDirection = Guy.getPreferenceDirection();
     
     //heritable - boolean
     this.hasDominantColor = util.chance(data.temp * 0.25);
@@ -303,7 +302,7 @@ class Guy {
 
   seekMate(mate, guys) {
     if (!mate.isHorny) {
-        this.resetHorniness();
+        this.mate = null;
         return;
     }
     if (!this.overRideMove) {
@@ -351,6 +350,46 @@ class Guy {
     }
   }
 
+  chooseMate() {
+    if (!this.preference || this.potentialMates.length < 2) {
+        return util.closestGuyByColor(this.color, this.potentialMates);
+    }
+
+    let bestGuy = null;
+    let bestValue = this.preferenceDirection == 1 ? -Infinity : Infinity;
+    
+    for (const pm of this.potentialMates) {
+        const v = pm[this.preference];
+
+        if (this.preferenceDirection == 1) {
+            if (v >= bestValue) {
+                bestValue = v;
+                bestGuy = pm;
+            }
+        } else {
+            if (v <= bestValue) {
+                bestValue = v;
+                bestGuy = pm;
+            }
+        }
+        
+    }
+
+    console.log(`${this.preference}, ${this.preferenceDirection} || ${bestGuy[this.preference]}`);
+    console.log(this.potentialMates.map(g => g[this.preference]));
+    this.halo = 1;
+    if (bestGuy) {
+        bestGuy.halo = 1;
+    }
+
+    if (volumeOn) {
+        deathBeep.currentTime = 0;
+        deathBeep.play().catch(() => {});
+    }
+
+    return bestGuy;
+  }
+
   businessTime(mate, guys) {
     //TODO: make babies small! let them grow into sexual maturity
     let mutationHappened = false;
@@ -365,7 +404,8 @@ class Guy {
     const child = new Guy();
     child.mutationPackage = {
         binary: [],
-        value: []
+        value: [],
+        special: [],
     };
 
     for (const trait of c.guys.traits.binary) {
@@ -400,6 +440,30 @@ class Guy {
             mutationHappened = true;
 
             child.mutationPackage.value.push(mutation);
+        }
+    }
+
+    for (const trait of c.guys.traits.special) {
+        child[trait] = util.coinToss(parentA, parentB)[trait];
+
+        if (util.chance(1, c.guys.mutationRate)) { 
+            mutationHappened = true;
+            let mutation = {
+                    trait,
+                    original: child[trait],
+                    mom: parentA[trait],
+                    dad: parentB[trait],
+                };
+            switch (trait) {
+                case 'preference':
+                    child[trait] = Guy.getPreference();
+                    break;
+                case 'preferenceDirection':
+                    child[trait] = Guy.getPreferenceDirection();
+                    break;
+            }
+            mutation.baby = child[trait];
+            child.mutationPackage.special.push(mutation);
         }
     }
     
@@ -595,5 +659,14 @@ class Guy {
 
   static smallerId(a, b) {
     return a.id < b.id ? a : b;
+  }
+
+  static getPreference() {
+    let valueOrBinary = util.coinToss('value', 'binary');
+    return util.chance(1, data.temp) ? c.guys.traits[valueOrBinary][util.randomNumber(0, c.guys.traits[valueOrBinary].length - 1)] : null;
+  }
+
+  static getPreferenceDirection() {
+    return data.pres >= 29.4 ? (util.chance(60) ? 1 : -1) : (util.chance(60) ? -1 : 1)
   }
 }

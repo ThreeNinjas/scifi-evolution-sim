@@ -33,6 +33,9 @@ class Config {
                 'velLimit',
                 'lifeSpan',
                 'childrenAllowed',
+            ], special: [
+                'preference',
+                'preferenceDirection'
             ]
             }
         };
