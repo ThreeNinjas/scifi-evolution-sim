@@ -436,9 +436,9 @@ class Guy {
     this.resetHorniness(mate);
     guys.push(child);
 
-    if (mutationHappened) {
-        // mutationBeep.currentTime = 0;
-        // mutationBeep.play().catch(() => {});
+    if (mutationHappened && volumeOn) {
+        mutationBeep.currentTime = 0;
+        mutationBeep.play().catch(() => {});
     }
     return;
 }

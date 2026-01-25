@@ -58,6 +58,10 @@ const guysToRemove = new Set();
 let histogramButtonBoxes;
 let selectedHistogram = 0;
 let automatedHistogramSelection = true;
+let volumeIcon;
+let muteIcon;
+let iconsReady;
+let volumeOn;
 
 /*
 TODO: move the actually populating of guys out of loadWeather and into guys.populateGuys();
@@ -269,23 +273,29 @@ function draw() {
 }
 
 function mousePressed() { 
-    // mutationBeep.play().then(() => {
-    //     mutationBeep.pause();
-    //     mutationBeep.currentTime = 0;
-    //   }).catch(() => {});
+    //width - 30, height/2 + 25
+    if (
+        mouseX >= width - 30 &&
+        mouseX <= (width - 30) + 20 &&
+        mouseY >= height/2 + 25 &&
+        mouseY <= (height/2 + 25) + 20
+    ) {
+        mutationBeep.play().then(() => {
+        mutationBeep.pause();
+        mutationBeep.currentTime = 0;
+      }).catch(() => {});
 
-    // deathBeep.play().then(() => {
-    //     deathBeep.pause();
-    //     mutationBeep.currentTime = 0;
-    // }).catch(() => {});
+        volumeOn = !volumeOn;
 
-    let sounds = [mutationBeep, deathBeep];
-    for (let sound of sounds) { 
-        sound.play().then(() => {
-            sound.pause();
-            sound.currentTime = 0;
-        }).catch(() => {})
+        let sounds = [mutationBeep];
+        for (let sound of sounds) { 
+            sound.play().then(() => {
+                sound.pause();
+                sound.currentTime = 0;
+            }).catch(() => {})
+        }
     }
+    
 
     for (const [i, box] of Object.entries(histogramButtonBoxes)) {
         if (
@@ -313,7 +323,7 @@ function mousePressed() {
 }
 
 async function loadWeather() {
-    //mutationBeep = loadSound('/assets/computer_work_beep.mp3');
+    loadIcons();
     const url = `${serverURL}weather/guys`;
     console.log(url);
     data = await fetch(url)
@@ -348,8 +358,20 @@ async function loadWeather() {
     for (const guy of guys) {
         guy.drawMe();
     }
+}
 
-    
+function loadIcons() {
+  iconsReady = false;
+
+  loadImage('/assets/Speaker_Icon.png', img => {
+    volumeIcon = img;
+    iconsReady = !!(volumeIcon && muteIcon);
+  });
+
+  loadImage('/assets/Mute_Icon.png', img => {
+    muteIcon = img;
+    iconsReady = !!(volumeIcon && muteIcon);
+  });
 }
 
 
@@ -533,6 +555,16 @@ function histogramButtons() {
 
 
 function drawGraphs() {
+    if (iconsReady) {
+        tint(255, 255, 255, 128);
+        if (volumeOn) {
+            image(volumeIcon, width - 30, height/2 + 25, 20, 20);
+        } else {
+            image(muteIcon, width - 30, height/2 + 25, 20, 20);
+        }
+        noTint();
+    }
+    
   push();
   let startingY = (height / 2) + 20;
   let graphs = ['numberOfGuysHistory', 'numberOfFoodHistory', 'histogram'];
@@ -687,76 +719,79 @@ function drawPing(guy) {
 }
 
 function drawBars() {
-    push();
-        translate(200, 712);
+    if (guys.length > 0) {
+        push();
+            translate(200, 712);
 
-        //food replenish
-        stroke(c.forage.color);
-        noFill();
-        rect(0, 0, 100, 20);
-        fill(c.forage.colorVar2);
-        let forageProgress = map(forage.replenishProgress, 0, 1, 0, 100)
-        rect(0, 0, forageProgress < 100 ? forageProgress : 100, 20);
+            //food replenish
+            stroke(c.forage.color);
+            noFill();
+            rect(0, 0, 100, 20);
+            fill(c.forage.colorVar2);
+            let forageProgress = map(forage.replenishProgress, 0, 1, 0, 100)
+            rect(0, 0, forageProgress < 100 ? forageProgress : 100, 20);
 
-        //food eaten
-        let cutoff = forage.chanceOfFood * 0.10;
-        let percentOfThreshold = ((forage.chanceOfFood - forage.foodStorage.length) / (forage.chanceOfFood - cutoff)) * 100;
-        percentOfThreshold = constrain(percentOfThreshold, 0, 100);
+            //food eaten
+            let cutoff = forage.chanceOfFood * 0.10;
+            let percentOfThreshold = ((forage.chanceOfFood - forage.foodStorage.length) / (forage.chanceOfFood - cutoff)) * 100;
+            percentOfThreshold = constrain(percentOfThreshold, 0, 100);
 
-        stroke(c.guys.colors.hungry);
-        noFill();
-        rect(0, 27, 100, 20);
-        fill(c.guys.colors.hungry);
-        rect(0, 27, percentOfThreshold, 20);
+            stroke(c.guys.colors.hungry);
+            noFill();
+            rect(0, 27, 100, 20);
+            fill(c.guys.colors.hungry);
+            rect(0, 27, percentOfThreshold, 20);
 
-        
-        if (percentOfThreshold > 90 && forageProgress > 90) {
-            if (Math.floor(millis() / 400) % 2 === 0) { 
-            push();
-                
-                fill(c.guys.colors.gold);
-                stroke(c.guys.colors.gold);
+            
+            if (percentOfThreshold > 90 && forageProgress > 90) {
+                if (Math.floor(millis() / 400) % 2 === 0) { 
+                push();
+                    
+                    fill(c.guys.colors.gold);
+                    stroke(c.guys.colors.gold);
 
-                //right top
-                strokeWeight(2);
-                line(-12, -1, -7, -1);
-                //right vert
-                strokeWeight(3);
-                line(-12, 0, -12, 47);
-                //right bottom
-                strokeWeight(2);
-                line(-12, 48, -7, 48);
+                    //right top
+                    strokeWeight(2);
+                    line(-12, -1, -7, -1);
+                    //right vert
+                    strokeWeight(3);
+                    line(-12, 0, -12, 47);
+                    //right bottom
+                    strokeWeight(2);
+                    line(-12, 48, -7, 48);
 
-                //left top
-                strokeWeight(2);
-                line(107, -1, 112, -1);
-                //left vert
-                strokeWeight(3);
-                line(113, 0, 113, 47);
-                //left bottom
-                strokeWeight(2);
-                line(108, 48, 113, 48);
-                pop();
+                    //left top
+                    strokeWeight(2);
+                    line(107, -1, 112, -1);
+                    //left vert
+                    strokeWeight(3);
+                    line(113, 0, 113, 47);
+                    //left bottom
+                    strokeWeight(2);
+                    line(108, 48, 113, 48);
+                    pop();
+                }
+            } 
+
+            //horny
+            stroke(c.guys.colors.hornyVar2);
+            noFill();
+            rect(0, 54, 100, 20);
+            fill(c.guys.colors.hornyVar2);
+            let hornyGuys = map(guys.filter(g => g.isHorny).length, 0, guys.length, 0, 100);
+            if (hornyGuys > 0) {
+                rect(0, 54, hornyGuys, 20);
             }
-        } 
 
-        //horny
-        stroke(c.guys.colors.hornyVar2);
-        noFill();
-        rect(0, 54, 100, 20);
-        fill(c.guys.colors.hornyVar2);
-        let hornyGuys = map(guys.filter(g => g.isHorny).length, 0, guys.length, 0, 100);
-        if (hornyGuys > 0) {
-            rect(0, 54, hornyGuys, 20);
-        }
-
-        let percentSexuallyMature = map(guys.filter(g => g.isSexuallyMature() == true).length, 0, guys.length, 0, 100);
-        if (percentSexuallyMature > 0) {
-            //stroke(c.guys.colors.hornyVar3);
-            stroke('black');
-            strokeWeight(1);
-            fill(c.guys.colors.hornyVar3);
-            rect(0, 54 + (20 - 5) / 2, percentSexuallyMature, 5);
-        }
-    pop();
+            let percentSexuallyMature = map(guys.filter(g => g.isSexuallyMature() == true).length, 0, guys.length, 0, 100);
+            if (percentSexuallyMature > 0) {
+                //stroke(c.guys.colors.hornyVar3);
+                stroke('black');
+                strokeWeight(1);
+                fill(c.guys.colors.hornyVar3);
+                rect(0, 54 + (20 - 5) / 2, percentSexuallyMature, 5);
+            }
+        pop();
+    }
+    
 }
