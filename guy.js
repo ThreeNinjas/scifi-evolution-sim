@@ -17,6 +17,8 @@ class Guy {
     this.digestionRate = this.getDigestionRate();
     this.lifeSpan = util.randomNormal(data.temp, data.vis);
     this.childrenAllowed = Math.abs(Math.floor(util.randomNormal(data.temp / 5, data.vis)));
+
+    //heritable - special cases
     this.preference = util.chance(1, data.temp) ? c.guys.traits.value[util.randomNumber(0, c.guys.traits.value.length - 1)] : null;
     
     //heritable - boolean
