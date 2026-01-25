@@ -2,3 +2,7 @@
 .env
 
 .DS_Store
+
+assets/Mute_Icon.svg
+
+assets/Speaker_Icon.svg
