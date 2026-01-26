@@ -1,3 +1,4 @@
+let NEXT_FORAGE_ID = 0;
 class Forage {
     constructor(traits) {
         this.maxX = traits.maxX;
@@ -14,15 +15,21 @@ class Forage {
         this.populateMe();
     }
 
-    populateMe() {
-        for (let i = 0; i < this.chanceOfFood; i++) {
-            if (util.chance(this.chanceOfFood) && this.foodStorage.length < this.chanceOfFood) {
+    populateMe(num = null) {
+        const max = num === null
+            ? this.chanceOfFood
+            : Math.floor(num / this.foodSize);
+
+        for (let i = 0; i < max; i++) {
+            if (num === null && this.foodStorage.length >= this.chanceOfFood) break;
+
+            if (util.chance(this.chanceOfFood)) {
                 this.foodStorage.push({
-                id: `${frameCount}-${i}`,
-                x: util.randomNumber(config.bounds.x.min, config.bounds.x.max),
-                y: util.randomNumber(config.bounds.y.min, config.bounds.y.max),
-            });
-            this.numberOfFood++;
+                    id: NEXT_FORAGE_ID++,
+                    x: util.randomNumber(config.bounds.x.min, config.bounds.x.max),
+                    y: util.randomNumber(config.bounds.y.min, config.bounds.y.max),
+                });
+                this.numberOfFood += this.foodSize;
             }
         }
     }

@@ -122,6 +122,12 @@ function draw() {
             guy.dead = 1;
 
             if (!guy.deathNoisePlayed) {
+                if (guy.stomachContents > 0) {
+                    forage.populateMe(guy.stomachContents);
+                    guy.stomachContents = 0;
+                }
+
+                forage.populateMe(guy.size);
                 stats.guys--;
                 guy.playDeathBeep();
             }
