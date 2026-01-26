@@ -148,7 +148,7 @@ function draw() {
         }
 
         for (let otherGuy of guys) {
-            if (otherGuy === guy) continue;
+            if (otherGuy === guy || guy.seekPriority == 'baby') continue;
             if (guy.senses(otherGuy) && guy.isHorny && otherGuy.isHorny && !guy.isSeeking && !guy.mate) {
                 guy.potentialMates.push(otherGuy);
                 guy.mateTimer++;
@@ -181,7 +181,7 @@ function draw() {
         }
 
         if (!guy.dead) {
-            if (guy.isHungry()) {
+            if (guy.isHungry() && guy.seekPriority !== 'baby') {
                 guy.isHorny = 0;
                 sensedFood = guy.sensesFood(forage.foodStorage);
 
@@ -210,12 +210,14 @@ function draw() {
                 if (guy.isSeeking && guy.mate && !guy.mate.dead) {
                     guy.seekMate(guy.mate, guys);
                     //guy.arrow(guy.mate);
+                } else if (guy.seekPriority == 'baby') {
+                    guy.seek();
                 } else {
                    guy.move(); 
                    guy.mate = null;
                 }
                 
-                guy.isHorny = guy.isSexuallyMature();
+                guy.isHorny = guy.seekPriority !== 'baby' && guy.isSexuallyMature();
             }
         }
 

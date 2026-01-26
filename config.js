@@ -18,6 +18,7 @@ class Config {
             },
             traits: {
                 binary: [
+                'movesAwayFromBaby',
                 'overRideMove',
                 'overRideMoveIntermittent',
                 'resolute',
@@ -37,6 +38,16 @@ class Config {
                 'preference',
                 'preferenceDirection'
             ]
+            }
+        };
+        this.bounds = {
+            x: {
+                min: 10,
+                max: width - 10,
+            },
+            y: {
+                min: 10,
+                max: height / 2,
             }
         };
     }
@@ -64,6 +75,8 @@ class Config {
  * aposematic: make other guys think you will kill them so they avoid you
  * monogamous: once you mate with a guy, you stick with that guy and mate again when the chance arrives
  * moves away from baby trait
+ * A way to visualize the current population, what traits are prevalent, a history of their prevalance, etc
+ * a 'family tree' mode, where you click on a guy and it highlights its entire lineage.
  * 
  * to implement:
  * when a guy dies with food in its stomach its body becomes food as it decays

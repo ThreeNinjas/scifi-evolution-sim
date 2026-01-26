@@ -26,6 +26,7 @@ class Guy {
     this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
     this.smartFoodFinder = util.coinToss(0, 1);
     this.resolute = util.chance(10); //if this is true, guy won't change its mind about food targets
+    this.movesAwayFromBaby = util.chance(data.temp);
 
     //heritable - vectors
     this.velLimit = !util.chance(99) ? 5 : util.randomNormal(0.001, 0.25); // random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
@@ -59,6 +60,7 @@ class Guy {
     this.deathNoisePlayed = 0;
 
     this.target = createVector(0,0);
+    this.seekPriority = null; //food|mate|baby
     
     this.potentialMates = [];
     this.mateTimer = 0;
@@ -97,36 +99,40 @@ class Guy {
     pop();
 
     if (this.halo == 1) {
-        push();
-            stroke('#ffdf27ff');
+        stroke('#ffdf27ff');
             noFill();
             circle(this.pos.x, this.pos.y, this.size * 2);
-            textSize(14);
-            let startY = this.pos.y + (this.size * 2);
-            let haloData = [];
-            if (this.mutationPackage.length > 0) {
-                for (let datum of this.mutationPackage) {
-                    haloData.push(`::${datum.trait}::`);
-                    haloData.push(`A: ${datum.mom}`);
-                    haloData.push(`B: ${datum.dad}`);
-                    haloData.push(`C: ${datum.baby}`);
-                }
-            } else {
-                haloData = [
-                    `DP:${this.digestionProgress.toFixed(4)}`,
-                    `SP:${this.calculateSensePerim().toFixed(4)}`,
-                    `V:${this.vel.mag().toFixed(4)}`,
-                    `VL:${this.velLimit.toFixed(4)}`, 
-                    `NM:${this.noiseMagnitude.toFixed(4)}`,
-                    `SA:${this.seekAccel.toFixed(4)}`,
-                    `${this.overRideMove}, ${this.overRideMoveIntermittent}, ${this.resolute}`,
-                ];
-            }
+        pop();
+        // push();
+        //     stroke('#ffdf27ff');
+        //     noFill();
+        //     circle(this.pos.x, this.pos.y, this.size * 2);
+        //     textSize(14);
+        //     let startY = this.pos.y + (this.size * 2);
+        //     let haloData = [];
+        //     if (this.mutationPackage.length > 0) {
+        //         for (let datum of this.mutationPackage) {
+        //             haloData.push(`::${datum.trait}::`);
+        //             haloData.push(`A: ${datum.mom}`);
+        //             haloData.push(`B: ${datum.dad}`);
+        //             haloData.push(`C: ${datum.baby}`);
+        //         }
+        //     } else {
+        //         haloData = [
+        //             `DP:${this.digestionProgress.toFixed(4)}`,
+        //             `SP:${this.calculateSensePerim().toFixed(4)}`,
+        //             `V:${this.vel.mag().toFixed(4)}`,
+        //             `VL:${this.velLimit.toFixed(4)}`, 
+        //             `NM:${this.noiseMagnitude.toFixed(4)}`,
+        //             `SA:${this.seekAccel.toFixed(4)}`,
+        //             `${this.overRideMove}, ${this.overRideMoveIntermittent}, ${this.resolute}`,
+        //         ];
+        //     }
 
-            for (let datum of haloData) {
-                //text(datum, this.pos.x-10, startY);
-                startY += 14;
-            }
+            // for (let datum of haloData) {
+            //     //text(datum, this.pos.x-10, startY);
+            //     startY += 14;
+            // }
             // text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
             // text(`SP:${this.calculateSensePerim().toFixed(4)}`, this.pos.x-10, (this.pos.y + this.size * 2) + 14);
             // text(`V:${this.vel.mag().toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 28);
@@ -136,7 +142,7 @@ class Guy {
             // if (this.isSeeking == 1) {
             //     line(this.pos.x, this.pos.y, this.target.x, this.target.y);
             // }
-        pop();
+        //pop();
     }
 
     if (debug) {
@@ -350,6 +356,47 @@ class Guy {
     }
   }
 
+  seek() {
+    // if (!this.overRideMove) {
+    //     this.move();
+    // }
+    // if (this.overRideMoveIntermittent) {
+    //     if (util.coinToss(1, 2) == 1) {
+    //         this.move();
+    //     }
+    // }
+    console.log(`seekPriority: ${this.seekPriority}`);
+    this.arrow(this.target);
+    this.acc.set(this.target).sub(this.pos);
+    this.acc.setMag(this.seekAccel);
+
+    this.noise.rotate(this.noiseRotate);
+    this.noise.setMag(this.noiseMagnitude);
+    this.acc.add(this.noise);
+
+    this.vel.add(this.acc);
+    this.vel.limit(this.velLimit);
+
+    this.pos.add(this.vel);
+    this.pos.x = constrain(this.pos.x, config.bounds.x.min, config.bounds.x.max);
+    this.pos.y = constrain(this.pos.y, config.bounds.y.min, config.bounds.y.max);
+    if (this.pos.x == config.bounds.x.min || this.pos.x == config.bounds.x.max) {
+        this.vel.x = 0;
+    }
+
+    if (this.pos.y == config.bounds.y.min || this.pos.y == config.bounds.y.max) {
+        this.vel.y = 0;
+    }
+
+    if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= 5) {
+        this.isSeeking = 0;
+        this.target.x = 0;
+        this.target.y = 0;
+        this.seekPriority = null;
+        console.log('seekPriority null');
+    }
+  }
+
   chooseMate() {
     if (!this.preference || this.potentialMates.length < 2) {
         return util.closestGuyByColor(this.color, this.potentialMates);
@@ -518,9 +565,18 @@ class Guy {
         child.halo = 1;
         child.haloWasSetAutomatically = 1;
     }
+
+    for (let guy of [this, mate]) {
+        if (guy.movesAwayFromBaby) {
+            guy.target.x = util.randomTargetWithinBounds(guy.pos);
+            console.log(guy.target);
+            guy.isSeeking = 1;
+            guy.seekPriority = 'baby';
+            guy.seek();
+        }
+    }
     return;
 }
-
 
   resetHorniness(mate = null) {
     for (let guy of [this, mate].filter(Boolean)) {

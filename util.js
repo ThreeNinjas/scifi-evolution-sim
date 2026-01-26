@@ -130,4 +130,26 @@ class Util {
 
         return color(hue, sat, bri);
     }
+
+    randomTargetWithinBounds(pos) {
+    let x, y;
+
+    while (true) {
+        x = pos.x + util.randomNumber(10, data.temp);
+        y = pos.y + util.randomNumber(10, data.temp);
+
+        if (
+            Math.abs(x - pos.x) >= 10 &&
+            Math.abs(y - pos.y) >= 10 &&
+            x >= c.bounds.x.min &&
+            x <= c.bounds.x.max &&
+            y >= c.bounds.y.min &&
+            y <= c.bounds.y.max
+        ) {
+            break;
+        }
+    }
+
+    return { x, y };
+}
 }
