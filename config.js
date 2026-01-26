@@ -74,15 +74,15 @@ class Config {
  * avoidDanger: if you sense a guy who is a carnivor or competitor killer, you run away
  * aposematic: make other guys think you will kill them so they avoid you
  * monogamous: once you mate with a guy, you stick with that guy and mate again when the chance arrives
- * moves away from baby trait
+ x moves away from baby trait
  * A way to visualize the current population, what traits are prevalent, a history of their prevalance, etc
  * a 'family tree' mode, where you click on a guy and it highlights its entire lineage.
  * 
  * to implement:
- * MAKE AMOUNT OF FOOD DEPENDANT UPON HOW MUCH ITS RAINED RECENTLY
- * when a guy dies with food in its stomach its body becomes food as it decays
+ x MAKE AMOUNT OF FOOD DEPENDANT UPON HOW MUCH ITS RAINED RECENTLY
+ x when a guy dies with food in its stomach its body becomes food as it decays
  * a button to hide pinging
  * space bar for pause
- * maybe when paused and a guy is clicked, let it run for 1 frame so that the guy gets highlighted
+ x maybe when paused and a guy is clicked, let it run for 1 frame so that the guy gets highlighted
  * if preference mutates, force a choice other than null. ie, add an override to the getPreference() function
  */

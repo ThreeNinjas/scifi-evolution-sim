@@ -99,6 +99,7 @@ class Guy {
     pop();
 
     if (this.halo == 1) {
+        push();
         stroke('#ffdf27ff');
             noFill();
             circle(this.pos.x, this.pos.y, this.size * 2);
@@ -357,15 +358,6 @@ class Guy {
   }
 
   seek() {
-    // if (!this.overRideMove) {
-    //     this.move();
-    // }
-    // if (this.overRideMoveIntermittent) {
-    //     if (util.coinToss(1, 2) == 1) {
-    //         this.move();
-    //     }
-    // }
-    console.log(`seekPriority: ${this.seekPriority}`);
     this.arrow(this.target);
     this.acc.set(this.target).sub(this.pos);
     this.acc.setMag(this.seekAccel);
@@ -393,7 +385,6 @@ class Guy {
         this.target.x = 0;
         this.target.y = 0;
         this.seekPriority = null;
-        console.log('seekPriority null');
     }
   }
 
@@ -432,8 +423,8 @@ class Guy {
     }
 
     if (volumeOn) {
-        prefBeep.currentTime = 0;
-        prefBeep.play().catch(() => {});
+        sounds.prefBeep.currentTime = 0;
+        sounds.prefBeep.play().catch(() => {});
     }
 
     return bestGuy;
@@ -550,12 +541,12 @@ class Guy {
     guys.push(child);
 
     if (volumeOn) {
-        birthBeep.currentTime = 0;
-        birthBeep.play()
+        sounds.birthBeep.currentTime = 0;
+        sounds.birthBeep.play()
         .then(() => {
             if (mutationHappened) {
-                mutationBeep.currentTime = 0;
-                mutationBeep.play().catch(() => {});
+                sounds.mutationBeep.currentTime = 0;
+                sounds.mutationBeep.play().catch(() => {});
             }
         })
         .catch(() => {});
@@ -681,8 +672,8 @@ class Guy {
 
     playDeathBeep() {
         if (volumeOn) {
-            deathBeep.currentTime = 0;
-            deathBeep.play().catch(() => {});
+            sounds.deathBeep.currentTime = 0;
+            sounds.deathBeep.play().catch(() => {});
         }
         
         this.deathNoisePlayed = 1;
@@ -741,7 +732,7 @@ class Guy {
 
   static getPreference() {
     let valueOrBinary = util.coinToss('value', 'binary');
-    return util.chance(1, data.temp) ? c.guys.traits[valueOrBinary][util.randomNumber(0, c.guys.traits[valueOrBinary].length - 1)] : null;
+    return util.chance(5, data.temp) ? c.guys.traits[valueOrBinary][util.randomNumber(0, c.guys.traits[valueOrBinary].length - 1)] : null;
   }
 
   static getPreferenceDirection() {

@@ -4,17 +4,31 @@ let numberOfGuys = params.get('guys') || null;
 let globalMaxGuys = 0;
 let font;
 
-const mutationBeep = new Audio('/assets/alert12.mp3');
-mutationBeep.preload = 'auto';
+let sounds = {
+    mutationBeep: new Audio('/assets/alert12.mp3'),
+    prefBeep: new Audio('/assets/computerbeep_39.mp3'),
+    deathBeep: new Audio('assets/communications_end_transmission.mp3'),
+    birthBeep: new Audio('assets/hailbeep4_clean.mp3')
+};
 
-const prefBeep = new Audio('/assets/computerbeep_39.mp3');
-prefBeep.preload = 'auto';
+for (let sound of Object.values(sounds)) {
+    sound.preload = 'auto';
+    sound.volume = 0.5;
+}
 
-const deathBeep = new Audio('assets/communications_end_transmission.mp3');
-deathBeep.preload = 'auto';
+sounds.deathBeep.volume = 0.125;
 
-const birthBeep = new Audio('assets/hailbeep4_clean.mp3');
-birthBeep.preload = 'true';
+// const mutationBeep = new Audio('/assets/alert12.mp3');
+// mutationBeep.preload = 'auto';
+
+// const prefBeep = new Audio('/assets/computerbeep_39.mp3');
+// prefBeep.preload = 'auto';
+
+// const deathBeep = new Audio('assets/communications_end_transmission.mp3');
+// deathBeep.preload = 'auto';
+
+// const birthBeep = new Audio('assets/hailbeep4_clean.mp3');
+// birthBeep.preload = 'true';
 
 let util = new Util();
 let c; //maybe rename config below later....
@@ -298,31 +312,22 @@ function draw() {
 }
 
 function mousePressed() { 
-    //width - 30, height/2 + 25
-    //let  y = height/2 + 95;
+    //mute button
     if (
         mouseX >= width - 30 &&
         mouseX <= (width - 30) + 20 &&
         mouseY >= height/2 + 95 &&
         mouseY <= (height/2 + 95) + 20
     ) {
-        mutationBeep.play().then(() => {
-        mutationBeep.pause();
-        mutationBeep.currentTime = 0;
-      }).catch(() => {});
-
         volumeOn = !volumeOn;
-
-        let sounds = [mutationBeep, prefBeep, deathBeep, birthBeep];
-        for (let sound of sounds) { 
-            sound.play().then(() => {
-                sound.pause();
-                sound.currentTime = 0;
-            }).catch(() => {})
+        
+        for (let sound of Object.values(sounds)) { 
+            sound.muted = volumeOn ? false : true;
         }
+
     }
     
-    //width - 45, height/2 + 30
+    //pause button
     if (
         mouseX >= width - 45 &&
         mouseX <= (width - 45) + 10 &&
@@ -338,6 +343,7 @@ function mousePressed() {
             }
         }
 
+    //historgram switcher
     for (const [i, box] of Object.entries(histogramButtonBoxes)) {
         if (
             mouseX >= box.x &&
@@ -350,6 +356,7 @@ function mousePressed() {
         }
     }
 
+    //guys
     for (const [i, guy] of Object.entries(guys)) {
         if (dist(mouseX, mouseY, guy.pos.x, guy.pos.y) <= guy.size / 2) {
             guy.halo = !guy.halo;
