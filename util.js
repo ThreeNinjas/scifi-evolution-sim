@@ -4,6 +4,7 @@ class Util {
     }
 
     randomColor(temp = 95, hum = 100) {
+        //colorMode(HSB, 360, 100, 100);
         return color(
             util.randomNumber(0, map(temp, 17, 95, 0, 360)),     // hue 0 - 360
             util.randomNumber(0, hum),    // saturation 0 - 100

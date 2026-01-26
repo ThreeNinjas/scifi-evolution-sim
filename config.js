@@ -33,12 +33,19 @@ class Config {
                 'velLimit',
                 'lifeSpan',
                 'childrenAllowed',
+            ], special: [
+                'preference',
+                'preferenceDirection'
             ]
             }
         };
+    }
+
+    generateOrbiterColors() {
         for (let value of this.guys.traits.value) {
             this.guys.colors.orbiters.push(util.randomColor());
         }
+        return true;
     }
 
     getOrbiterColor(trait) {
