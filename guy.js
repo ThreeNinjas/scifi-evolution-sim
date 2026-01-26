@@ -502,9 +502,19 @@ class Guy {
     this.resetHorniness(mate);
     guys.push(child);
 
-    if (mutationHappened && volumeOn) {
-        mutationBeep.currentTime = 0;
-        mutationBeep.play().catch(() => {});
+    if (volumeOn) {
+        birthBeep.currentTime = 0;
+        birthBeep.play()
+        .then(() => {
+            if (mutationHappened) {
+                mutationBeep.currentTime = 0;
+                mutationBeep.play().catch(() => {});
+            }
+        })
+        .catch(() => {});
+    }
+
+    if (mutationHappened) {
         child.halo = 1;
         child.haloWasSetAutomatically = 1;
     }
@@ -612,6 +622,15 @@ class Guy {
 
     age() {
         return getTimeIndex() - this.birthday;
+    }
+
+    playDeathBeep() {
+        if (volumeOn) {
+            deathBeep.currentTime = 0;
+            deathBeep.play().catch(() => {});
+        }
+        
+        this.deathNoisePlayed = 1;
     }
 
   static whoIsDominant(a, b) {

@@ -5,7 +5,7 @@ class Config {
             colorVar2: '#99ccaa'
         };
         this.guys = {
-            mutationRate: data.hum,
+            mutationRate: data.hum * 2,
             size: 10,
             colors: {
                 dead: '#272a3aff',
@@ -55,7 +55,6 @@ class Config {
 
 /**
  * some traits I want to add:
- * resolute: once it chooses a food or mate target it does not change until it eats / mates, or target is invalidated
  * killsCompetitors: if a guy has chosen a mate and it isn't mutual, but its target mate has other potential mates, it kills is competitors
  * selfDefense: cannot be killed by by a killsCompetitors guy
  * selfDefensePlus: kills the killer first
@@ -64,9 +63,12 @@ class Config {
  * avoidDanger: if you sense a guy who is a carnivor or competitor killer, you run away
  * aposematic: make other guys think you will kill them so they avoid you
  * monogamous: once you mate with a guy, you stick with that guy and mate again when the chance arrives
- * preference: pick a preference from the list of heritable traits
- * preferenceDirection: more of that trait or less
+ * moves away from baby trait
  * 
  * to implement:
  * when a guy dies with food in its stomach its body becomes food as it decays
+ * a button to hide pinging
+ * space bar for pause
+ * maybe when paused and a guy is clicked, let it run for 1 frame so that the guy gets highlighted
+ * if preference mutates, force a choice other than null. ie, add an override to the getPreference() function
  */
