@@ -131,7 +131,7 @@ class Util {
         return color(hue, sat, bri);
     }
 
-    randomTargetWithinBounds(pos) {
+    randomVectorTargetWithinBounds(pos) {
     let x, y;
 
     while (true) {
@@ -150,6 +150,6 @@ class Util {
         }
     }
 
-    return { x, y };
+    return createVector(x, y);
 }
 }

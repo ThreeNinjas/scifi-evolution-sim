@@ -568,8 +568,7 @@ class Guy {
 
     for (let guy of [this, mate]) {
         if (guy.movesAwayFromBaby) {
-            guy.target.x = util.randomTargetWithinBounds(guy.pos);
-            console.log(guy.target);
+            guy.target = util.randomVectorTargetWithinBounds(guy.pos);
             guy.isSeeking = 1;
             guy.seekPriority = 'baby';
             guy.seek();
