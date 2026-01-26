@@ -2,7 +2,7 @@ class Forage {
     constructor(traits) {
         this.maxX = traits.maxX;
         this.maxY = traits.maxY;
-        this.chanceOfFood = traits.chanceOfFood;
+        this.chanceOfFood = this.calculateChanceOfFood();
         this.replenishRate = traits.replenishRate;
 
         this.replenishProgress = 0;
@@ -27,8 +27,11 @@ class Forage {
         }
     }
 
-    replenish() {
-        
+    calculateChanceOfFood() {
+        let start = (Math.floor(data.hum) - data.totalDryDays);
+        let chanceOfFood = start + (start * data.totalRainfall/100);
+        chanceOfFood -= data.daysSinceRain;
+        return Math.abs(chanceOfFood);
     }
 
     drawMe() {

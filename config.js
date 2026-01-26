@@ -79,6 +79,7 @@ class Config {
  * a 'family tree' mode, where you click on a guy and it highlights its entire lineage.
  * 
  * to implement:
+ * MAKE AMOUNT OF FOOD DEPENDANT UPON HOW MUCH ITS RAINED RECENTLY
  * when a guy dies with food in its stomach its body becomes food as it decays
  * a button to hide pinging
  * space bar for pause

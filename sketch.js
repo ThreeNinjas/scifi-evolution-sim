@@ -379,7 +379,6 @@ async function loadWeather() {
     forage = new Forage({
         maxX: config.bounds.x.max,
         maxY: config.bounds.y.max,
-        chanceOfFood: Math.floor(data.hum),
         replenishRate: Guy.getGlobalDigestionRate(data) * 1.005
     });
 
