@@ -4,11 +4,11 @@ let numberOfGuys = params.get('guys') || null;
 let globalMaxGuys = 0;
 let font;
 
-const mutationBeep = new Audio('/assets/computer_work_beep.mp3');
+const mutationBeep = new Audio('/assets/alert12.mp3');
 mutationBeep.preload = 'auto';
 
-const deathBeep = new Audio('/assets/computerbeep_39.mp3');
-deathBeep.preload = 'auto';
+const prefBeep = new Audio('/assets/computerbeep_39.mp3');
+prefBeep.preload = 'auto';
 
 let util = new Util();
 let c; //maybe rename config below later....
@@ -61,7 +61,8 @@ let automatedHistogramSelection = true;
 let volumeIcon;
 let muteIcon;
 let iconsReady;
-let volumeOn;
+let volumeOn = false;
+let paused = false;
 
 /*
 TODO: move the actually populating of guys out of loadWeather and into guys.populateGuys();
@@ -73,6 +74,7 @@ TODO: visual indicators of certain traits
 async function setup() { 
     font = await loadFont("/assets/Antonio-Regular.ttf");
     colorMode(HSB, 360, 100, 100);
+    
     frameRate(60);
     createCanvas(400, 800);
     background(0);
@@ -112,7 +114,6 @@ function draw() {
     for (let guy of guys) {
         if (getTimeIndex() - guy.birthday >= guy.lifeSpan || guy.offspringCount > guy.childrenAllowed) {
             guy.dead = 1;
-            guy.halo = 1;
 
             if (!guy.deathNoisePlayed) {
                 stats.guys--;
@@ -218,6 +219,11 @@ function draw() {
             if (guy.digestionProgress >= 1) {
                 guy.stomachContents -= forage.foodSize;
                 guy.digestionProgress -= 1;
+
+                if (guy.haloWasSetAutomatically) {
+                    guy.halo = 0;
+                    guy.haloWasSetAutomatically = 0;
+                }
             }
         } else {
             if (guy.digestionProgress >= 1 && guy.dead == 0 && guy.stomachContents == 0) {
@@ -288,7 +294,7 @@ function mousePressed() {
 
         volumeOn = !volumeOn;
 
-        let sounds = [mutationBeep];
+        let sounds = [mutationBeep, prefBeep];
         for (let sound of sounds) { 
             sound.play().then(() => {
                 sound.pause();
@@ -297,6 +303,21 @@ function mousePressed() {
         }
     }
     
+    //width - 45, height/2 + 30
+    if (
+        mouseX >= width - 45 &&
+        mouseX <= (width - 45) + 10 &&
+        mouseY >= height/2 + 30 &&
+        mouseY <= (height/2 + 30) + 10
+        ) {
+            paused = !paused;
+
+            if (paused) {
+                noLoop();
+            } else {
+                loop();
+            }
+        }
 
     for (const [i, box] of Object.entries(histogramButtonBoxes)) {
         if (
@@ -316,7 +337,7 @@ function mousePressed() {
             
             if (guy.halo) {
                 console.log(guy, guy.calculateSensePerim(), guy.isHungry(), guy.isHorny);
-                console.log(guy, `sensePerim: ${guy.calculateSensePerim()}, hungry: ${guy.isHungry()}, horny: ${guy.isHorny}`);
+                console.log(`sensePerim: ${guy.calculateSensePerim()}, hungry: ${guy.isHungry()}, horny: ${guy.isHorny}`);
                 console.log(`size: ${guy.size}, adultSize: ${guy.adultSize}, sexually mature: ${guy.isSexuallyMature()}`);
             }
         }
@@ -332,6 +353,7 @@ async function loadWeather() {
 
     console.log(data);
     c = new Config();
+    c.generateOrbiterColors();
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 
@@ -565,6 +587,25 @@ function drawGraphs() {
         }
         noTint();
     }
+
+    push();
+        //translate(width - 45, height/2 + 30);
+        stroke(c.guys.colors.hungry);
+        fill(c.guys.colors.hungry);
+        if (!paused) {
+            rect(width - 45, height/2 + 30, 10, 10);
+            stroke('black');
+            fill('black');
+            rect(width - 41, height/2 + 30, 2, 10);
+        } else {
+            triangle(
+                width - 45,          height/2 + 30,
+                width - 45,          height/2 + 40,
+                width - 35,          height/2 + 35
+            );
+        }
+        
+    pop();
     
   push();
   let startingY = (height / 2) + 20;

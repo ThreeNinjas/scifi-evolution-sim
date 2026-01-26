@@ -48,6 +48,7 @@ class Guy {
     this.decayProgress = 0;
     this.isHorny = 0;
     this.halo = 0;
+    this.haloWasSetAutomatically = 0;
     this.isSeeking = 0;
     this.digestionProgress = 0;
     this.starvationProgress = 0;
@@ -198,8 +199,7 @@ class Guy {
         let orbiterSize = this.size * 0.2 >= 2 ? this.size * 0.2 : 2;
         translate(this.pos.x, this.pos.y);
         strokeWeight(orbiterSize);
-        const col = this.orbiters[i].color;
-        stroke(red(col), green(col), blue(col), alpha(col));
+        stroke(this.orbiters[i].color);
 
         let r = this.size * this.orbiters[i].rMultiplier;
         let x = r * cos(this.orbiters[i].angle);
@@ -377,14 +377,16 @@ class Guy {
 
     console.log(`${this.preference}, ${this.preferenceDirection} || ${bestGuy[this.preference]}`);
     console.log(this.potentialMates.map(g => g[this.preference]));
+    
     this.halo = 1;
+    this.haloWasSetAutomatically = 1;
     if (bestGuy) {
         bestGuy.halo = 1;
     }
 
     if (volumeOn) {
-        deathBeep.currentTime = 0;
-        deathBeep.play().catch(() => {});
+        prefBeep.currentTime = 0;
+        prefBeep.play().catch(() => {});
     }
 
     return bestGuy;
@@ -503,6 +505,8 @@ class Guy {
     if (mutationHappened && volumeOn) {
         mutationBeep.currentTime = 0;
         mutationBeep.play().catch(() => {});
+        child.halo = 1;
+        child.haloWasSetAutomatically = 1;
     }
     return;
 }
