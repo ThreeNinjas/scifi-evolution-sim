@@ -5,7 +5,7 @@ class Config {
             colorVar2: '#99ccaa'
         };
         this.guys = {
-            mutationRate: data.hum * 2,
+            mutationRate: data.hum * 3,
             size: 10,
             colors: {
                 dead: '#272a3aff',

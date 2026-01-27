@@ -97,6 +97,14 @@ async function setup() {
     
     frameRate(60);
     createCanvas(400, 800);
+
+    boundary = new Rectangle(
+        width / 2,
+        10 + (height / 4),
+        (width - 20) / 2,
+        (height / 2) / 2
+    );
+
     background(0);
     drawEnvironment();
     loadWeather();
@@ -167,35 +175,40 @@ function draw() {
             }
         }
 
-        for (let otherGuy of guys) {
-            if (otherGuy === guy || guy.seekPriority == 'baby') continue;
-            if (guy.senses(otherGuy) && guy.isHorny && otherGuy.isHorny && !guy.isSeeking && !guy.mate) {
-                guy.potentialMates.push(otherGuy);
-                guy.mateTimer++;
+        //hey, there's no need to check the position of every other guy when all you want to find is another currently horny guy!
+        //just like real life!
+        if (guy.isHorny) {
+            const hornyGuys = guys.filter(g => g.isHorny);
+            for (let otherGuy of hornyGuys) {
+                if (otherGuy === guy || guy.seekPriority == 'baby') continue;
+                if (guy.senses(otherGuy) && !guy.isSeeking && !guy.mate) {
+                    guy.potentialMates.push(otherGuy);
+                    guy.mateTimer++;
 
-                if (!guy.isSeeking && guy.mateTimer > 100) {
-                    //guy.mate = util.closestGuyByColor(guy.color, guy.potentialMates);
-                    guy.mate = guy.chooseMate(guy.color, guy.potentialMates);
-                    if (guy.mate) {
-                        guy.target.x = guy.mate.pos.x;
-                        guy.target.y = guy.mate.pos.y;
-                        guy.isSeeking = 1;
+                    if (!guy.isSeeking && guy.mateTimer > 100) {
+                        //guy.mate = util.closestGuyByColor(guy.color, guy.potentialMates);
+                        guy.mate = guy.chooseMate(guy.color, guy.potentialMates);
+                        if (guy.mate) {
+                            guy.target.x = guy.mate.pos.x;
+                            guy.target.y = guy.mate.pos.y;
+                            guy.isSeeking = 1;
+                        }
+                        
+                        guy.mateTimer = 0;
                     }
-                    
-                    guy.mateTimer = 0;
-                }
-            
-                if (debug) {
-                    push();
-                        textSize(10);
-                        fill('white');
-                        text('!!', guy.pos.x, guy.pos.y+20);
-                        text('!!', otherGuy.pos.x, otherGuy.pos.y+20);
-                    pop();
+                
+                    if (debug) {
+                        push();
+                            textSize(10);
+                            fill('white');
+                            text('!!', guy.pos.x, guy.pos.y+20);
+                            text('!!', otherGuy.pos.x, otherGuy.pos.y+20);
+                        pop();
+                    }
                 }
             }
         }
-
+        
         for (let mt of guy.potentialMates) {
             guy.arrow(mt);
         }
