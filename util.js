@@ -132,24 +132,53 @@ class Util {
     }
 
     randomVectorTargetWithinBounds(pos) {
-    let x, y;
+        const minX = config.bounds.x.min;
+        const maxX = config.bounds.x.max;
+        const minY = config.bounds.y.min;
+        const maxY = config.bounds.y.max;
 
-    while (true) {
-        x = pos.x + util.randomNumber(10, data.temp);
-        y = pos.y + util.randomNumber(10, data.temp);
+        const minDist = 10;
+
+        const xMin = Math.max(minX, pos.x - data.temp);
+        const xMax = Math.min(maxX, pos.x + data.temp);
+        const yMin = Math.max(minY, pos.y - data.temp);
+        const yMax = Math.min(maxY, pos.y + data.temp);
 
         if (
-            Math.abs(x - pos.x) >= 10 &&
-            Math.abs(y - pos.y) >= 10 &&
-            x >= c.bounds.x.min &&
-            x <= c.bounds.x.max &&
-            y >= c.bounds.y.min &&
-            y <= c.bounds.y.max
+            xMax - xMin < minDist * 2 ||
+            yMax - yMin < minDist * 2
         ) {
-            break;
+            return createVector(
+                constrain(pos.x + random([-1, 1]) * minDist, minX, maxX),
+                constrain(pos.y + random([-1, 1]) * minDist, minY, maxY)
+            );
         }
+
+        let x, y;
+        do {
+            x = random(xMin, xMax);
+            y = random(yMin, yMax);
+        } while (
+            Math.abs(x - pos.x) < minDist &&
+            Math.abs(y - pos.y) < minDist
+        );
+
+        return createVector(x, y);
     }
 
-    return createVector(x, y);
-}
+    calculateMean(values) {
+        return d3.mean(values);
+    }
+
+    calculateMedian(values) {
+        return d3.median(values);
+    }
+
+    calculatePercentiles(values, percentile) {
+        return d3.quantile(values, percentile/100);
+    }
+
+    calculateStdDev(values) {
+        return d3.deviation(values);
+    }
 }

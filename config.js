@@ -86,3 +86,36 @@ class Config {
  x maybe when paused and a guy is clicked, let it run for 1 frame so that the guy gets highlighted
  * if preference mutates, force a choice other than null. ie, add an override to the getPreference() function
  */
+
+
+ /**
+  * SOmething to consider: a standalone p5 sketch whose sole job is to display the data compiled by this sketch's visualizer.
+  * 
+  * 
+  * 
+// SENDER (sim sketch) — run on http://localhost:3000
+const dashboard = window.open('http://localhost:4000', 'lcars');
+
+function sendSnapshot(snapshotObj) {
+  if (!dashboard) return;
+  dashboard.postMessage(
+    { type: 'SIM_SNAPSHOT', payload: snapshotObj },
+    'http://localhost:4000'
+  );
+}
+*
+*
+*
+// RECEIVER (viewer sketch) — run on http://localhost:4000
+window.addEventListener('message', (event) => {
+  if (event.origin !== 'http://localhost:3000') return;
+  const msg = event.data;
+  if (!msg || msg.type !== 'SIM_SNAPSHOT') return;
+
+  const snapshot = msg.payload;
+  console.log('snapshot:', snapshot);
+
+  // update viewer state here
+});
+
+*/

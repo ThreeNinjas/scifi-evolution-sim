@@ -412,12 +412,7 @@ class Guy {
         }
         
     }
-
-    console.log(`${this.preference}, ${this.preferenceDirection} || ${bestGuy[this.preference]}`);
-    console.log(this.potentialMates.map(g => g[this.preference]));
     
-    this.halo = 1;
-    this.haloWasSetAutomatically = 1;
     if (bestGuy) {
         bestGuy.halo = 1;
     }
@@ -714,8 +709,13 @@ class Guy {
     return false;
   }
 
+  //0.00042206896551724135 
+  // - 
+  // -0.05957793103448276
+
+
   static getGlobalDigestionRate() {
-    return data.temp / (data.hum * 750);
+    return data.temp / (data.hum * 750);;
   }
 
   static getGlobalSenseDistance(size) {

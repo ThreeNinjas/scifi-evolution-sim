@@ -4,6 +4,8 @@ let numberOfGuys = params.get('guys') || null;
 let globalMaxGuys = 0;
 let font;
 
+let viz;
+
 let sounds = {
     mutationBeep: new Audio('/assets/alert12.mp3'),
     prefBeep: new Audio('/assets/computerbeep_39.mp3'),
@@ -13,10 +15,11 @@ let sounds = {
 
 for (let sound of Object.values(sounds)) {
     sound.preload = 'auto';
-    sound.volume = 0.5;
+    sound.volume = 0.25;
 }
 
 sounds.deathBeep.volume = 0.125;
+sounds.birthBeep.volume = 0.125;
 
 // const mutationBeep = new Audio('/assets/alert12.mp3');
 // mutationBeep.preload = 'auto';
@@ -56,6 +59,8 @@ const DOWNSAMPLE_RATE = 2;
 //environmentally dependent variables
 let DIGESTION_RATE_PER_FRAME = 0;
 let SENSE_DISTANCE_MULTIPLIER = null;
+
+let viewerOn = false;
 
 const serverURL =
     window.location.hostname === "127.0.0.1" ? "http://localhost:3000/" : "http://199.19.74.165:3000/";
@@ -97,13 +102,6 @@ async function setup() {
     
     frameRate(60);
     createCanvas(400, 800);
-
-    boundary = new Rectangle(
-        width / 2,
-        10 + (height / 4),
-        (width - 20) / 2,
-        (height / 2) / 2
-    );
 
     background(0);
     drawEnvironment();
@@ -322,9 +320,18 @@ function draw() {
     drawHistogram(0);
 
     drawBars();
+
+    if (frameCount % 1000 === 0) {
+        viz.takeSnapshot(guys);
+        //console.log(viz);
+    }
+
+    if (viewerOn) {
+        showViz();
+    }
 }
 
-function mousePressed() { 
+function mousePressed() {
     //mute button
     if (
         mouseX >= width - 30 &&
@@ -355,6 +362,15 @@ function mousePressed() {
                 loop();
             }
         }
+
+    //viz button
+    //width - 60, height/2 + 100
+    if (
+        dist(mouseX, mouseY, width - 60, height/2 + 100) <= 10 / 2
+
+    ) {
+        viewerOn = !viewerOn;
+    }
 
     //historgram switcher
     for (const [i, box] of Object.entries(histogramButtonBoxes)) {
@@ -397,6 +413,11 @@ async function loadWeather() {
     console.log(data);
     c = new Config();
     c.generateOrbiterColors();
+
+    viz  = new Visualization();
+    console.log(viz.index);
+    console.log(viz.experiment);
+
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 
@@ -405,7 +426,6 @@ async function loadWeather() {
     forage = new Forage({
         maxX: config.bounds.x.max,
         maxY: config.bounds.y.max,
-        replenishRate: Guy.getGlobalDigestionRate(data) * 1.005
     });
 
     frameRate(data.temp);
@@ -420,6 +440,9 @@ async function loadWeather() {
             return guy;
         });
     globalMaxGuys = guys.length;
+
+    viz.takeSnapshot(guys);
+
     for (const guy of guys) {
         guy.drawMe();
     }
@@ -618,8 +641,27 @@ function histogramButtons() {
   pop();
 }
 
+function showViz() {
+    push();
+        stroke(c.guys.colors.horny);
+        fill('black');
+
+        translate(10, 100);
+        rect(0, 0, width-20, 100);
+
+        beginShape();
+            for (let i = 0; i < viz.experiment.samples['velLimit'].length; i++) {
+                let x = map(i, 0, viz.experiment.samples['velLimit'].length - 1, 0, width-20);
+                let y = map(viz.experiment.samples['velLimit'][i].mean, 0, Math.max(...viz.experiment.samples['velLimit'].map(d => d.mean)), 100, 0);
+                vertex(x, y);
+            }
+        endShape();
+    pop();
+}
+
 
 function drawGraphs() {
+    //mute
     if (iconsReady) {
         let  y = height/2 + 95;
         tint(255, 255, 255, 128);
@@ -631,6 +673,7 @@ function drawGraphs() {
         noTint();
     }
 
+    //play / pause
     push();
         //translate(width - 45, height/2 + 30);
         stroke(c.guys.colors.hungry);
@@ -650,6 +693,15 @@ function drawGraphs() {
         }
         
     pop();
+
+    //visualizer
+    if (viz.experiment.samples['velLimit'].length > 2) {
+        push();
+        stroke(c.guys.colors.hungry);
+        fill(c.guys.colors.hungry);
+        circle(width - 60, height/2 + 100, 10);
+        pop();
+    }
     
   push();
   let startingY = (height / 2) + 20;
@@ -878,6 +930,5 @@ function drawBars() {
                 rect(0, 54 + (20 - 5) / 2, percentSexuallyMature, 5);
             }
         pop();
-    }
-    
+    }   
 }
