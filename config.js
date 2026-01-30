@@ -13,6 +13,7 @@ class Config {
                 hornyVar2: '#ff3cd1aa',
                 hornyVar3: '#f25ecfff',
                 hungry: '#339cccaa',
+                hungryVar2: '#339cccff',
                 gold: '#ffaa00',
                 orbiters: []
             },
@@ -74,16 +75,16 @@ class Config {
  * avoidDanger: if you sense a guy who is a carnivor or competitor killer, you run away
  * aposematic: make other guys think you will kill them so they avoid you
  * monogamous: once you mate with a guy, you stick with that guy and mate again when the chance arrives
- x moves away from baby trait
+
  * A way to visualize the current population, what traits are prevalent, a history of their prevalance, etc
  * a 'family tree' mode, where you click on a guy and it highlights its entire lineage.
+ * option to use Perlin noise instead of randomly incrementing x and y
  * 
- * to implement:
- x MAKE AMOUNT OF FOOD DEPENDANT UPON HOW MUCH ITS RAINED RECENTLY
- x when a guy dies with food in its stomach its body becomes food as it decays
+ * 
+ * features to implement:
  * a button to hide pinging
  * space bar for pause
- x maybe when paused and a guy is clicked, let it run for 1 frame so that the guy gets highlighted
+
  * if preference mutates, force a choice other than null. ie, add an override to the getPreference() function
  */
 
@@ -93,29 +94,8 @@ class Config {
   * 
   * 
   * 
-// SENDER (sim sketch) — run on http://localhost:3000
-const dashboard = window.open('http://localhost:4000', 'lcars');
-
-function sendSnapshot(snapshotObj) {
-  if (!dashboard) return;
-  dashboard.postMessage(
-    { type: 'SIM_SNAPSHOT', payload: snapshotObj },
-    'http://localhost:4000'
-  );
-}
-*
-*
-*
-// RECEIVER (viewer sketch) — run on http://localhost:4000
-window.addEventListener('message', (event) => {
-  if (event.origin !== 'http://localhost:3000') return;
-  const msg = event.data;
-  if (!msg || msg.type !== 'SIM_SNAPSHOT') return;
-
-  const snapshot = msg.payload;
-  console.log('snapshot:', snapshot);
-
-  // update viewer state here
-});
-
+x moves away from baby trait
+ x maybe when paused and a guy is clicked, let it run for 1 frame so that the guy gets highlighted
+  x MAKE AMOUNT OF FOOD DEPENDANT UPON HOW MUCH ITS RAINED RECENTLY
+ x when a guy dies with food in its stomach its body becomes food as it decays
 */

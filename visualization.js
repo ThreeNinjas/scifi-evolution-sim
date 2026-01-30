@@ -1,5 +1,7 @@
 class Visualization {
     constructor() {
+        this.houseKeeping();
+
         this.indexName = "experiments:index";
         this.index = JSON.parse(localStorage.getItem(this.indexName)) || this.createIndex();
         this.index.currentId = this.uniqueID();
@@ -12,6 +14,7 @@ class Visualization {
         this.save(this.index, this.indexName);
 
         this.experiment = this.createExperiment();
+        this.mutationsBucket = [];
     }
 
     createIndex() {
@@ -31,12 +34,14 @@ class Visualization {
     createExperiment() {
         let experiment = {
             id: this.index.currentId,
-            samples: {}
+            samples: {},
+            mutations: {}
         }
 
         for (let types of Object.keys(c.guys.traits)) { 
             for (let traits of c.guys.traits[types]) { 
                 experiment.samples[traits] = [];
+                experiment.mutations[traits] = [];
             }
         }
 
@@ -63,6 +68,7 @@ class Visualization {
         for (let trait of c.guys.traits.value) {
             let values = guys.map(g => g[trait]);
             this.experiment.samples[trait].push({
+                t,
                 max: Math.max(...values),
                 min: Math.min(...values),
                 mean: util.calculateMean(values),
@@ -80,6 +86,19 @@ class Visualization {
 
     emptyStorage() {
         localStorage.clear();
+    }
+
+    houseKeeping() {
+        let total = 0;
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+                total += localStorage[key].length;
+            }
+        }
+
+        if (total > 4000000) {
+            this.emptyStorage();
+        }
     }
 }
 

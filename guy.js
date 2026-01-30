@@ -5,25 +5,37 @@ class Guy {
     this.id = NEXT_ID++;
 
     let globalDigestionRate = Guy.getGlobalDigestionRate();
-    
+
     //heritable - value
-    this.adultSize = constrain(Math.abs(Math.floor(util.randomNormal(12, data.clouds/10))), 5, 100);
-    this.growthRate = Math.abs(util.randomNormal(globalDigestionRate - (globalDigestionRate * (data.clouds/100)), 0.0005));
+    this.adultSize = constrain(
+      Math.abs(Math.floor(util.randomNormal(12, data.clouds / 10))),
+      5,
+      100
+    );
+    this.growthRate = Math.abs(
+      util.randomNormal(
+        globalDigestionRate - globalDigestionRate * (data.clouds / 100),
+        0.0005
+      )
+    );
     this.color = util.randomColor(data.temp, data.hum);
     this.senseDistanceMultiplier = util.randomNormal(1, 0.5);
     this.digestionRate = this.getDigestionRate();
     this.lifeSpan = util.randomNormal(data.temp, data.vis);
-    this.childrenAllowed = Math.abs(Math.floor(util.randomNormal(data.temp / 5, data.vis)));
+    this.childrenAllowed = Math.abs(
+      Math.floor(util.randomNormal(data.temp / 5, data.vis))
+    );
 
     //heritable - special cases
     //there's a 1 in temperature chance that guy will have a preference of some random trait
     this.preference = Guy.getPreference();
     this.preferenceDirection = Guy.getPreferenceDirection();
-    
+
     //heritable - boolean
     this.hasDominantColor = util.chance(data.temp * 0.25);
     this.overRideMove = util.chance(data.hum) ? 0 : 1;
-    this.overRideMoveIntermittent = util.chance(data.hum) && !this.overRideMove ? 0 : 1;
+    this.overRideMoveIntermittent =
+      util.chance(data.hum) && !this.overRideMove ? 0 : 1;
     this.smartFoodFinder = util.coinToss(0, 1);
     this.resolute = util.chance(10); //if this is true, guy won't change its mind about food targets
     this.movesAwayFromBaby = util.chance(data.temp);
@@ -33,12 +45,15 @@ class Guy {
     this.noise = p5.Vector.random2D().setMag(0.1);
     this.noiseRotate = util.randomNormal(50, 10);
     this.noiseMagnitude = util.randomNormalBounded(1, 1, 0, 10); //util.rightSkew(0.5, 5, data.clouds > 0 ? map(data.clouds, 0, 100, 0.1, 3) : 1);
-    this.seekAccel = util.randomNormal(0.5, data.vis); 
+    this.seekAccel = util.randomNormal(0.5, data.vis);
 
     //vectors
-    this.pos = createVector(util.randomNumber(config.bounds.x.min, config.bounds.x.max), util.randomNumber(config.bounds.y.min, config.bounds.y.max));
+    this.pos = createVector(
+      util.randomNumber(config.bounds.x.min, config.bounds.x.max),
+      util.randomNumber(config.bounds.y.min, config.bounds.y.max)
+    );
     this.vel = p5.Vector.random2D();
-    this.acc = createVector(0,0);
+    this.acc = createVector(0, 0);
 
     //acquired / stative
     this.size = 5 >= this.adultSize * 0.9 ? this.adultSize * 0.6 : 5;
@@ -59,173 +74,183 @@ class Guy {
     this.offspringCount = 0;
     this.deathNoisePlayed = 0;
 
-    this.target = createVector(0,0);
+    this.target = createVector(0, 0);
     this.seekPriority = null; //food|mate|baby
-    
+
     this.potentialMates = [];
     this.mateTimer = 0;
     this.mate = undefined;
-    this.mutationPackage = [];   
+    this.mutationPackage = [];
   }
 
   drawMe() {
     push();
-        if (this.orbiters.length > 0) {
-            this.orbiter();
-        }
-        
-      stroke(!this.dead ? this.color : c.guys.colors.dead);
+    if (this.orbiters.length > 0) {
+      this.orbiter();
+    }
 
-      
-      fill(!this.dead ? this.color : c.guys.colors.dead);
+    stroke(!this.dead ? this.color : c.guys.colors.dead);
+
+    fill(!this.dead ? this.color : c.guys.colors.dead);
+    circle(this.pos.x, this.pos.y, this.size);
+
+    if (this.isHorny == 1) {
+      strokeWeight(0.5);
+      stroke("#cc2233");
+      noFill();
       circle(this.pos.x, this.pos.y, this.size);
+    }
 
-      if (this.isHorny == 1) {
-        strokeWeight(0.5);
-        stroke('#cc2233');
-        noFill();
-        circle(this.pos.x, this.pos.y, this.size);
-      }
-
-      if (this.stomachContents > 0) {
-        stroke(c.forage.color);
-        fill(c.forage.color);
-        circle(this.pos.x, this.pos.y+1, this.stomachContents);
-      }
-      if (!this.dead && this.senseDistance >0  && 
-            ((this.isHungry() && !this.isSeeking) || (this.isHungry() && this.target.x == 0)|| (this.isHorny && !this.isSeeking))) {
-        drawPing(this);
-      }
+    if (this.stomachContents > 0) {
+      stroke(c.forage.color);
+      fill(c.forage.color);
+      circle(this.pos.x, this.pos.y + 1, this.stomachContents);
+    }
+    if (
+      !this.dead &&
+      this.senseDistance > 0 &&
+      ((this.isHungry() && !this.isSeeking) ||
+        (this.isHungry() && this.target.x == 0) ||
+        (this.isHorny && !this.isSeeking))
+    ) {
+      drawPing(this);
+    }
     pop();
 
     if (this.halo == 1) {
-        push();
-        stroke('#ffdf27ff');
-            noFill();
-            circle(this.pos.x, this.pos.y, this.size * 2);
-        pop();
-        // push();
-        //     stroke('#ffdf27ff');
-        //     noFill();
-        //     circle(this.pos.x, this.pos.y, this.size * 2);
-        //     textSize(14);
-        //     let startY = this.pos.y + (this.size * 2);
-        //     let haloData = [];
-        //     if (this.mutationPackage.length > 0) {
-        //         for (let datum of this.mutationPackage) {
-        //             haloData.push(`::${datum.trait}::`);
-        //             haloData.push(`A: ${datum.mom}`);
-        //             haloData.push(`B: ${datum.dad}`);
-        //             haloData.push(`C: ${datum.baby}`);
-        //         }
-        //     } else {
-        //         haloData = [
-        //             `DP:${this.digestionProgress.toFixed(4)}`,
-        //             `SP:${this.calculateSensePerim().toFixed(4)}`,
-        //             `V:${this.vel.mag().toFixed(4)}`,
-        //             `VL:${this.velLimit.toFixed(4)}`, 
-        //             `NM:${this.noiseMagnitude.toFixed(4)}`,
-        //             `SA:${this.seekAccel.toFixed(4)}`,
-        //             `${this.overRideMove}, ${this.overRideMoveIntermittent}, ${this.resolute}`,
-        //         ];
-        //     }
+      push();
+      stroke("#ffdf27ff");
+      noFill();
+      circle(this.pos.x, this.pos.y, this.size * 2);
+      pop();
+      // push();
+      //     stroke('#ffdf27ff');
+      //     noFill();
+      //     circle(this.pos.x, this.pos.y, this.size * 2);
+      //     textSize(14);
+      //     let startY = this.pos.y + (this.size * 2);
+      //     let haloData = [];
+      //     if (this.mutationPackage.length > 0) {
+      //         for (let datum of this.mutationPackage) {
+      //             haloData.push(`::${datum.trait}::`);
+      //             haloData.push(`A: ${datum.mom}`);
+      //             haloData.push(`B: ${datum.dad}`);
+      //             haloData.push(`C: ${datum.baby}`);
+      //         }
+      //     } else {
+      //         haloData = [
+      //             `DP:${this.digestionProgress.toFixed(4)}`,
+      //             `SP:${this.calculateSensePerim().toFixed(4)}`,
+      //             `V:${this.vel.mag().toFixed(4)}`,
+      //             `VL:${this.velLimit.toFixed(4)}`,
+      //             `NM:${this.noiseMagnitude.toFixed(4)}`,
+      //             `SA:${this.seekAccel.toFixed(4)}`,
+      //             `${this.overRideMove}, ${this.overRideMoveIntermittent}, ${this.resolute}`,
+      //         ];
+      //     }
 
-            // for (let datum of haloData) {
-            //     //text(datum, this.pos.x-10, startY);
-            //     startY += 14;
-            // }
-            // text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
-            // text(`SP:${this.calculateSensePerim().toFixed(4)}`, this.pos.x-10, (this.pos.y + this.size * 2) + 14);
-            // text(`V:${this.vel.mag().toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 28);
-            // text(`VL:${this.velLimit.toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 42);
-            // text(`${this.overRideMove}, ${this.overRideMoveIntermittent}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 56);
+      // for (let datum of haloData) {
+      //     //text(datum, this.pos.x-10, startY);
+      //     startY += 14;
+      // }
+      // text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
+      // text(`SP:${this.calculateSensePerim().toFixed(4)}`, this.pos.x-10, (this.pos.y + this.size * 2) + 14);
+      // text(`V:${this.vel.mag().toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 28);
+      // text(`VL:${this.velLimit.toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 42);
+      // text(`${this.overRideMove}, ${this.overRideMoveIntermittent}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 56);
 
-            // if (this.isSeeking == 1) {
-            //     line(this.pos.x, this.pos.y, this.target.x, this.target.y);
-            // }
-        //pop();
+      // if (this.isSeeking == 1) {
+      //     line(this.pos.x, this.pos.y, this.target.x, this.target.y);
+      // }
+      //pop();
     }
 
     if (debug) {
-        push();
-            fill('white');
-            textSize(10);
-            text(`${this.id},${this.calculateSensePerim()}`, this.pos.x - 10, this.pos.y);
-        pop();
+      push();
+      fill("white");
+      textSize(10);
+      text(
+        `${this.id},${this.calculateSensePerim()}`,
+        this.pos.x - 10,
+        this.pos.y
+      );
+      pop();
 
-        push();
-        noFill();
-        stroke('white')
-        circle(this.pos.x, this.pos.y, this.calculateSensePerim());
-        pop();
-    }     
+      push();
+      noFill();
+      stroke("white");
+      circle(this.pos.x, this.pos.y, this.calculateSensePerim());
+      pop();
+    }
   }
 
   arrow(target) {
     const isGuy = target && target.pos !== undefined;
 
     if (isGuy) {
-        this.target.x = target.pos.x;
-        this.target.y = target.pos.y;
+      this.target.x = target.pos.x;
+      this.target.y = target.pos.y;
 
-        stroke(this.color);
-        line(this.pos.x, this.pos.y, target.pos.x, target.pos.y);
-    } 
+      stroke(this.color);
+      line(this.pos.x, this.pos.y, target.pos.x, target.pos.y);
+    }
 
     const d = p5.Vector.sub(this.target, this.pos);
     const angle = atan2(d.y, d.x);
     const sourceRadius = this.size / 2;
     const padding = 4;
     const tipDistanceFromSource = sourceRadius + padding;
-    const back = createVector(d.x, d.y).setMag(dist(this.pos.x, this.pos.y, this.target.x, this.target.y) - tipDistanceFromSource);
+    const back = createVector(d.x, d.y).setMag(
+      dist(this.pos.x, this.pos.y, this.target.x, this.target.y) -
+        tipDistanceFromSource
+    );
     const tip = p5.Vector.sub(this.target, back);
 
     push();
-        if (isGuy) {
-            stroke(c.guys.colors.horny);
-        } else {
-            stroke(c.guys.colors.hungry);
-        }
-        
-        strokeWeight(2);
-        translate(tip.x, tip.y);
-        rotate(angle);
-        if (isGuy) {
-            line(0, 0, -4, -6);
-            line(0, 0, -4, 6);
-        } else {
-            line(0, 0, -4, -4);
-            line(0, 0, -4, 4);
-        }
+    if (isGuy) {
+      stroke(c.guys.colors.horny);
+    } else {
+      stroke(c.guys.colors.hungry);
+    }
+
+    strokeWeight(2);
+    translate(tip.x, tip.y);
+    rotate(angle);
+    if (isGuy) {
+      line(0, 0, -4, -6);
+      line(0, 0, -4, 6);
+    } else {
+      line(0, 0, -4, -4);
+      line(0, 0, -4, 4);
+    }
     pop();
   }
 
   orbiter() {
     for (let i = 0; i < this.orbiters.length; i++) {
-        push();
-        let orbiterSize = this.size * 0.2 >= 2 ? this.size * 0.2 : 2;
-        translate(this.pos.x, this.pos.y);
-        strokeWeight(orbiterSize);
-        stroke(this.orbiters[i].color);
+      push();
+      let orbiterSize = this.size * 0.2 >= 2 ? this.size * 0.2 : 2;
+      translate(this.pos.x, this.pos.y);
+      strokeWeight(orbiterSize);
+      stroke(this.orbiters[i].color);
 
-        let r = this.size * this.orbiters[i].rMultiplier;
-        let x = r * cos(this.orbiters[i].angle);
-        let y = r * sin(this.orbiters[i].angle);
-        point(x, y);
-        this.orbiters[i].angle += this.orbiters[i].delta;
-    pop();
+      let r = this.size * this.orbiters[i].rMultiplier;
+      let x = r * cos(this.orbiters[i].angle);
+      let y = r * sin(this.orbiters[i].angle);
+      point(x, y);
+      this.orbiters[i].angle += this.orbiters[i].delta;
+      pop();
     }
-    
   }
 
   static getGuyById(id) {
-    return guys.find(g => g.id === id);
+    return guys.find((g) => g.id === id);
   }
 
   move() {
     if (this.dead) {
-        return this.drawMe();
-    } 
+      return this.drawMe();
+    }
     for (const key of ["x", "y"]) {
       switch (util.randomNumber(0, 2)) {
         case 0:
@@ -246,80 +271,93 @@ class Guy {
   }
 
   /**
-     * Cheat sheet for modifying food seeking efficiency
-     * 1. Acceleration magnitude (this.acc) controls how hard a guy pulls toward food.
-     *      -higher value = stronger steering towards food, faster course correction.
-     *      -lower value = sluggish response, more drift
-     * 
-     * 2. Noise rotation range (this.noise.rotate()) controls direction instability
-     *      -smaller range = smoother, more stable pursuit
-     *      -higher range = jittery erratic path
-     * 
-     * 3. Noise magnitude controls how strong the randomness is
-     *      -higher value = more wandering, less efficient seeking
-     *      -lower value = straighter course to food
-     * 
-     * 4. Velocity limit controls max pursuit speed
-     *      -higher value = potential for a hungrier dog
-     *      -lower value = this dog is not food motivated
-     * 
-     * 5. The ratio of the respecitve magnitudes of this.acc and this.noise is the most important factor in determining seek efficiency.
-     *      -acc > noise = more intentional seeking behavior
-     *      -evenly matched = wandering with bias
-     *      -acc < noise = chaos lol
-     * 
-     * 6. This is all according to ChatGPT so it could be completely fucking wrong.
-     */
+   * Cheat sheet for modifying food seeking efficiency
+   * 1. Acceleration magnitude (this.acc) controls how hard a guy pulls toward food.
+   *      -higher value = stronger steering towards food, faster course correction.
+   *      -lower value = sluggish response, more drift
+   *
+   * 2. Noise rotation range (this.noise.rotate()) controls direction instability
+   *      -smaller range = smoother, more stable pursuit
+   *      -higher range = jittery erratic path
+   *
+   * 3. Noise magnitude controls how strong the randomness is
+   *      -higher value = more wandering, less efficient seeking
+   *      -lower value = straighter course to food
+   *
+   * 4. Velocity limit controls max pursuit speed
+   *      -higher value = potential for a hungrier dog
+   *      -lower value = this dog is not food motivated
+   *
+   * 5. The ratio of the respecitve magnitudes of this.acc and this.noise is the most important factor in determining seek efficiency.
+   *      -acc > noise = more intentional seeking behavior
+   *      -evenly matched = wandering with bias
+   *      -acc < noise = chaos lol
+   *
+   * 6. This is all according to ChatGPT so it could be completely fucking wrong.
+   */
 
   seekFood(food) {
     if (forage.exists(food.id)) {
-        if (this.target.x == 0 && this.target.y == 0) {
-            this.target.x = food.x;
-            this.target.y = food.y;
-        } else if (!this.resolute) {
-            this.target.x = food.x;
-            this.target.y = food.y;
-        }
-        
-        this.acc.set(this.target).sub(this.pos);
-        this.acc.setMag(this.seekAccel);
+      if (this.target.x == 0 && this.target.y == 0) {
+        this.target.x = food.x;
+        this.target.y = food.y;
+      } else if (!this.resolute) {
+        this.target.x = food.x;
+        this.target.y = food.y;
+      }
 
-        //this.noise.rotate(random(-0.25, 0.25));
-       
+      this.acc.set(this.target).sub(this.pos);
+      this.acc.setMag(this.seekAccel);
 
-        this.vel.add(this.acc);
-        this.vel.limit(this.velLimit);
+      //this.noise.rotate(random(-0.25, 0.25));
 
-        this.pos.add(this.vel);
-        this.pos.x = constrain(this.pos.x, config.bounds.x.min, config.bounds.x.max);
-        this.pos.y = constrain(this.pos.y, config.bounds.y.min, config.bounds.y.max);
+      this.vel.add(this.acc);
+      this.vel.limit(this.velLimit);
 
-        if (this.pos.x == config.bounds.x.min || this.pos.x == config.bounds.x.max) {
-            this.vel.x = 0;
-        }
+      this.pos.add(this.vel);
+      this.pos.x = constrain(
+        this.pos.x,
+        config.bounds.x.min,
+        config.bounds.x.max
+      );
+      this.pos.y = constrain(
+        this.pos.y,
+        config.bounds.y.min,
+        config.bounds.y.max
+      );
 
-        if (this.pos.y == config.bounds.y.min || this.pos.y == config.bounds.y.max) {
-            this.vel.y = 0;
-        }
+      if (
+        this.pos.x == config.bounds.x.min ||
+        this.pos.x == config.bounds.x.max
+      ) {
+        this.vel.x = 0;
+      }
+
+      if (
+        this.pos.y == config.bounds.y.min ||
+        this.pos.y == config.bounds.y.max
+      ) {
+        this.vel.y = 0;
+      }
     } else {
-        this.isSeeking = 0;
-        this.target = null;
+      this.isSeeking = 0;
+      this.target = null;
     }
   }
 
   seekMate(mate, guys) {
     if (!mate.isHorny) {
-        this.mate = null;
-        return;
+      this.mate = null;
+      return;
     }
     if (!this.overRideMove) {
-        this.move();
+      this.move();
     }
 
     if (this.overRideMoveIntermittent) {
-        if (util.coinToss(1, 2) == 1) {
-            this.move();
-        }
+      if (util.coinToss(1, 2) == 1) {
+        this.move();
+      }
     }
     this.arrow(mate);
 
@@ -327,33 +365,47 @@ class Guy {
     this.acc.setMag(this.seekAccel);
 
     this.noise.rotate(this.noiseRotate);
-        this.noise.setMag(this.noiseMagnitude);
-        this.acc.add(this.noise);
+    this.noise.setMag(this.noiseMagnitude);
+    this.acc.add(this.noise);
 
     this.vel.add(this.acc);
     this.vel.limit(this.velLimit);
 
     this.pos.add(this.vel);
-    this.pos.x = constrain(this.pos.x, config.bounds.x.min, config.bounds.x.max);
-    this.pos.y = constrain(this.pos.y, config.bounds.y.min, config.bounds.y.max);
-    if (this.pos.x == config.bounds.x.min || this.pos.x == config.bounds.x.max) {
-        this.vel.x = 0;
+    this.pos.x = constrain(
+      this.pos.x,
+      config.bounds.x.min,
+      config.bounds.x.max
+    );
+    this.pos.y = constrain(
+      this.pos.y,
+      config.bounds.y.min,
+      config.bounds.y.max
+    );
+    if (
+      this.pos.x == config.bounds.x.min ||
+      this.pos.x == config.bounds.x.max
+    ) {
+      this.vel.x = 0;
     }
 
-    if (this.pos.y == config.bounds.y.min || this.pos.y == config.bounds.y.max) {
-        this.vel.y = 0;
+    if (
+      this.pos.y == config.bounds.y.min ||
+      this.pos.y == config.bounds.y.max
+    ) {
+      this.vel.y = 0;
     }
 
     if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= 5) {
-        if (mate && dist(this.pos.x, this.pos.y, mate.pos.x, mate.pos.y) <= 5) {
-            this.businessTime(mate, guys);
-        } else if (mate) {
-            this.target.x = mate.pos.x;
-            this.target.y = mate.pos.y;
-        } else {
-            this.isSeeking = 0;
-            this.mate = null;
-        }
+      if (mate && dist(this.pos.x, this.pos.y, mate.pos.x, mate.pos.y) <= 5) {
+        this.businessTime(mate, guys);
+      } else if (mate) {
+        this.target.x = mate.pos.x;
+        this.target.y = mate.pos.y;
+      } else {
+        this.isSeeking = 0;
+        this.mate = null;
+      }
     }
   }
 
@@ -370,56 +422,69 @@ class Guy {
     this.vel.limit(this.velLimit);
 
     this.pos.add(this.vel);
-    this.pos.x = constrain(this.pos.x, config.bounds.x.min, config.bounds.x.max);
-    this.pos.y = constrain(this.pos.y, config.bounds.y.min, config.bounds.y.max);
-    if (this.pos.x == config.bounds.x.min || this.pos.x == config.bounds.x.max) {
-        this.vel.x = 0;
+    this.pos.x = constrain(
+      this.pos.x,
+      config.bounds.x.min,
+      config.bounds.x.max
+    );
+    this.pos.y = constrain(
+      this.pos.y,
+      config.bounds.y.min,
+      config.bounds.y.max
+    );
+    if (
+      this.pos.x == config.bounds.x.min ||
+      this.pos.x == config.bounds.x.max
+    ) {
+      this.vel.x = 0;
     }
 
-    if (this.pos.y == config.bounds.y.min || this.pos.y == config.bounds.y.max) {
-        this.vel.y = 0;
+    if (
+      this.pos.y == config.bounds.y.min ||
+      this.pos.y == config.bounds.y.max
+    ) {
+      this.vel.y = 0;
     }
 
     if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= 5) {
-        this.isSeeking = 0;
-        this.target.x = 0;
-        this.target.y = 0;
-        this.seekPriority = null;
+      this.isSeeking = 0;
+      this.target.x = 0;
+      this.target.y = 0;
+      this.seekPriority = null;
     }
   }
 
   chooseMate() {
     if (!this.preference || this.potentialMates.length < 2) {
-        return util.closestGuyByColor(this.color, this.potentialMates);
+      return util.closestGuyByColor(this.color, this.potentialMates);
     }
 
     let bestGuy = null;
     let bestValue = this.preferenceDirection == 1 ? -Infinity : Infinity;
-    
-    for (const pm of this.potentialMates) {
-        const v = pm[this.preference];
 
-        if (this.preferenceDirection == 1) {
-            if (v >= bestValue) {
-                bestValue = v;
-                bestGuy = pm;
-            }
-        } else {
-            if (v <= bestValue) {
-                bestValue = v;
-                bestGuy = pm;
-            }
+    for (const pm of this.potentialMates) {
+      const v = pm[this.preference];
+
+      if (this.preferenceDirection == 1) {
+        if (v >= bestValue) {
+          bestValue = v;
+          bestGuy = pm;
         }
-        
+      } else {
+        if (v <= bestValue) {
+          bestValue = v;
+          bestGuy = pm;
+        }
+      }
     }
-    
+
     if (bestGuy) {
-        bestGuy.halo = 1;
+      bestGuy.halo = 1;
     }
 
     if (volumeOn) {
-        sounds.prefBeep.currentTime = 0;
-        sounds.prefBeep.play().catch(() => {});
+      sounds.prefBeep.currentTime = 0;
+      sounds.prefBeep.play().catch(() => {});
     }
 
     return bestGuy;
@@ -438,94 +503,121 @@ class Guy {
 
     const child = new Guy();
     child.mutationPackage = {
-        binary: [],
-        value: [],
-        special: [],
+      binary: [],
+      value: [],
+      special: [],
     };
 
+    let mutation;
+    let t = frameCount;
+
     for (const trait of c.guys.traits.binary) {
-        child[trait] = util.coinToss(parentA, parentB)[trait];
-        if (util.chance(1, c.guys.mutationRate)) {
-            child[trait] = !child[trait]
-            //child.halo = 1;
-            mutationHappened = true;
-            child.mutationPackage.binary.push({
-                trait,
-                mom: parentA[trait],
-                dad: parentB[trait],
-                baby: child[trait]
-            });
-        }
+      child[trait] = util.coinToss(parentA, parentB)[trait];
+      if (util.chance(1, c.guys.mutationRate)) {
+        child[trait] = !child[trait];
+        //child.halo = 1;
+        mutationHappened = true;
+        mutation = {
+          t,
+          trait,
+          mom: parentA[trait],
+          dad: parentB[trait],
+          baby: child[trait],
+        };
+        child.mutationPackage.binary.push(mutation);
+        viz.experiment.mutations[mutation.trait].push(mutation);
+      }
     }
 
     for (const trait of c.guys.traits.value) {
-        child[trait] = util.coinToss(parentA, parentB)[trait];
-        if (util.chance(1, c.guys.mutationRate)) {
-            let mutation = {
-                trait,
-                original: child[trait],
-                mutated: 0,
-                percentChange: 0,
-            };
-            const sign = util.chance(1, 2) ? 1 : -1;
-            const percent = Math.abs(util.randomNormal(0, 0.03));
-            child[trait] *= 1 + sign * percent;
-            mutation.mutated = child[trait];
-            mutation.percentChange = util.percentChange(mutation.original, mutation.mutated);
-            mutationHappened = true;
+      child[trait] = util.coinToss(parentA, parentB)[trait];
+      if (util.chance(1, c.guys.mutationRate)) {
+        mutationHappened = true;
+        mutation = {
+          t,
+          trait,
+          original: child[trait],
+          mutated: 0,
+          percentChange: 0,
+        };
+        const sign = util.chance(1, 2) ? 1 : -1;
+        const percent = Math.abs(
+          util.randomNormal(0, util.randomNumber(0, data.totalDryDays))
+        );
+        child[trait] *= 1 + sign * percent;
+        mutation.baby = child[trait];
+        mutation.percentChange = util.percentChange(
+          mutation.original,
+          mutation.mutated
+        );
 
-            child.mutationPackage.value.push(mutation);
-        }
+        child.mutationPackage.value.push(mutation);
+        viz.experiment.mutations[mutation.trait].push(mutation);
+      }
     }
 
     for (const trait of c.guys.traits.special) {
-        child[trait] = util.coinToss(parentA, parentB)[trait];
+      child[trait] = util.coinToss(parentA, parentB)[trait];
 
-        if (util.chance(1, c.guys.mutationRate)) { 
-            mutationHappened = true;
-            let mutation = {
-                    trait,
-                    original: child[trait],
-                    mom: parentA[trait],
-                    dad: parentB[trait],
-                };
-            switch (trait) {
-                case 'preference':
-                    child[trait] = Guy.getPreference();
-                    break;
-                case 'preferenceDirection':
-                    child[trait] = Guy.getPreferenceDirection();
-                    break;
-            }
-            mutation.baby = child[trait];
-            child.mutationPackage.special.push(mutation);
+      if (util.chance(1, c.guys.mutationRate)) {
+        mutationHappened = true;
+        mutation = {
+          t,
+          trait,
+          original: child[trait],
+          mom: parentA[trait],
+          dad: parentB[trait],
+        };
+        switch (trait) {
+          case "preference":
+            child[trait] = Guy.getPreference();
+            break;
+          case "preferenceDirection":
+            child[trait] = Guy.getPreferenceDirection();
+            break;
         }
+        mutation.baby = child[trait];
+        child.mutationPackage.special.push(mutation);
+        viz.experiment.mutations[mutation.trait].push(mutation);
+      }
     }
-    
+
+    if (mutationHappened) {
+      for (let type of Object.values(child.mutationPackage)) {
+        for (let m of type) {
+          if (!Guy.getCurrentRangeFor(m.trait).includes(m.baby)) {
+            console.log(`Guy${child.id} had a mutation on ${m.trait}`);
+          }
+        }
+      }
+    }
+
     for (const m of child.mutationPackage.value) {
-        child.orbiters.push({
-            trait: m.trait,
-            angle: 0,
-            delta: m.percentChange / 100,
-            color: c.getOrbiterColor(m.trait),
-            rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
-        });
+      child.orbiters.push({
+        trait: m.trait,
+        angle: 0,
+        delta: m.percentChange / 100,
+        color: c.getOrbiterColor(m.trait),
+        rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
+      });
     }
 
     for (const orbiterArray of [parentA.orbiters, parentB.orbiters]) {
-        for (const o of orbiterArray) {
-            if (!child.orbiters.some(c => c.trait === o.trait)) {
-                child.orbiters.push({...o});
-            }
+      for (const o of orbiterArray) {
+        if (!child.orbiters.some((c) => c.trait === o.trait)) {
+          child.orbiters.push({ ...o });
         }
+      }
     }
 
     if (util.chance(1, 1000)) {
-        child.color = util.randomColor();
+      child.color = util.randomColor();
     }
     child.color = parentA.hasDominantColor
-        ? parentA.color
-        : (parentB.hasDominantColor ? parentB.color : util.coinToss(parentA, parentB).color);
+      ? parentA.color
+      : parentB.hasDominantColor
+      ? parentB.color
+      : util.coinToss(parentA, parentB).color;
 
     child.pos.x = this.pos.x + 10;
     child.pos.y = this.pos.y + 10;
@@ -535,68 +627,70 @@ class Guy {
     this.resetHorniness(mate);
     guys.push(child);
 
-    if (volumeOn) {
-        sounds.birthBeep.currentTime = 0;
-        sounds.birthBeep.play()
-        .then(() => {
-            if (mutationHappened) {
-                sounds.mutationBeep.currentTime = 0;
-                sounds.mutationBeep.play().catch(() => {});
-            }
-        })
-        .catch(() => {});
+    if (volumeOn && mutationHappened) {
+      sounds.mutationBeep.currentTime = 0;
+      sounds.mutationBeep.play().catch(() => {});
     }
 
     if (mutationHappened) {
-        child.halo = 1;
-        child.haloWasSetAutomatically = 1;
+      child.halo = 1;
+      child.haloWasSetAutomatically = 1;
     }
 
     for (let guy of [this, mate]) {
-        if (guy.movesAwayFromBaby) {
-            guy.target = util.randomVectorTargetWithinBounds(guy.pos);
-            guy.isSeeking = 1;
-            guy.seekPriority = 'baby';
-            guy.seek();
-        }
+      if (guy.movesAwayFromBaby) {
+        guy.target = util.randomVectorTargetWithinBounds(guy.pos);
+        guy.isSeeking = 1;
+        guy.seekPriority = "baby";
+        guy.seek();
+      }
     }
     return;
-}
+  }
 
   resetHorniness(mate = null) {
     for (let guy of [this, mate].filter(Boolean)) {
-        guy.isSeeking = 0;
-        guy.isHorny = 0;
-        guy.stomachContents = guy.stomachContents / 4;
-        guy.mate = null;
+      guy.isSeeking = 0;
+      guy.isHorny = 0;
+      guy.stomachContents = guy.stomachContents / 4;
+      guy.mate = null;
     }
   }
 
   sensesFood(foods) {
     let potentialFoods = [];
     for (let food of foods) {
-        if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.calculateSensePerim()) {
-            this.isSeeking = 1;
-            //
-            if (this.smartFoodFinder) {
-                potentialFoods.push({x: food.x, y: food.y, id: food.id, dist: dist(this.pos.x, this.pos.y, food.x, food.y)});
-            } else {
-                return {x: food.x, y: food.y, id: food.id}
-            }
-            
+      if (
+        dist(this.pos.x, this.pos.y, food.x, food.y) <
+        this.calculateSensePerim()
+      ) {
+        this.isSeeking = 1;
+        //
+        if (this.smartFoodFinder) {
+          potentialFoods.push({
+            x: food.x,
+            y: food.y,
+            id: food.id,
+            dist: dist(this.pos.x, this.pos.y, food.x, food.y),
+          });
+        } else {
+          return { x: food.x, y: food.y, id: food.id };
         }
+      }
     }
 
     if (potentialFoods.length > 0) {
-        return potentialFoods.reduce((a, b) => a.dist < b.dist ? a : b);
-
-    } 
+      return potentialFoods.reduce((a, b) => (a.dist < b.dist ? a : b));
+    }
 
     return null;
   }
 
   senses(other) {
-    return dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y) < this.calculateSensePerim();
+    return (
+      dist(this.pos.x, this.pos.y, other.pos.x, other.pos.y) <
+      this.calculateSensePerim()
+    );
   }
 
   intersects(other) {
@@ -605,9 +699,9 @@ class Guy {
 
   intersectsFood(foods) {
     for (let food of foods) {
-        if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.size) {
-            return food.id;
-        }
+      if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.size) {
+        return food.id;
+      }
     }
     return null;
   }
@@ -623,99 +717,104 @@ class Guy {
   }
 
   isHungry() {
-    if (this.stomachContents > (this.size * 0.4)) {
-        return false;
+    if (this.stomachContents > this.size * 0.4) {
+      return false;
     }
 
     return true;
   }
 
   isSexuallyMature() {
-    return this.size >= this.adultSize - (this.adultSize * 0.1);
+    return this.size >= this.adultSize - this.adultSize * 0.1;
   }
 
   calculateSensePerim() {
-    return this.size + (this.senseDistance);
+    return this.size + this.senseDistance;
   }
 
   senseDistanceG(size = this.size, vis = data.vis) {
-        // how far a guy *could* sense based on size alone
-        const sizeSense = 150 * Math.pow(size, 0.30103);
+    // how far a guy *could* sense based on size alone
+    const sizeSense = 150 * Math.pow(size, 0.30103);
 
-        // visibility effect: 0 → none, higher → asymptotically stronger
-        const visEffect = vis / (vis + 1);
+    // visibility effect: 0 → none, higher → asymptotically stronger
+    const visEffect = vis / (vis + 1);
 
-        // final sense distance
-        return (size + sizeSense * visEffect) * this.senseDistanceMultiplier;
-    }
+    // final sense distance
+    return (size + sizeSense * visEffect) * this.senseDistanceMultiplier;
+  }
 
   dominance() {
-    return this.hasDominantColor ? 0.5 + (data.temp/100) : 0.5;
+    return this.hasDominantColor ? 0.5 + data.temp / 100 : 0.5;
   }
 
   getDigestionRate() {
     return Guy.getGlobalDigestionRate() * util.logNormalMultiplier();
   }
 
-    getSenseDistance(){
-        return Math.max(0, util.randomNormal(Guy.getGlobalSenseDistance(this.size), data.vis * data.vis));
-    }
+  getSenseDistance() {
+    return Math.max(
+      0,
+      util.randomNormal(
+        Guy.getGlobalSenseDistance(this.size),
+        data.vis * data.vis
+      )
+    );
+  }
 
-    age() {
-        return getTimeIndex() - this.birthday;
-    }
+  age() {
+    return getTimeIndex() - this.birthday;
+  }
 
-    playDeathBeep() {
-        if (volumeOn) {
-            sounds.deathBeep.currentTime = 0;
-            sounds.deathBeep.play().catch(() => {});
-        }
-        
-        this.deathNoisePlayed = 1;
-    }
+  playDeathBeep() {
+    // if (volumeOn) {
+    //     sounds.deathBeep.currentTime = 0;
+    //     sounds.deathBeep.play().catch(() => {});
+    // }
+
+    this.deathNoisePlayed = 1;
+  }
 
   static whoIsDominant(a, b) {
     if (a.stomachContents > b.stomachContents) {
-        return {
-            dom: a,
-            non: b
-        }
+      return {
+        dom: a,
+        non: b,
+      };
     }
 
-    if (b.stomachContents > a.stomachContents) 
-        return {
-            dom: b,
-            non: a
-        }
+    if (b.stomachContents > a.stomachContents)
+      return {
+        dom: b,
+        non: a,
+      };
 
     if (a.hasDominantColor && b.hasDominantColor) {
-      return 'both';
+      return "both";
     }
 
     if (a.hasDominantColor && !b.hasDominantColor) {
       return {
         dom: a,
-        non: b
+        non: b,
       };
     }
 
     if (!a.hasDominantColor && b.hasDominantColor) {
       return {
         dom: b,
-        non: a
+        non: a,
       };
     }
 
     return false;
   }
 
-  //0.00042206896551724135 
-  // - 
+  //0.00042206896551724135
+  // -
   // -0.05957793103448276
 
-
   static getGlobalDigestionRate() {
-    return data.temp / (data.hum * 750);;
+    return data.temp / (data.hum * 750);
   }
 
   static getGlobalSenseDistance(size) {
@@ -731,11 +830,25 @@ class Guy {
   }
 
   static getPreference() {
-    let valueOrBinary = util.coinToss('value', 'binary');
-    return util.chance(5, data.temp) ? c.guys.traits[valueOrBinary][util.randomNumber(0, c.guys.traits[valueOrBinary].length - 1)] : null;
+    let valueOrBinary = util.coinToss("value", "binary");
+    return util.chance(5, data.temp)
+      ? c.guys.traits[valueOrBinary][
+          util.randomNumber(0, c.guys.traits[valueOrBinary].length - 1)
+        ]
+      : null;
   }
 
   static getPreferenceDirection() {
-    return data.pres >= 29.4 ? (util.chance(60) ? 1 : -1) : (util.chance(60) ? -1 : 1)
+    return data.pres >= 29.4
+      ? util.chance(60)
+        ? 1
+        : -1
+      : util.chance(60)
+      ? -1
+      : 1;
+  }
+
+  static getCurrentRangeFor(trait) {
+    return guys.map((g) => g[trait]);
   }
 }
