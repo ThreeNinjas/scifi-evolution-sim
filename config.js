@@ -81,6 +81,15 @@ class Config {
  * option to use Perlin noise instead of randomly incrementing x and y
  * 
  * 
+ * viz to track:
+ * avg actual lifespan
+x make viz only consider alive guys
+ * avg age
+ * # who are sexually mature
+ * # who are dead
+ * death date
+ * PREFERENCES
+ * 
  * features to implement:
  * a button to hide pinging
  * space bar for pause
@@ -95,7 +104,7 @@ class Config {
   * 
   * 
 x moves away from baby trait
- x maybe when paused and a guy is clicked, let it run for 1 frame so that the guy gets highlighted
-  x MAKE AMOUNT OF FOOD DEPENDANT UPON HOW MUCH ITS RAINED RECENTLY
- x when a guy dies with food in its stomach its body becomes food as it decays
+x maybe when paused and a guy is clicked, let it run for 1 frame so that the guy gets highlighted
+x MAKE AMOUNT OF FOOD DEPENDANT UPON HOW MUCH ITS RAINED RECENTLY
+x when a guy dies with food in its stomach its body becomes food as it decays
 */

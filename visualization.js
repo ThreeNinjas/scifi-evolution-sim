@@ -1,5 +1,6 @@
 class Visualization {
     constructor() {
+        this.memoryLimit = 3;
         this.houseKeeping();
 
         this.indexName = "experiments:index";
@@ -57,16 +58,18 @@ class Visualization {
     takeSnapshot(guys) {
         let t = frameCount;
 
+        let aliveGuys = guys.filter(g => g.dead === 0);
+
         for (let trait of c.guys.traits.binary) {
             this.experiment.samples[trait].push({
                 t,
-                true: guys.filter(g => g[trait]).length,
-                false: guys.filter(g => !g[trait]).length,
+                true: aliveGuys.filter(g => g[trait]).length,
+                false: aliveGuys.filter(g => !g[trait]).length,
             });
         }
 
         for (let trait of c.guys.traits.value) {
-            let values = guys.map(g => g[trait]);
+            let values = aliveGuys.map(g => g[trait]);
             this.experiment.samples[trait].push({
                 t,
                 max: Math.max(...values),
@@ -96,7 +99,7 @@ class Visualization {
             }
         }
 
-        if (total > 4000000) {
+        if (total > this.memoryLimit * 1000000) {
             this.emptyStorage();
         }
     }

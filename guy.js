@@ -227,6 +227,8 @@ class Guy {
   }
 
   orbiter() {
+    if (this.dead) return;
+    
     for (let i = 0; i < this.orbiters.length; i++) {
       push();
       let orbiterSize = this.size * 0.2 >= 2 ? this.size * 0.2 : 2;
@@ -542,7 +544,7 @@ class Guy {
         };
         const sign = util.chance(1, 2) ? 1 : -1;
         const percent = Math.abs(
-          util.randomNormal(0, util.randomNumber(0, data.totalDryDays))
+          util.randomNormal(0, util.randomNumber(0, util.coinToss(data.totalDryDays, 0.5)))
         );
         child[trait] *= 1 + sign * percent;
         mutation.baby = child[trait];
@@ -585,8 +587,14 @@ class Guy {
     if (mutationHappened) {
       for (let type of Object.values(child.mutationPackage)) {
         for (let m of type) {
-          if (!Guy.getCurrentRangeFor(m.trait).includes(m.baby)) {
-            console.log(`Guy${child.id} had a mutation on ${m.trait}`);
+            let min = Math.min(...Guy.getCurrentRangeFor(m.trait));
+            let max = Math.max(...Guy.getCurrentRangeFor(m.trait));
+          if (m.baby > max || m.baby < min) {
+            console.log(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
+            if (volumeOn) {
+                sounds.monsterAlert.currentTime = 0;
+                sounds.monsterAlert.play().catch(() => {});
+            }
           }
         }
       }

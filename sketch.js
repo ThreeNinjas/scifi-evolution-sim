@@ -10,7 +10,9 @@ let sounds = {
     mutationBeep: new Audio('/assets/alert12.mp3'),
     prefBeep: new Audio('/assets/computerbeep_39.mp3'),
     deathBeep: new Audio('assets/communications_end_transmission.mp3'),
-    birthBeep: new Audio('assets/hailbeep4_clean.mp3')
+    birthBeep: new Audio('assets/hailbeep4_clean.mp3'),
+    monsterAlert: new Audio('assets/input_ok_3_clean.mp3'),
+    weatherUpdated: new Audio('assets/ds9intercom.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -47,6 +49,8 @@ const DOWNSAMPLE_RATE = 2;
 //environmentally dependent variables
 let DIGESTION_RATE_PER_FRAME = 0;
 let SENSE_DISTANCE_MULTIPLIER = null;
+
+let weatherUpdateInFlight = false;
 
 let viewerOn = false;
 
@@ -156,7 +160,7 @@ function draw() {
         let sensedFood;
         guy.potentialMates = [];
         if (guy.dead) {
-            guy.decayProgress += Guy.getGlobalDigestionRate() * (data.rain > 0 ? data.rain : data.vis);
+            guy.decayProgress += Guy.getGlobalDigestionRate() * (data.vis);
 
             if (guy.decayProgress >= 1) {
                 //delete
@@ -315,20 +319,47 @@ function draw() {
     if (frameCount % 1000 === 0) {
         viz.houseKeeping();
         viz.takeSnapshot(guys);
+        
+        if (!weatherUpdateInFlight) {
+            weatherUpdateInFlight = true;
+            const prevData = JSON.stringify(data);
+
+            updateWeather()
+                .then((newData) => {
+                    if (!newData) return;
+
+                    data = newData;
+
+                    if (volumeOn && weatherHasChanged(prevData)) {
+                        sounds.weatherUpdated.currentTime = 0;
+                        sounds.weatherUpdated.play().catch(() => {});
+                        console.log(data);
+                    }
+                }).finally(() => {
+                    weatherUpdateInFlight = false;
+                })
+        }
     }
 
     if (viewerOn) {
         showViz();
     }
+
+    drawControls();
+}
+
+function weatherHasChanged(prevData) {
+    return JSON.stringify(data) !== prevData;
 }
 
 function mousePressed() {
+    let yAddOn = 30;
     //mute button
     if (
         mouseX >= width - 30 &&
         mouseX <= (width - 30) + 20 &&
-        mouseY >= height/2 + 95 &&
-        mouseY <= (height/2 + 95) + 20
+        mouseY >= (height/2 + 95) + yAddOn &&
+        mouseY <= ((height/2 + 95) + 20) + yAddOn
     ) {
         volumeOn = !volumeOn;
         
@@ -342,8 +373,8 @@ function mousePressed() {
     if (
         mouseX >= width - 45 &&
         mouseX <= (width - 45) + 10 &&
-        mouseY >= height/2 + 95 &&
-        mouseY <= (height/2 + 95) + 10
+        mouseY >= (height/2 + 95)  + yAddOn &&
+        mouseY <= ((height/2 + 95) + 10) + yAddOn
         ) {
             paused = !paused;
 
@@ -357,7 +388,7 @@ function mousePressed() {
     //viz button
     //width - 60, height/2 + 100
     if (
-        dist(mouseX, mouseY, width - 60, height/2 + 100) <= 10 / 2
+        dist(mouseX, mouseY, width - 60, (height/2 + 100) + yAddOn) <= 10 / 2
 
     ) {
         viewerOn = !viewerOn;
@@ -400,12 +431,16 @@ function mousePressed() {
     }
 }
 
+async function updateWeather() {
+    return await fetch(`${serverURL}weather/guys`)
+        .then(r => r.json());
+}
+
 async function loadWeather() {
     loadIcons();
     const url = `${serverURL}weather/guys`;
     console.log(url);
-    data = await fetch(url)
-        .then(r => r.json());
+    data = await updateWeather();
 
     console.log(data);
     c = new Config();
@@ -763,17 +798,16 @@ function drawBinaryLine(trait) {
     endShape(CLOSE);
 }
 
-
-
-function drawGraphs() {
+function drawControls() {
+    yAddOn = 30;
     //mute
     if (iconsReady) {
         let  y = height/2 + 95;
         tint(255, 255, 255, 128);
         if (volumeOn) {
-            image(volumeIcon, width - 30, y - 5, 20, 20);
+            image(volumeIcon, width - 30, (y - 5) + yAddOn, 20, 20);
         } else {
-            image(muteIcon, width - 30, y - 5, 20, 20);
+            image(muteIcon, width - 30, (y - 5) + yAddOn, 20, 20);
         }
         noTint();
     }
@@ -785,15 +819,15 @@ function drawGraphs() {
         fill(c.guys.colors.hungry);
         let  x = height/2 + 95;
         if (!paused) {
-            rect(width - 45, x, 10, 10);
+            rect(width - 45, x + yAddOn, 10, 10);
             stroke('black');
             fill('black');
-            rect(width - 41, x, 2, 10);
+            rect(width - 41, x + yAddOn, 2, 10);
         } else {
             triangle(
-                width - 45,          x,
-                width - 45,          x + 10,
-                width - 35,          x + 5
+                width - 45,          x + yAddOn,
+                width - 45,          x + 10 + yAddOn,
+                width - 35,          x + 5 + yAddOn,
             );
         }
         
@@ -804,9 +838,12 @@ function drawGraphs() {
         push();
         stroke(c.guys.colors.hungry);
         fill(c.guys.colors.hungry);
-        circle(width - 60, height/2 + 100, 10);
+        circle(width - 60, (height/2 + 100) + yAddOn, 10);
         pop();
     }
+}
+
+function drawGraphs() {
     
   push();
   let startingY = (height / 2) + 20;
@@ -850,12 +887,15 @@ function drawGraphs() {
     if (graph != 'histogram') {
       if (stats[graph].length > 1) {
         beginShape();
+        fill(color);
         for (let i = 0; i < stats[graph].length; i++) {
           let x = map(i, 0, stats[graph].length - 1, 10, width - 10);
           let y = map(stats[graph][i], minY, maxY, yBottom, yTop, true);
           vertex(x, y);
         }
-        endShape();
+        vertex(width - 10, yBottom);
+        vertex(10, yBottom);
+        endShape(CLOSE);
       }
     }
 
