@@ -4,7 +4,7 @@ class Forage {
         this.maxX = traits.maxX;
         this.maxY = traits.maxY;
         this.chanceOfFood = this.calculateChanceOfFood();
-        this.replenishRate = traits.replenishRate;
+        this.replenishRate = Forage.getFoodReplenishmentRate();
 
         this.replenishProgress = 0;
         this.numberOfFood = 0;
@@ -64,5 +64,14 @@ class Forage {
 
     exists(id) {
         return this.foodStorage.some(f => f.id === id);
+    }
+
+    static getFoodReplenishmentRate() {
+        let out = Guy.getGlobalDigestionRate();
+
+        if (data.totalDryDays > 0) {
+            out = out + (out * (data.totalDryDays / 100));
+        }
+        return out;
     }
 }

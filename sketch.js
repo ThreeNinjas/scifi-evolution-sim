@@ -4,31 +4,24 @@ let numberOfGuys = params.get('guys') || null;
 let globalMaxGuys = 0;
 let font;
 
+let viz;
+
 let sounds = {
     mutationBeep: new Audio('/assets/alert12.mp3'),
     prefBeep: new Audio('/assets/computerbeep_39.mp3'),
     deathBeep: new Audio('assets/communications_end_transmission.mp3'),
-    birthBeep: new Audio('assets/hailbeep4_clean.mp3')
+    birthBeep: new Audio('assets/hailbeep4_clean.mp3'),
+    monsterAlert: new Audio('assets/input_ok_3_clean.mp3'),
+    weatherUpdated: new Audio('assets/ds9intercom.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
     sound.preload = 'auto';
-    sound.volume = 0.5;
+    sound.volume = 0.25;
 }
 
 sounds.deathBeep.volume = 0.125;
-
-// const mutationBeep = new Audio('/assets/alert12.mp3');
-// mutationBeep.preload = 'auto';
-
-// const prefBeep = new Audio('/assets/computerbeep_39.mp3');
-// prefBeep.preload = 'auto';
-
-// const deathBeep = new Audio('assets/communications_end_transmission.mp3');
-// deathBeep.preload = 'auto';
-
-// const birthBeep = new Audio('assets/hailbeep4_clean.mp3');
-// birthBeep.preload = 'true';
+sounds.birthBeep.volume = 0.125;
 
 let util = new Util();
 let c; //maybe rename config below later....
@@ -50,12 +43,16 @@ let stats = {
 
 let graphAreaHeight = 275;
 
-const MAX_HISTORY_LENGTH = 2500;
+const MAX_HISTORY_LENGTH = 500;
 const DOWNSAMPLE_RATE = 2;
 
 //environmentally dependent variables
 let DIGESTION_RATE_PER_FRAME = 0;
 let SENSE_DISTANCE_MULTIPLIER = null;
+
+let weatherUpdateInFlight = false;
+
+let viewerOn = false;
 
 const serverURL =
     window.location.hostname === "127.0.0.1" ? "http://localhost:3000/" : "http://199.19.74.165:3000/";
@@ -84,6 +81,9 @@ let iconsReady;
 let volumeOn = false;
 let paused = false;
 
+let valueToViz = 'velLimit';
+let vizValueDropdown;
+
 /*
 TODO: move the actually populating of guys out of loadWeather and into guys.populateGuys();
 TODO: other real world data variables: size, speed (increment by more than 1?), ability to kill
@@ -97,13 +97,6 @@ async function setup() {
     
     frameRate(60);
     createCanvas(400, 800);
-
-    boundary = new Rectangle(
-        width / 2,
-        10 + (height / 4),
-        (width - 20) / 2,
-        (height / 2) / 2
-    );
 
     background(0);
     drawEnvironment();
@@ -167,7 +160,7 @@ function draw() {
         let sensedFood;
         guy.potentialMates = [];
         if (guy.dead) {
-            guy.decayProgress += Guy.getGlobalDigestionRate() * (data.rain > 0 ? data.rain : data.vis);
+            guy.decayProgress += Guy.getGlobalDigestionRate() * (data.vis);
 
             if (guy.decayProgress >= 1) {
                 //delete
@@ -294,13 +287,13 @@ function draw() {
         stats.numberOfFoodHistory.push(forage.foodStorage.length);
 
         if (stats.numberOfFoodHistory.length > MAX_HISTORY_LENGTH) {
-            stats.numberOfFoodHistory = [];
+            stats.numberOfFoodHistory.shift();
         }
 
         stats.numberOfGuysHistory.push(stats.guys);
 
         if (stats.numberOfGuysHistory.length > MAX_HISTORY_LENGTH) {
-            stats.numberOfGuysHistory = [];
+            stats.numberOfGuysHistory.shift();
         }
     }
 
@@ -322,15 +315,51 @@ function draw() {
     drawHistogram(0);
 
     drawBars();
+
+    if (frameCount % 1000 === 0) {
+        viz.houseKeeping();
+        viz.takeSnapshot(guys);
+        
+        if (!weatherUpdateInFlight) {
+            weatherUpdateInFlight = true;
+            const prevData = JSON.stringify(data);
+
+            updateWeather()
+                .then((newData) => {
+                    if (!newData) return;
+
+                    data = newData;
+
+                    if (volumeOn && weatherHasChanged(prevData)) {
+                        sounds.weatherUpdated.currentTime = 0;
+                        sounds.weatherUpdated.play().catch(() => {});
+                        console.log(data);
+                    }
+                }).finally(() => {
+                    weatherUpdateInFlight = false;
+                })
+        }
+    }
+
+    if (viewerOn) {
+        showViz();
+    }
+
+    drawControls();
 }
 
-function mousePressed() { 
+function weatherHasChanged(prevData) {
+    return JSON.stringify(data) !== prevData;
+}
+
+function mousePressed() {
+    let yAddOn = 30;
     //mute button
     if (
         mouseX >= width - 30 &&
         mouseX <= (width - 30) + 20 &&
-        mouseY >= height/2 + 95 &&
-        mouseY <= (height/2 + 95) + 20
+        mouseY >= (height/2 + 95) + yAddOn &&
+        mouseY <= ((height/2 + 95) + 20) + yAddOn
     ) {
         volumeOn = !volumeOn;
         
@@ -344,8 +373,8 @@ function mousePressed() {
     if (
         mouseX >= width - 45 &&
         mouseX <= (width - 45) + 10 &&
-        mouseY >= height/2 + 95 &&
-        mouseY <= (height/2 + 95) + 10
+        mouseY >= (height/2 + 95)  + yAddOn &&
+        mouseY <= ((height/2 + 95) + 10) + yAddOn
         ) {
             paused = !paused;
 
@@ -355,6 +384,21 @@ function mousePressed() {
                 loop();
             }
         }
+
+    //viz button
+    //width - 60, height/2 + 100
+    if (
+        dist(mouseX, mouseY, width - 60, (height/2 + 100) + yAddOn) <= 10 / 2
+
+    ) {
+        viewerOn = !viewerOn;
+
+        if (viewerOn) {
+            vizValueDropdown.show();
+        } else {
+            vizValueDropdown.hide();
+        }
+    }
 
     //historgram switcher
     for (const [i, box] of Object.entries(histogramButtonBoxes)) {
@@ -387,16 +431,42 @@ function mousePressed() {
     }
 }
 
+async function updateWeather() {
+    return await fetch(`${serverURL}weather/guys`)
+        .then(r => r.json());
+}
+
 async function loadWeather() {
     loadIcons();
     const url = `${serverURL}weather/guys`;
     console.log(url);
-    data = await fetch(url)
-        .then(r => r.json());
+    data = await updateWeather();
 
     console.log(data);
     c = new Config();
     c.generateOrbiterColors();
+
+    viz  = new Visualization();
+    console.log(viz.index);
+    console.log(viz.experiment);
+
+    vizValueDropdown = createSelect();
+
+    vizValueDropdown.changed(() => {
+            valueToViz = vizValueDropdown.value();
+        });
+
+    //let traits = c.guys.traits.value.sort((a, b) => a.localeCompare(b));
+    let traits = c .guys.traits.value.concat(c.guys.traits.binary).sort((a, b) => a.localeCompare(b));
+    
+    for (let traitLabel of traits) {
+        vizValueDropdown.option(traitLabel);
+    }
+
+    vizValueDropdown.hide();
+
+    valueToViz = traits[0];
+
     numberOfGuys = debug && numberOfGuys ? numberOfGuys : Math.floor(data.temp);
     stats.guys = numberOfGuys;
 
@@ -405,7 +475,6 @@ async function loadWeather() {
     forage = new Forage({
         maxX: config.bounds.x.max,
         maxY: config.bounds.y.max,
-        replenishRate: Guy.getGlobalDigestionRate(data) * 1.005
     });
 
     frameRate(data.temp);
@@ -420,6 +489,9 @@ async function loadWeather() {
             return guy;
         });
     globalMaxGuys = guys.length;
+
+    viz.takeSnapshot(guys);
+
     for (const guy of guys) {
         guy.drawMe();
     }
@@ -566,7 +638,7 @@ function statsText() {
         fill("#ddbbff");
         textSize(15);
         text("TIME INDEX: " + getTimeIndex(), leftMargin, startingY);
-        text("GUYS: " + guys.length, leftMargin, startingY + 20);
+        text("GUYS: " + guys.filter(g => g.dead == 0).length, leftMargin, startingY + 20);
         text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
         text(`RPL: ${(forage.replenishRate*10000).toFixed(3)}`, leftMargin, startingY + 60);
 
@@ -618,38 +690,160 @@ function histogramButtons() {
   pop();
 }
 
+function showViz() {
+    push();
+        stroke(c.guys.colors.horny);
+        fill(0, 0, 0, 128);
 
-function drawGraphs() {
+        translate(10, 100);
+        rect(0, 0, width-20, 100);
+
+        vizValueDropdown.position(12, 78);
+
+        if (c.guys.traits.value.includes(valueToViz)) {
+            // drawIndividualLine(valueToViz, 'max');
+            // drawIndividualLine(valueToViz, 'min');
+
+            drawMinMaxShape(valueToViz);
+
+            stroke(c.guys.colors.hungryVar2);
+            drawIndividualLine(valueToViz, 'mean');
+            
+            stroke(c.guys.colors.gold);
+            drawIndividualLine(valueToViz, 'median');
+        } else {
+            drawBinaryLine(valueToViz);
+        }
+        
+        
+    pop();
+}
+
+function drawIndividualLine(trait, stat) {
+    let min = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
+    let max = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
+
+    if (min === max) {
+        return;
+    }
+    
+    textSize(10);
+    push();
+        noStroke();
+        fill(c.guys.colors.gold);
+        textSize(16);
+        text(viz.experiment.samples[trait][viz.experiment.samples[trait].length - 1].max, 1, 16);
+        text(viz.experiment.samples[trait][viz.experiment.samples[trait].length - 1].min, 1, 99);
+    pop();
+
+    if (viz.experiment.samples[trait].length > 2) {
+        noFill();
+        beginShape();
+            for (let i = 0; i < viz.experiment.samples[trait].length; i++) {
+                let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
+                let y = map(viz.experiment.samples[trait][i][stat], min, max, 100, 0);
+                vertex(x, y);
+            }
+        endShape();
+    }
+}
+
+function drawMinMaxShape(trait) {
+    let min = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
+    let max = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
+
+    if (min === max) {
+        return;
+    }
+
+    if (viz.experiment.samples[trait].length > 2) {
+        fill(c.guys.colors.hornyVar2);
+        beginShape();
+            for (let i = 0; i < viz.experiment.samples[trait].length; i++) {
+                let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
+                let y = map(viz.experiment.samples[trait][i].max, min, max, 100, 0);
+                vertex(x, y);
+            }
+            for (let i = viz.experiment.samples[trait].length - 1; i >= 0; i--) {
+                let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
+                let y = map(viz.experiment.samples[trait][i].min, min, max, 100, 0);
+                vertex(x, y);
+            }
+        endShape(CLOSE);
+    }
+}
+
+function drawBinaryLine(trait) {
+    const props = viz.experiment.samples[trait].map(d => d.true / (d.true + d.false));
+    let min =  0; //Math.min(...props);
+    let max = 1; //Math.max(...props);
+    if (min === max) return;
+
+    let h = 100;
+    let w = width - 20;
+
+    noStroke();
+    fill(c.guys.colors.hornyVar2);
+    rect(1, 1, w - 2, h - 2);
+
+    fill(c.guys.colors.hungry);
+    beginShape();
+        vertex(1, 1);
+        for (let i = 0; i < props.length; i++) {
+            let x = map(i, 0, props.length - 1, 1, w - 1);
+            let y = map(props[i], min, max, h - 1, 1);
+            vertex(x, y);
+        }
+        vertex(w - 1, 1);
+    endShape(CLOSE);
+}
+
+function drawControls() {
+    yAddOn = 30;
+    //mute
     if (iconsReady) {
         let  y = height/2 + 95;
         tint(255, 255, 255, 128);
         if (volumeOn) {
-            image(volumeIcon, width - 30, y - 5, 20, 20);
+            image(volumeIcon, width - 30, (y - 5) + yAddOn, 20, 20);
         } else {
-            image(muteIcon, width - 30, y - 5, 20, 20);
+            image(muteIcon, width - 30, (y - 5) + yAddOn, 20, 20);
         }
         noTint();
     }
 
+    //play / pause
     push();
         //translate(width - 45, height/2 + 30);
         stroke(c.guys.colors.hungry);
         fill(c.guys.colors.hungry);
         let  x = height/2 + 95;
         if (!paused) {
-            rect(width - 45, x, 10, 10);
+            rect(width - 45, x + yAddOn, 10, 10);
             stroke('black');
             fill('black');
-            rect(width - 41, x, 2, 10);
+            rect(width - 41, x + yAddOn, 2, 10);
         } else {
             triangle(
-                width - 45,          x,
-                width - 45,          x + 10,
-                width - 35,          x + 5
+                width - 45,          x + yAddOn,
+                width - 45,          x + 10 + yAddOn,
+                width - 35,          x + 5 + yAddOn,
             );
         }
         
     pop();
+
+    //visualizer
+    if (viz.experiment.samples['velLimit'].length > 2) {
+        push();
+        stroke(c.guys.colors.hungry);
+        fill(c.guys.colors.hungry);
+        circle(width - 60, (height/2 + 100) + yAddOn, 10);
+        pop();
+    }
+}
+
+function drawGraphs() {
     
   push();
   let startingY = (height / 2) + 20;
@@ -693,12 +887,15 @@ function drawGraphs() {
     if (graph != 'histogram') {
       if (stats[graph].length > 1) {
         beginShape();
+        fill(color);
         for (let i = 0; i < stats[graph].length; i++) {
           let x = map(i, 0, stats[graph].length - 1, 10, width - 10);
           let y = map(stats[graph][i], minY, maxY, yBottom, yTop, true);
           vertex(x, y);
         }
-        endShape();
+        vertex(width - 10, yBottom);
+        vertex(10, yBottom);
+        endShape(CLOSE);
       }
     }
 
@@ -878,6 +1075,5 @@ function drawBars() {
                 rect(0, 54 + (20 - 5) / 2, percentSexuallyMature, 5);
             }
         pop();
-    }
-    
+    }   
 }
