@@ -38,6 +38,11 @@ class Visualization {
             samples: {},
             mutations: {}
         }
+        let traits = {
+            binary: [...c.guys.traits.binary],
+            value: [...c.guys.traits.value],
+        };
+        traits.binary.push('carnivorous');
 
         for (let types of Object.keys(c.guys.traits)) { 
             for (let traits of c.guys.traits[types]) { 
@@ -102,6 +107,13 @@ class Visualization {
         if (total > this.memoryLimit * 1000000) {
             this.emptyStorage();
         }
+    }
+
+    show(trait) {
+        valueToViz = trait;
+        viewerOn = true;
+        vizValueDropdown.value(valueToViz);
+        vizValueDropdown.show();
     }
 }
 

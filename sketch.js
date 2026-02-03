@@ -133,12 +133,14 @@ function draw() {
     }
 
     for (let guy of guys) {
+        //kill guys whose time is up or who have had their allotment of children
         if (getTimeIndex() - guy.birthday >= guy.lifeSpan || guy.offspringCount > guy.childrenAllowed) {
             guy.dead = 1;
 
             if (!guy.deathNoisePlayed) {
+                //return them to the environment
                 if (guy.stomachContents > 0) {
-                    forage.populateMe(guy.stomachContents);
+                    forage.populateMe(guy.stomachContents, guy.pos);
                     guy.stomachContents = 0;
                 }
 
@@ -147,9 +149,12 @@ function draw() {
                 guy.playDeathBeep();
             }
         }
+
+        //guys that aren't full grown, increment their growth
         if (guy.size < guy.adultSize) {
             guy.growthProgress += guy.growthRate;
 
+            //if their belly is full and so is their growth progress, increment their size
             if (!guy.isHungry() && guy.growthProgress >= 1) {
                 guy.size++;
                 guy.growthProgress--;
@@ -157,8 +162,11 @@ function draw() {
             }
         }
 
+        //food, folks, and fun
         let sensedFood;
         guy.potentialMates = [];
+
+        //decay dead guys, remove them from the board
         if (guy.dead) {
             guy.decayProgress += Guy.getGlobalDigestionRate() * (data.vis);
 
@@ -206,8 +214,26 @@ function draw() {
             guy.arrow(mt);
         }
 
+        //find food
         if (!guy.dead) {
-            if (guy.isHungry() && guy.seekPriority !== 'baby') {
+            //hungry carnivores
+            if (guy.isHungry() && guy.carnivorous) {
+                guy.isHorny = 0;
+                if (!guy.prey) {
+                    //choose the guy with the fullest stomach as prey
+                    guy.prey = guys.filter(g => g.stomachContents < guy.size && !g.dead && g !== guy).reduce((a, b) => !a || b.stomachContents > a.stomachContents ? b : a, null);
+
+                    guy.target.x = guy.prey.pos.x;
+                    guy.target.y = guy.prey.pos.y;
+                }
+                
+                guy.isSeeking = 1;
+                guy.seekPriority = 'prey';
+                guy.seek();
+            }
+
+            //hungry herbivores
+            if (guy.isHungry() && guy.seekPriority !== 'baby' && !guy.carnivorous) {
                 guy.isHorny = 0;
                 sensedFood = guy.sensesFood(forage.foodStorage);
 
@@ -249,6 +275,13 @@ function draw() {
 
 
         guy.digestionProgress += guy.isSexuallyMature() ? guy.digestionRate : guy.digestionRate / 4;
+
+        if (guy.stomachContents > 0 && !guy.dead) {
+            //Penalizing speeds faster than the fastest guy at initialization
+            const penalty = Math.max(0, guy.vel.mag() - viz.experiment.samples.velLimit[0].max);
+            guy.stomachContents -= penalty * 0.001;
+            guy.stomachContents = Math.max(0, guy.stomachContents);
+        }
         if (guy.stomachContents > 0 && guy.dead == 0) {
             if (guy.digestionProgress >= 1) {
                 guy.stomachContents -= forage.foodSize;
@@ -261,12 +294,7 @@ function draw() {
             }
         } else {
             if (guy.digestionProgress >= 1 && guy.dead == 0 && guy.stomachContents == 0) {
-                guy.dead = 1;
-                stats.guys--;
-
-                if (!guy.deathNoisePlayed) {
-                    guy.playDeathBeep();
-                }
+                Guy.killThisGuy(guy);
             }
         }
 
@@ -349,6 +377,7 @@ function draw() {
 }
 
 function weatherHasChanged(prevData) {
+    forage.calculateChanceOfFood();
     return JSON.stringify(data) !== prevData;
 }
 
@@ -515,7 +544,7 @@ function loadIcons() {
 function drawEnvironment() {
     push();
     strokeWeight(2);
-    stroke("#cc99ff");
+    stroke(forage && forage.penaltyActive ? c.guys.colors.mars : '#cc99ff');
     fill(0);
     rect(10, 10, width - 20, height / 2, 26);
     pop();

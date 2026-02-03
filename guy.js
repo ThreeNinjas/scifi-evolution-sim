@@ -39,6 +39,17 @@ class Guy {
     this.smartFoodFinder = util.coinToss(0, 1);
     this.resolute = util.chance(10); //if this is true, guy won't change its mind about food targets
     this.movesAwayFromBaby = util.chance(data.temp);
+    //this.carnivorous = guys.length > 100 && guys.filter(g => g.carnivorous).length < 2 ? util.chance(1, data.clouds) : 0;
+    this.carnivorous = guys.length > 100 ? util.chance(1, data.clouds) : false;
+    if (this.carnivorous) {
+        this.digestionRate = Math.abs(this.digestionRate);
+        console.log(`Guy${this.id} is a carnivore.`);
+        this.halo = 1;
+        if (volumeOn) {
+        sounds.prefBeep.currentTime = 0;
+        sounds.prefBeep.play().catch(() => {});
+        }
+    }
 
     //heritable - vectors
     this.velLimit = !util.chance(99) ? 5 : util.randomNormal(0.001, 0.25); // random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
@@ -75,11 +86,14 @@ class Guy {
     this.deathNoisePlayed = 0;
 
     this.target = createVector(0, 0);
-    this.seekPriority = null; //food|mate|baby
+    this.seekPriority = null; //food|mate|baby|prey
+
+    this.prey = undefined;
 
     this.potentialMates = [];
     this.mateTimer = 0;
     this.mate = undefined;
+
     this.mutationPackage = [];
   }
 
@@ -208,7 +222,12 @@ class Guy {
 
     push();
     if (isGuy) {
-      stroke(c.guys.colors.horny);
+        if (this.seekPriority == 'prey') {
+            stroke(c.guys.colors.mars);
+        } else {
+            stroke(c.guys.colors.horny);
+        }
+      
     } else {
       stroke(c.guys.colors.hungry);
     }
@@ -230,6 +249,9 @@ class Guy {
     if (this.dead) return;
     
     for (let i = 0; i < this.orbiters.length; i++) {
+        if (this.orbiters[i].delta >= 1 || this.orbiters[i].delta <= -1) {
+            continue;
+        }
       push();
       let orbiterSize = this.size * 0.2 >= 2 ? this.size * 0.2 : 2;
       translate(this.pos.x, this.pos.y);
@@ -253,6 +275,17 @@ class Guy {
     if (this.dead) {
       return this.drawMe();
     }
+
+    if (this.overRideMove) {
+        return;
+    }
+
+    if (this.overRideMoveIntermittent) {
+        if (util.coinToss('oven', 'toaster oven') == 'oven') {
+            return;
+        }
+    }
+
     for (const key of ["x", "y"]) {
       switch (util.randomNumber(0, 2)) {
         case 0:
@@ -412,7 +445,7 @@ class Guy {
   }
 
   seek() {
-    this.arrow(this.target);
+    this.arrow(this.prey);
     this.acc.set(this.target).sub(this.pos);
     this.acc.setMag(this.seekAccel);
 
@@ -449,6 +482,22 @@ class Guy {
     }
 
     if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= 5) {
+        if (this.carnivorous && this.seekPriority == 'prey' && this.prey && !this.prey.dead) {
+            if (dist(this.pos.x, this.pos.y, this.prey.pos.x, this.prey.pos.y) <= this.size) {
+                //you found your guy, eat that fucker
+                this.stomachContents += this.prey.stomachContents + this.prey.size;
+                this.prey.stomachContents = 0;
+                Guy.killThisGuy(this.prey);
+                this.prey = undefined;
+                console.log(`Guy${this.id} just killed a man.`);
+            } else {
+                //your prey has moved.....find him!
+                this.target.x = this.prey.pos.x;
+                this.target.y = this.prey.pos.y;
+                console.log(`Guy${this.id} updated target position.`);
+            }
+            
+        }
       this.isSeeking = 0;
       this.target.x = 0;
       this.target.y = 0;
@@ -480,14 +529,10 @@ class Guy {
       }
     }
 
-    if (bestGuy) {
-      bestGuy.halo = 1;
-    }
-
-    if (volumeOn) {
-      sounds.prefBeep.currentTime = 0;
-      sounds.prefBeep.play().catch(() => {});
-    }
+    // if (volumeOn) {
+    //   sounds.prefBeep.currentTime = 0;
+    //   sounds.prefBeep.play().catch(() => {});
+    // }
 
     return bestGuy;
   }
@@ -584,6 +629,11 @@ class Guy {
       }
     }
 
+    if (parentA.carnivorous || parentB.carnivorous) {
+        child.carnivorous = true;
+    }
+
+    
     if (mutationHappened) {
       for (let type of Object.values(child.mutationPackage)) {
         for (let m of type) {
@@ -591,6 +641,9 @@ class Guy {
             let max = Math.max(...Guy.getCurrentRangeFor(m.trait));
           if (m.baby > max || m.baby < min) {
             console.log(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
+            
+            viz.show(m.trait);
+
             if (volumeOn) {
                 sounds.monsterAlert.currentTime = 0;
                 sounds.monsterAlert.play().catch(() => {});
@@ -599,16 +652,16 @@ class Guy {
         }
       }
     }
-
-    for (const m of child.mutationPackage.value) {
-      child.orbiters.push({
-        trait: m.trait,
-        angle: 0,
-        delta: m.percentChange / 100,
-        color: c.getOrbiterColor(m.trait),
-        rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
-      });
-    }
+       
+        for (const m of child.mutationPackage.value) {
+            child.orbiters.push({
+                trait: m.trait,
+                angle: 0,
+                delta: (m.percentChange / 100) / 10,
+                color: c.getOrbiterColor(m.trait),
+                rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
+            });
+        }
 
     for (const orbiterArray of [parentA.orbiters, parentB.orbiters]) {
       for (const o of orbiterArray) {
@@ -617,6 +670,7 @@ class Guy {
         }
       }
     }
+    
 
     if (util.chance(1, 1000)) {
       child.color = util.randomColor();
@@ -638,11 +692,7 @@ class Guy {
     if (volumeOn && mutationHappened) {
       sounds.mutationBeep.currentTime = 0;
       sounds.mutationBeep.play().catch(() => {});
-    }
-
-    if (mutationHappened) {
-      child.halo = 1;
-      child.haloWasSetAutomatically = 1;
+      console.log(`Welcome, Mutant${child.id}`);
     }
 
     for (let guy of [this, mate]) {
@@ -774,10 +824,10 @@ class Guy {
   }
 
   playDeathBeep() {
-    // if (volumeOn) {
-    //     sounds.deathBeep.currentTime = 0;
-    //     sounds.deathBeep.play().catch(() => {});
-    // }
+    if (volumeOn) {
+        sounds.deathBeep.currentTime = 0;
+        sounds.deathBeep.play().catch(() => {});
+    }
 
     this.deathNoisePlayed = 1;
   }
@@ -858,5 +908,34 @@ class Guy {
 
   static getCurrentRangeFor(trait) {
     return guys.map((g) => g[trait]);
+  }
+
+  static killThisGuy(guy) {
+    guy.dead = 1;
+    stats.guys--;
+
+    if (!guy.deathNoisePlayed) {
+        guy.playDeathBeep();
+    }
+  }
+
+  static makeThisGuyCarnivorous(id) {
+    let guy = guys.find(g => g.id === id);
+    if (!guy) return;
+
+    guy.carnivorous = 1; 
+    guy.target.x = 0;
+    guy.target.y = 0;
+    guy.seekPriority = 'prey';
+  }
+
+  static showCarnivoreDetails(id) {
+    let guy = guys.find(g => g.id === id);
+    if (!guy) return;
+    console.log(
+        `isHungry: ${guy.isHungry()}; isHorny: ${guy.isHorny}; stomachContents: ${guy.stomachContents};
+        seekPriority: ${guy.seekPriority}; size: ${guy.size};
+        target: ${guy.target.x},${guy.target.y}; prey: ${guy.prey};
+    `);
   }
 }
