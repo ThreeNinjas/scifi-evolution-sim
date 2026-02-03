@@ -32,6 +32,10 @@ class Forage {
             this.penaltyActive = false;
             this.startOfPenalty = null;
             chanceOfFood = this.chanceOfFood;
+            if (volumeOn) {
+                sounds.penaltyOffBeep.currentTime = 0;
+                sounds.penaltyOffBeep.play().catch(() => {});
+            }
             }
         } 
         } else {
@@ -39,6 +43,10 @@ class Forage {
                 this.penaltyActive = true;
                 this.startOfPenalty = frameCount;
                 chanceOfFood = this.chanceOfFood / 2;
+                if (volumeOn) {
+                    sounds.penaltyOnBeep.currentTime = 0;
+                    sounds.penaltyOnBeep.play().catch(() => {});
+                }
             }
         }
 
@@ -49,6 +57,11 @@ class Forage {
         if (this.penaltyActive && frameCount > this.startOfPenalty + this.penaltyLength) {
             this.startOfPenalty = null;
             this.penaltyActive = false;
+
+            if (volumeOn) {
+                sounds.penaltyOffBeep.currentTime = 0;
+                sounds.penaltyOffBeep.play().catch(() => {});
+            }
         }
 
         const max = num === null

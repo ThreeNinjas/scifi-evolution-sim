@@ -41,15 +41,16 @@ class Guy {
     this.movesAwayFromBaby = util.chance(data.temp);
     //this.carnivorous = guys.length > 100 && guys.filter(g => g.carnivorous).length < 2 ? util.chance(1, data.clouds) : 0;
     this.carnivorous = guys.length > 100 ? util.chance(1, data.clouds) : false;
+    this.carnivoreNoisePlayed = false;
     if (this.carnivorous) {
         this.digestionRate = Math.abs(this.digestionRate);
         console.log(`Guy${this.id} is a carnivore.`);
         this.halo = 1;
-        if (volumeOn) {
-        sounds.prefBeep.currentTime = 0;
-        sounds.prefBeep.play().catch(() => {});
-        }
+        util.playNoise(sounds.carnivoreNoise);
+        this.carnivoreNoisePlayed = true;
     }
+
+    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : null;
 
     //heritable - vectors
     this.velLimit = !util.chance(99) ? 5 : util.randomNormal(0.001, 0.25); // random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
@@ -95,6 +96,8 @@ class Guy {
     this.mate = undefined;
 
     this.mutationPackage = [];
+
+    this.lastPing = 0;
   }
 
   drawMe() {
@@ -116,9 +119,9 @@ class Guy {
     }
 
     if (this.stomachContents > 0) {
-      stroke(c.forage.color);
+      stroke(this.carnivorous ? c.guys.colors.mars : c.forage.color);
       fill(c.forage.color);
-      circle(this.pos.x, this.pos.y + 1, this.stomachContents);
+      circle(this.pos.x, this.pos.y + 1, constrain(this.stomachContents, 0, this.size - 1));
     }
     if (
       !this.dead &&
@@ -128,6 +131,10 @@ class Guy {
         (this.isHorny && !this.isSeeking))
     ) {
       drawPing(this);
+    }
+
+    if (this.carnivorous && this.isHungry()) {
+        drawPing(this);
     }
     pop();
 
@@ -195,6 +202,16 @@ class Guy {
       stroke("white");
       circle(this.pos.x, this.pos.y, this.calculateSensePerim());
       pop();
+    }
+
+    if (this.armored) {
+        push();
+            noFill();
+            strokeWeight(0.5);
+            stroke(c.guys.colors.radioactive);
+            circle(this.pos.x, this.pos.y, this.size - (this.size * 0.4));
+            circle(this.pos.x, this.pos.y, this.size + (this.size * 0.5));
+        pop();
     }
   }
 
@@ -445,6 +462,13 @@ class Guy {
   }
 
   seek() {
+    if (this.seekPriority == 'prey' && this.prey && this.prey.dead) {
+        this.isSeeking = 0;
+        this.target.x = 0;
+        this.target.y = 0;
+        this.seekPriority = null;
+        return;
+    }
     this.arrow(this.prey);
     this.acc.set(this.target).sub(this.pos);
     this.acc.setMag(this.seekAccel);
@@ -481,28 +505,32 @@ class Guy {
       this.vel.y = 0;
     }
 
+    //if you have reached your target:
     if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= 5) {
+        //if you are carnivorous and seeking prey and that prey has not died:
         if (this.carnivorous && this.seekPriority == 'prey' && this.prey && !this.prey.dead) {
-            if (dist(this.pos.x, this.pos.y, this.prey.pos.x, this.prey.pos.y) <= this.size) {
-                //you found your guy, eat that fucker
+            //you found your guy, eat that fucker! unless he's armored
+            if (!this.prey.armored) { 
                 this.stomachContents += this.prey.stomachContents + this.prey.size;
                 this.prey.stomachContents = 0;
                 Guy.killThisGuy(this.prey);
                 this.prey = undefined;
                 console.log(`Guy${this.id} just killed a man.`);
-            } else {
-                //your prey has moved.....find him!
-                this.target.x = this.prey.pos.x;
-                this.target.y = this.prey.pos.y;
-                console.log(`Guy${this.id} updated target position.`);
             }
-            
-        }
-      this.isSeeking = 0;
-      this.target.x = 0;
-      this.target.y = 0;
-      this.seekPriority = null;
+        } 
+        this.nullifyTarget();
     }
+  }
+
+  nullifyTarget() {
+    if (this.seekPriority == 'prey') {
+        this.prey = null;
+    }
+    this.isSeeking = 0;
+    this.target.x = 0;
+    this.target.y = 0;
+    this.seekPriority = null;
+    this.vel.setMag(0);
   }
 
   chooseMate() {
@@ -593,6 +621,7 @@ class Guy {
         );
         child[trait] *= 1 + sign * percent;
         mutation.baby = child[trait];
+        mutation.mutated = child[trait];
         mutation.percentChange = util.percentChange(
           mutation.original,
           mutation.mutated
@@ -630,10 +659,13 @@ class Guy {
     }
 
     if (parentA.carnivorous || parentB.carnivorous) {
-        child.carnivorous = true;
+        child.carnivorous = util.coinToss(true, false);
+        if (child.carnivorous && !child.carnivoreNoisePlayed) {
+            util.playNoise(sounds.carnivoreNoise);
+            child.carnivoreNoisePlayed = true;
+        }
     }
 
-    
     if (mutationHappened) {
       for (let type of Object.values(child.mutationPackage)) {
         for (let m of type) {
@@ -653,15 +685,15 @@ class Guy {
       }
     }
        
-        for (const m of child.mutationPackage.value) {
-            child.orbiters.push({
-                trait: m.trait,
-                angle: 0,
-                delta: (m.percentChange / 100) / 10,
-                color: c.getOrbiterColor(m.trait),
-                rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
-            });
-        }
+    for (const m of child.mutationPackage.value) {
+        child.orbiters.push({
+            trait: m.trait,
+            angle: 0,
+            delta: (m.percentChange / 100) / 10,
+            color: parentA.color,
+            rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
+        });
+    }
 
     for (const orbiterArray of [parentA.orbiters, parentB.orbiters]) {
       for (const o of orbiterArray) {

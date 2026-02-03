@@ -181,4 +181,12 @@ class Util {
     calculateStdDev(values) {
         return d3.deviation(values);
     }
+
+    playNoise(noise) {
+        if (volumeOn) {
+            noise.currentTime = 0;
+            noise.play().catch(() => {});
+        }
+        return;
+    }
 }

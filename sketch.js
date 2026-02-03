@@ -13,6 +13,9 @@ let sounds = {
     birthBeep: new Audio('assets/hailbeep4_clean.mp3'),
     monsterAlert: new Audio('assets/input_ok_3_clean.mp3'),
     weatherUpdated: new Audio('assets/ds9intercom.mp3'),
+    penaltyOnBeep: new Audio('assets/penaltyOn.mp3'),
+    penaltyOffBeep: new Audio('assets/penaltyOff.mp3'),
+    carnivoreNoise: new Audio('assets/thatSFXguy/alert 02.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -222,14 +225,20 @@ function draw() {
                 if (!guy.prey) {
                     //choose the guy with the fullest stomach as prey
                     guy.prey = guys.filter(g => g.stomachContents < guy.size && !g.dead && g !== guy).reduce((a, b) => !a || b.stomachContents > a.stomachContents ? b : a, null);
+                    if (guy.prey) {
+                        console.log(`Guy${guy.id} is trying to eat Guy${guy.prey.id}`);
+                        guy.halo = true;
+                        guy.prey.halo = true;
+                        guy.target.x = guy.prey.pos.x;
+                        guy.target.y = guy.prey.pos.y;
 
-                    guy.target.x = guy.prey.pos.x;
-                    guy.target.y = guy.prey.pos.y;
+                        guy.isSeeking = 1;
+                        guy.seekPriority = 'prey';
+                        
+                    }   
+                } else {
+                    guy.seek();
                 }
-                
-                guy.isSeeking = 1;
-                guy.seekPriority = 'prey';
-                guy.seek();
             }
 
             //hungry herbivores
@@ -317,19 +326,22 @@ function draw() {
         if (stats.numberOfFoodHistory.length > MAX_HISTORY_LENGTH) {
             stats.numberOfFoodHistory.shift();
         }
+    }
 
+    if (frameCount % 200 === 0 && automatedHistogramSelection) {
         stats.numberOfGuysHistory.push(stats.guys);
 
         if (stats.numberOfGuysHistory.length > MAX_HISTORY_LENGTH) {
             stats.numberOfGuysHistory.shift();
         }
-    }
 
-    if (frameCount % 200 === 0 && automatedHistogramSelection) {
-        selectedHistogram++;
-        if (selectedHistogram > 3) {
-            selectedHistogram = 0;
+        if (automatedHistogramSelection) {
+            selectedHistogram++;
+            if (selectedHistogram > 3) {
+                selectedHistogram = 0;
+            }
         }
+        
     }
 
     drawMasking();
@@ -518,6 +530,8 @@ async function loadWeather() {
             return guy;
         });
     globalMaxGuys = guys.length;
+
+    stats.numberOfGuysHistory.push(stats.guys);
 
     viz.takeSnapshot(guys);
 
@@ -1007,9 +1021,10 @@ function drawHistogram() {
 
 
 function drawPing(guy) {
-    if (!guy.isHorny && forage.foodStorage.length == 0 && millis() - guy.lastPing < 80000) {
+    if (!guy.isHorny && forage.foodStorage.length == 0 && millis() - guy.lastPing < 10000) {
        return;
     }
+    guy.lastPing = millis();
     const start = guy.size;
     //const end = guy.senseDistance * 2;
     //const end = guy.senseDistance;
@@ -1018,7 +1033,7 @@ function drawPing(guy) {
     const alpha = Math.floor(255 * (1 - t));
     const hexAlpha = alpha.toString(16).padStart(2, '0');
 
-    const colorStub = guy.isHorny ? '#ff3cd1' : '#339ccc'
+    const colorStub = guy.carnivorous ? '#ff22' : guy.isHorny ? '#ff3cd1' : '#339ccc'
     push();
         noFill();
         stroke(`${colorStub}${hexAlpha}`);

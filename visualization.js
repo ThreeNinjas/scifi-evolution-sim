@@ -4,7 +4,8 @@ class Visualization {
         this.houseKeeping();
 
         this.indexName = "experiments:index";
-        this.index = JSON.parse(localStorage.getItem(this.indexName)) || this.createIndex();
+        //this.index = JSON.parse(localStorage.getItem(this.indexName)) || this.createIndex();
+        this.index = this.createIndex();
         this.index.currentId = this.uniqueID();
         this.experimentKey = `experiments:${this.index.currentId}`;
         
@@ -12,7 +13,7 @@ class Visualization {
             this.index.ids.push(this.index.currentId);
         }
 
-        this.save(this.index, this.indexName);
+        //this.save(this.index, this.indexName);
 
         this.experiment = this.createExperiment();
         this.mutationsBucket = [];
@@ -24,7 +25,7 @@ class Visualization {
             "ids": []
         };
 
-        this.save(index, this.indexName);
+        //this.save(index, this.indexName);
         return index;
     }
 
@@ -57,6 +58,7 @@ class Visualization {
     }
 
     save(data, fileName) {
+        return;
         return localStorage.setItem(fileName, JSON.stringify(data));
     }
 

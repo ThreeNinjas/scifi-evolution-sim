@@ -16,6 +16,7 @@ class Config {
                 hungryVar2: '#339cccff',
                 gold: '#ffaa00',
                 mars: '#ff2200',
+                radioactive: '#88ffff',
                 orbiters: []
             },
             traits: {
