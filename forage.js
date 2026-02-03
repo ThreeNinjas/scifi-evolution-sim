@@ -10,24 +10,88 @@ class Forage {
         this.numberOfFood = 0;
         this.foodStorage = [];
         this.foodSize = 0.25;
+
+        this.startOfPenalty = 0;
+        this.penaltyLength = data.clouds * 10;
+        this.penaltyActive = false;
         
 
         this.populateMe();
     }
 
-    populateMe(num = null) {
+    populateMe(num = null, pos = null) {
+        let chanceOfFood = this.chanceOfFood;
+
+        if (this.penaltyActive) {
+        chanceOfFood = this.chanceOfFood / 2;
+
+        if (guys.length > 100) {
+            if (this.startOfPenalty == null) this.startOfPenalty = frameCount;
+
+            if (frameCount - this.startOfPenalty >= this.penaltyLength) {
+            this.penaltyActive = false;
+            this.startOfPenalty = null;
+            chanceOfFood = this.chanceOfFood;
+            if (volumeOn) {
+                sounds.penaltyOffBeep.currentTime = 0;
+                sounds.penaltyOffBeep.play().catch(() => {});
+            }
+            }
+        } 
+        } else {
+            if (guys.length > 100) {
+                this.penaltyActive = true;
+                this.startOfPenalty = frameCount;
+                chanceOfFood = this.chanceOfFood / 2;
+                if (volumeOn) {
+                    sounds.penaltyOnBeep.currentTime = 0;
+                    sounds.penaltyOnBeep.play().catch(() => {});
+                }
+            }
+        }
+
+        if (this.penaltyActive && this.startOfPenalty == null && guys.length > 100) {
+            this.startOfPenalty = frameCount;
+        }
+
+        if (this.penaltyActive && frameCount > this.startOfPenalty + this.penaltyLength) {
+            this.startOfPenalty = null;
+            this.penaltyActive = false;
+
+            if (volumeOn) {
+                sounds.penaltyOffBeep.currentTime = 0;
+                sounds.penaltyOffBeep.play().catch(() => {});
+            }
+        }
+
         const max = num === null
-            ? this.chanceOfFood
+            ? chanceOfFood
             : Math.floor(num / this.foodSize);
 
         for (let i = 0; i < max; i++) {
-            if (num === null && this.foodStorage.length >= this.chanceOfFood) break;
+            if (num === null && this.foodStorage.length >= chanceOfFood) break;
 
-            if (util.chance(this.chanceOfFood)) {
+            if (util.chance(chanceOfFood)) {
+                let x = pos != null ? util.randomNumber(pos.x - 10, pos.x + 10) : util.randomNumber(config.bounds.x.min, config.bounds.x.max);
+                let y = pos != null ? util.randomNumber(pos.y - 10, pos.y + 10) : util.randomNumber(config.bounds.y.min, config.bounds.y.max);
+
+                if (x > config.bounds.x.max) {
+                    x = config.bounds.x.max
+                }
+                if (x < config.bounds.x.min) {
+                    x = config.bounds.x.min;
+                }
+                if (y > config.bounds.y.max) {
+                    y = config.bounds.y.max
+                }
+                if (y < config.bounds.y.min) {
+                    y = config.bounds.y.min;
+                }
+
                 this.foodStorage.push({
                     id: NEXT_FORAGE_ID++,
-                    x: util.randomNumber(config.bounds.x.min, config.bounds.x.max),
-                    y: util.randomNumber(config.bounds.y.min, config.bounds.y.max),
+                    x,
+                    y,
                 });
                 this.numberOfFood += this.foodSize;
             }

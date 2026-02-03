@@ -4,7 +4,8 @@ class Visualization {
         this.houseKeeping();
 
         this.indexName = "experiments:index";
-        this.index = JSON.parse(localStorage.getItem(this.indexName)) || this.createIndex();
+        //this.index = JSON.parse(localStorage.getItem(this.indexName)) || this.createIndex();
+        this.index = this.createIndex();
         this.index.currentId = this.uniqueID();
         this.experimentKey = `experiments:${this.index.currentId}`;
         
@@ -12,7 +13,7 @@ class Visualization {
             this.index.ids.push(this.index.currentId);
         }
 
-        this.save(this.index, this.indexName);
+        //this.save(this.index, this.indexName);
 
         this.experiment = this.createExperiment();
         this.mutationsBucket = [];
@@ -24,7 +25,7 @@ class Visualization {
             "ids": []
         };
 
-        this.save(index, this.indexName);
+        //this.save(index, this.indexName);
         return index;
     }
 
@@ -38,6 +39,11 @@ class Visualization {
             samples: {},
             mutations: {}
         }
+        let traits = {
+            binary: [...c.guys.traits.binary],
+            value: [...c.guys.traits.value],
+        };
+        traits.binary.push('carnivorous');
 
         for (let types of Object.keys(c.guys.traits)) { 
             for (let traits of c.guys.traits[types]) { 
@@ -52,6 +58,7 @@ class Visualization {
     }
 
     save(data, fileName) {
+        return;
         return localStorage.setItem(fileName, JSON.stringify(data));
     }
 
@@ -102,6 +109,13 @@ class Visualization {
         if (total > this.memoryLimit * 1000000) {
             this.emptyStorage();
         }
+    }
+
+    show(trait) {
+        valueToViz = trait;
+        viewerOn = true;
+        vizValueDropdown.value(valueToViz);
+        vizValueDropdown.show();
     }
 }
 

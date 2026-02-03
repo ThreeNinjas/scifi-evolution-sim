@@ -15,6 +15,8 @@ class Config {
                 hungry: '#339cccaa',
                 hungryVar2: '#339cccff',
                 gold: '#ffaa00',
+                mars: '#ff2200',
+                radioactive: '#88ffff',
                 orbiters: []
             },
             traits: {
@@ -37,7 +39,7 @@ class Config {
                 'childrenAllowed',
             ], special: [
                 'preference',
-                'preferenceDirection'
+                'preferenceDirection',
             ]
             }
         };
