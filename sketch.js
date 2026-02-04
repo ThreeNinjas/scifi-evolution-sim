@@ -247,7 +247,15 @@ function draw() {
                 sensedFood = guy.sensesFood(forage.foodStorage);
 
                 if (sensedFood) {
-                    guy.seekFood(sensedFood);
+                    if (guy.reactionStartFrame === null && guy.seekPriority !== 'food') {
+                        guy.reactionStartFrame = frameCount;
+                    }
+                    if (frameCount >= guy.reactionStartFrame + guy.reactionTime) {
+                        guy.seekFood(sensedFood);
+                        guy.reactionStartFrame = null;
+                        guy.seekPriority = 'food';
+                    }
+                    
                     if (!guy.overRideMove) {
                         guy.move();
                     }
@@ -1021,7 +1029,7 @@ function drawHistogram() {
 
 
 function drawPing(guy) {
-    if (!guy.isHorny && forage.foodStorage.length == 0 && millis() - guy.lastPing < 10000) {
+    if (!guy.isHorny && forage.foodStorage.length == 0 && millis() - guy.lastPing > 10000) {
        return;
     }
     guy.lastPing = millis();
