@@ -25,7 +25,7 @@ class Guy {
     this.childrenAllowed = Math.abs(
       Math.floor(util.randomNormal(data.temp / 5, data.vis))
     );
-    this.reactionTime = constrain(Math.abs(Math.floor(util.randomNormal(data.temp, data.hum))), 100, 200);
+    this.reactionTime = constrain(Math.abs(Math.floor(util.randomNormal(data.temp, data.hum))), 30, 20000);
 
     //heritable - special cases
     //there's a 1 in temperature chance that guy will have a preference of some random trait
