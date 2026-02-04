@@ -34,13 +34,14 @@ class Visualization {
     }
 
     createExperiment() {
+        let extraBinary = ['carnivorous'];
         let experiment = {
             id: this.index.currentId,
             samples: {},
             mutations: {}
         }
         let traits = {
-            binary: [...c.guys.traits.binary],
+            binary: [...c.guys.traits.binary.concat(extraBinary)],
             value: [...c.guys.traits.value],
         };
         traits.binary.push('carnivorous');
@@ -67,6 +68,8 @@ class Visualization {
 
         let aliveGuys = guys.filter(g => g.dead === 0);
 
+        
+
         for (let trait of c.guys.traits.binary) {
             this.experiment.samples[trait].push({
                 t,
@@ -91,6 +94,27 @@ class Visualization {
                 std_dev: util.calculateStdDev(values)
             });
         }
+
+        //prefs
+        this.experiment.samples.preference = {};
+        for (let traitType of Object.keys(c.guys.traits)) {
+            if (traitType == 'special') continue;
+
+            for (let trait of c.guys.traits[traitType]) {
+                let count = guys.filter(g => g.preference === trait).length;
+                
+                if (count > 0) {
+                    this.experiment.samples.preference[trait] = {
+                        trait,
+                        count,
+                        positive: guys.filter(g => g.preference === trait & g. preferenceDirection == 1).length,
+                        negative: guys.filter(g => g.preference === trait & g. preferenceDirection == -1).length,
+                        chosenThisTimeFrame: 0
+                    };
+                }
+            }
+        }
+
         this.save(this.experiment, this.experimentKey);
     }
 

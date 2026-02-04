@@ -23,8 +23,9 @@ for (let sound of Object.values(sounds)) {
     sound.volume = 0.25;
 }
 
-sounds.deathBeep.volume = 0.125;
-sounds.birthBeep.volume = 0.125;
+for (let sound of [sounds.deathBeep, sounds.birthBeep, sounds.carnivoreNoise]) {
+    sound.volume = 0.125;
+}
 
 let util = new Util();
 let c; //maybe rename config below later....
@@ -47,7 +48,7 @@ let stats = {
 let graphAreaHeight = 275;
 
 const MAX_HISTORY_LENGTH = 500;
-const DOWNSAMPLE_RATE = 2;
+const DOWNSAMPLE_RATE = 4;
 
 //environmentally dependent variables
 let DIGESTION_RATE_PER_FRAME = 0;
@@ -143,11 +144,11 @@ function draw() {
             if (!guy.deathNoisePlayed) {
                 //return them to the environment
                 if (guy.stomachContents > 0) {
-                    forage.populateMe(guy.stomachContents, guy.pos);
+                    forage.populateMe(guy.stomachContents, guy.pos, guy.size);
                     guy.stomachContents = 0;
                 }
 
-                forage.populateMe(guy.size);
+                forage.populateMe(guy.size, guy.pos, guy.size);
                 stats.guys--;
                 guy.playDeathBeep();
             }
@@ -334,15 +335,15 @@ function draw() {
         if (stats.numberOfFoodHistory.length > MAX_HISTORY_LENGTH) {
             stats.numberOfFoodHistory.shift();
         }
-    }
 
-    if (frameCount % 200 === 0 && automatedHistogramSelection) {
         stats.numberOfGuysHistory.push(stats.guys);
 
         if (stats.numberOfGuysHistory.length > MAX_HISTORY_LENGTH) {
             stats.numberOfGuysHistory.shift();
         }
+    }
 
+    if (frameCount % 200 === 0 && automatedHistogramSelection) {
         if (automatedHistogramSelection) {
             selectedHistogram++;
             if (selectedHistogram > 3) {
@@ -506,7 +507,7 @@ async function loadWeather() {
         });
 
     //let traits = c.guys.traits.value.sort((a, b) => a.localeCompare(b));
-    let traits = c .guys.traits.value.concat(c.guys.traits.binary).sort((a, b) => a.localeCompare(b));
+    let traits = c .guys.traits.value.concat(c.guys.traits.binary).concat(['preference', 'carnivory']).sort((a, b) => a.localeCompare(b));
     
     for (let traitLabel of traits) {
         vizValueDropdown.option(traitLabel);
@@ -752,9 +753,6 @@ function showViz() {
         vizValueDropdown.position(12, 78);
 
         if (c.guys.traits.value.includes(valueToViz)) {
-            // drawIndividualLine(valueToViz, 'max');
-            // drawIndividualLine(valueToViz, 'min');
-
             drawMinMaxShape(valueToViz);
 
             stroke(c.guys.colors.hungryVar2);
@@ -762,12 +760,52 @@ function showViz() {
             
             stroke(c.guys.colors.gold);
             drawIndividualLine(valueToViz, 'median');
-        } else {
+        }
+
+        if (c.guys.traits.binary.includes(valueToViz)) {
             drawBinaryLine(valueToViz);
         }
         
+        if (valueToViz === 'preference') {
+            drawPreferencePlot();
+        }
         
     pop();
+}
+
+function drawPreferencePlot() {
+    let halfWidth = 180;
+    let barHeight = 100 / Object.values(viz.experiment.samples.preference).length;
+    let startingY = 0;
+
+    const prefs = Object.values(viz.experiment.samples.preference);
+    const maxCount = Math.max(...prefs.map(p => p.count));
+
+    textAlign(LEFT, BOTTOM);
+
+    for (let trait of Object.values(viz.experiment.samples.preference)) { 
+        let negativeWidth = map(trait.negative, 0, maxCount, 0, halfWidth);
+        let positiveWidth = map(trait.positive, 0, maxCount, 0, halfWidth);
+
+        let x = 200 - negativeWidth;
+        let barWidth = negativeWidth + positiveWidth;
+
+        stroke(c.guys.colors.horny);
+        fill(c.guys.colors.hornyVar2)
+        rect(x, startingY, barWidth, barHeight - 2);
+
+        push();
+        textSize(barHeight - (barHeight * 0.25));
+        fill(c.guys.colors.hungryVar2);
+        stroke('black');
+        strokeWeight(2);
+        text(trait.trait, x + 1, startingY + barHeight);
+        pop();
+
+        startingY += barHeight;
+    }
+
+    line(200, 0, 200, 100);
 }
 
 function drawIndividualLine(trait, stat) {
