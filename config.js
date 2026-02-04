@@ -37,6 +37,7 @@ class Config {
                 'velLimit',
                 'lifeSpan',
                 'childrenAllowed',
+                'reactionTime',
             ], special: [
                 'preference',
                 'preferenceDirection',

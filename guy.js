@@ -25,6 +25,7 @@ class Guy {
     this.childrenAllowed = Math.abs(
       Math.floor(util.randomNormal(data.temp / 5, data.vis))
     );
+    this.reactionTime = constrain(Math.abs(Math.floor(util.randomNormal(data.temp, data.hum))), 100, 200);
 
     //heritable - special cases
     //there's a 1 in temperature chance that guy will have a preference of some random trait
@@ -85,6 +86,8 @@ class Guy {
     this.orbiters = [];
     this.offspringCount = 0;
     this.deathNoisePlayed = 0;
+
+    this.reactionStartFrame = null;
 
     this.target = createVector(0, 0);
     this.seekPriority = null; //food|mate|baby|prey
@@ -293,15 +296,15 @@ class Guy {
       return this.drawMe();
     }
 
-    if (this.overRideMove) {
-        return;
-    }
+    // if (this.overRideMove) {
+    //     return;
+    // }
 
-    if (this.overRideMoveIntermittent) {
-        if (util.coinToss('oven', 'toaster oven') == 'oven') {
-            return;
-        }
-    }
+    // if (this.overRideMoveIntermittent) {
+    //     if (util.coinToss('oven', 'toaster oven') == 'oven') {
+    //         return;
+    //     }
+    // }
 
     for (const key of ["x", "y"]) {
       switch (util.randomNumber(0, 2)) {
@@ -804,6 +807,7 @@ class Guy {
     this.vel.setMag(0);
     this.target.x = 0;
     this.target.y = 0;
+    this.seekPriority = null;
   }
 
   isHungry() {
