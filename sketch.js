@@ -222,7 +222,7 @@ function draw() {
         if (!guy.dead) {
             //hungry carnivores
             if (guy.isHungry() && guy.carnivorous) {
-                guy.isHorny = 0;
+                guy.isHorny = false;
                 if (!guy.prey) {
                     //choose the guy with the fullest stomach as prey
                     guy.prey = guys.filter(g => g.stomachContents < guy.size && !g.dead && g !== guy).reduce((a, b) => !a || b.stomachContents > a.stomachContents ? b : a, null);
@@ -244,7 +244,7 @@ function draw() {
 
             //hungry herbivores
             if (guy.isHungry() && guy.seekPriority !== 'baby' && !guy.carnivorous) {
-                guy.isHorny = 0;
+                guy.isHorny = false;
                 sensedFood = guy.sensesFood(forage.foodStorage);
 
                 if (sensedFood) {
@@ -289,6 +289,10 @@ function draw() {
                 
                 guy.isHorny = guy.seekPriority !== 'baby' && guy.isSexuallyMature();
             }
+        }
+
+        if (guy.isHungry()) {
+            guy.isHorny = false;
         }
 
 
@@ -586,13 +590,15 @@ function drawEnvironment() {
         }
     pop();
     
+    if (forage && forage.penaltyActive) return;
+
     push();
     //the box is 380px wide
     stroke(0);
     strokeWeight(3);
     const linewidth = 300;
-    line(linewidth, 10, width - 10 - linewidth, 10);
-    line(linewidth, 10 + height / 2, width - 10 - linewidth, 10 + height / 2);
+    line(linewidth, 10, width - linewidth, 10);
+    line(linewidth, 10 + height / 2, width - linewidth, 10 + height / 2);
     pop();
 }
 

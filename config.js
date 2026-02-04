@@ -74,24 +74,23 @@ class Config {
  * selfDefense: cannot be killed by by a killsCompetitors guy
  * selfDefensePlus: kills the killer first
  * wander: if there's no food or mates within sensor range it picks a spot far away to look for stuff there
- * carnivore: when food is scarce and starvation is imminent, eat another guy (which will take you to full right away)
  * avoidDanger: if you sense a guy who is a carnivor or competitor killer, you run away
  * aposematic: make other guys think you will kill them so they avoid you
  * monogamous: once you mate with a guy, you stick with that guy and mate again when the chance arrives
 
- * A way to visualize the current population, what traits are prevalent, a history of their prevalance, etc
+ * 
  * a 'family tree' mode, where you click on a guy and it highlights its entire lineage.
  * option to use Perlin noise instead of randomly incrementing x and y
  * 
  * 
  * viz to track:
  * avg actual lifespan
-x make viz only consider alive guys
+
  * avg age
  * # who are sexually mature
  * # who are dead
  * death date
- * PREFERENCES
+
  * 
  * features to implement:
  * a button to hide pinging
@@ -106,8 +105,28 @@ x make viz only consider alive guys
   * 
   * 
   * 
+
+
+Put a limit on number of orbiters, or make them more rare.
+When guys are big, food moves to them...I can draw lines or something instead of animating forage
+Tails for binary mutations 
+Have the threshold for carnivory be 1 in (max population - current population). Closer it gets the more likely carnivory is
+Guys that aren't full killers, they take a nip off random guys
+Mutation viewer. Select a guy, highlight everyone with his same orbiters, hide everyone else.
+
+
+x When the carnivores are the majority, evolve guys with defenses
+x No arrow if target is 0,0
+x Adjust ping mills
+x Carnivore noise
+x Penalty time noise
+x Reaction time. They don't notice food immediately
 x moves away from baby trait
 x maybe when paused and a guy is clicked, let it run for 1 frame so that the guy gets highlighted
 x MAKE AMOUNT OF FOOD DEPENDANT UPON HOW MUCH ITS RAINED RECENTLY
 x when a guy dies with food in its stomach its body becomes food as it decays
+x PREFERENCES
+x make viz only consider alive guys
+x A way to visualize the current population, what traits are prevalent, a history of their prevalance, etc
+x carnivore: when food is scarce and starvation is imminent, eat another guy (which will take you to full right away)
 */

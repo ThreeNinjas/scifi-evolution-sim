@@ -221,10 +221,16 @@ class Guy {
   arrow(target) {
     const isGuy = target && target.pos !== undefined;
 
+
+
     if (isGuy) {
       this.target.x = target.pos.x;
       this.target.y = target.pos.y;
+    }
+    
+    if (this.target.x === 0 && this.target.y === 0) return;
 
+    if (isGuy) {
       stroke(this.color);
       line(this.pos.x, this.pos.y, target.pos.x, target.pos.y);
     }
@@ -580,6 +586,7 @@ class Guy {
     mate.offspringCount++;
 
     const child = new Guy();
+    util.playNoise(sounds.birthBeep);
     child.mutationPackage = {
       binary: [],
       value: [],
