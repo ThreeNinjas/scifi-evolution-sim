@@ -151,6 +151,8 @@ function draw() {
         globalMaxGuys = guys.length;
     }
 
+    guysToHighlight = treeMode && treeGuy ? treeGuy : guys.filter(g => g.halo == 1);
+
     for (let guy of guys) {
         //kill guys whose time is up or who have had their allotment of children
         if (getTimeIndex() - guy.birthday >= guy.lifeSpan || guy.offspringCount > guy.childrenAllowed) {
@@ -242,9 +244,6 @@ function draw() {
                     //choose the guy with the fullest stomach as prey
                     guy.prey = guys.filter(g => g.stomachContents < guy.size && !g.dead && g !== guy).reduce((a, b) => !a || b.stomachContents > a.stomachContents ? b : a, null);
                     if (guy.prey) {
-                        console.log(`Guy${guy.id} is trying to eat Guy${guy.prey.id}`);
-                        guy.halo = true;
-                        guy.prey.halo = true;
                         guy.target.x = guy.prey.pos.x;
                         guy.target.y = guy.prey.pos.y;
 
@@ -372,17 +371,7 @@ function draw() {
         
     }
 
-    drawMasking();
-
-    statsText();
     
-    drawGraphs();
-
-    histogramButtons();
-
-    drawHistogram(0);
-
-    drawBars();
 
     if (frameCount % 1000 === 0) {
         viz.houseKeeping();
@@ -409,14 +398,33 @@ function draw() {
         }
     }
 
-    if (viewerOn) {
-        showViz();
+    if (guysToHighlight.length > 0) {
+        drawHighLightMask();
+        for (let guy of guysToHighlight) {
+            guy.drawMe();
+        }
     }
 
     if (treeMode && treeGuy) {
         guys.filter(g => g.id !== treeGuy.id).forEach(g => g.halo = 0);
         drawTree();
     }
+
+    if (viewerOn) {
+        showViz();
+    }
+
+    drawMasking();
+
+    statsText();
+    
+    drawGraphs();
+
+    histogramButtons();
+
+    drawHistogram(0);
+
+    drawBars();
 
     drawControls();
 }
@@ -534,6 +542,8 @@ function mousePressed() {
 }
 
 function drawTree() {
+    drawHighLightMask();
+    treeGuy.drawMe();
     let descendants = treeGuy.getDescendants();
     let ancestors = treeGuy.getAncestors();
 
@@ -551,9 +561,10 @@ function drawTree() {
 
             for (let [parentId, nodes] of Object.entries(direction)) {
                 let originGuy = Guy.getGuyById(parentId);
-
+                originGuy.drawMe();
                 for (let node of nodes) {
                     let nodeGuy = Guy.getGuyById(node);
+                    nodeGuy.drawMe();
                     line(originGuy.pos.x, originGuy.pos.y, nodeGuy.pos.x, nodeGuy.pos.y);
                     util.relationalArrow(nodeGuy.pos, originGuy.pos, dist(originGuy.pos.x, originGuy.pos.y, nodeGuy.pos.x, nodeGuy.pos.y) / 2, arrowDirection);
                 }
@@ -563,6 +574,13 @@ function drawTree() {
     }
 }
 
+function drawHighLightMask() {
+    push();
+    noStroke();
+    fill(0, 0, 0, 128);
+    rect(11, 11, width - 22, height / 2 - 2, 26);
+    pop();
+}
 async function updateWeather() {
     return await fetch(`${serverURL}weather/guys`)
         .then(r => r.json());
