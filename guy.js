@@ -631,7 +631,7 @@ class Guy {
         };
         const sign = util.chance(1, 2) ? 1 : -1;
         const percent = Math.abs(
-          util.randomNormal(0, util.randomNumber(0, util.coinToss(data.totalDryDays, 0.5)))
+          util.randomNormal(0, util.randomNumber(0.001, util.coinToss(data.totalDryDays, 0.5)))
         );
         child[trait] *= 1 + sign * percent;
         mutation.baby = child[trait];
@@ -668,7 +668,7 @@ class Guy {
         }
         mutation.baby = child[trait];
         child.mutationPackage.special.push(mutation);
-        viz.experiment.mutations[mutation.trait].push(mutation);
+        //viz.experiment.mutations[mutation.trait].push(mutation);
       }
     }
 

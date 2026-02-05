@@ -589,7 +589,7 @@ async function loadWeather() {
         });
 
     //let traits = c.guys.traits.value.sort((a, b) => a.localeCompare(b));
-    let traits = c .guys.traits.value.concat(c.guys.traits.binary).concat(['preference', 'carnivory']).sort((a, b) => a.localeCompare(b));
+    let traits = viz.traits.value.concat(viz.traits.binary).sort((a, b) => a.localeCompare(b));
     
     for (let traitLabel of traits) {
         vizValueDropdown.option(traitLabel);
@@ -848,7 +848,7 @@ function showViz() {
 
         vizValueDropdown.position(12, 78);
 
-        if (c.guys.traits.value.includes(valueToViz)) {
+        if (viz.traits.value.includes(valueToViz)) {
             drawMinMaxShape(valueToViz);
 
             stroke(c.guys.colors.hungryVar2);
@@ -858,7 +858,7 @@ function showViz() {
             drawIndividualLine(valueToViz, 'median');
         }
 
-        if (c.guys.traits.binary.includes(valueToViz)) {
+        if (viz.traits.binary.includes(valueToViz)) {
             drawBinaryLine(valueToViz);
         }
         
