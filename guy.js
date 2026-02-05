@@ -524,8 +524,8 @@ class Guy {
                 this.stomachContents += this.prey.stomachContents + this.prey.size;
                 this.prey.stomachContents = 0;
                 Guy.killThisGuy(this.prey);
+                console.log(`Guy${this.id} just killed ${this.prey.id}.`);
                 this.prey = undefined;
-                console.log(`Guy${this.id} just killed a man.`);
             }
         } 
         this.nullifyTarget();
