@@ -40,15 +40,14 @@ class Guy {
     this.smartFoodFinder = util.coinToss(0, 1);
     this.resolute = util.chance(10); //if this is true, guy won't change its mind about food targets
     this.movesAwayFromBaby = util.chance(data.temp);
-    //this.carnivorous = guys.length > 100 && guys.filter(g => g.carnivorous).length < 2 ? util.chance(1, data.clouds) : 0;
-    this.carnivorous = guys.length > 100 ? util.chance(1, data.clouds) : false;
+    
+    this.carnivorous = getTimeIndex() < data.totalRainfall * 10 ? false : guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length));
     this.carnivoreNoisePlayed = false;
     if (this.carnivorous) {
         this.digestionRate = Math.abs(this.digestionRate);
         console.log(`Guy${this.id} is a carnivore.`);
-        this.halo = 1;
-        util.playNoise(sounds.carnivoreNoise);
-        this.carnivoreNoisePlayed = true;
+        util.playNoise(sounds.carnivoreNoise, () => this.carnivoreNoisePlayed = true);
+        //this.carnivoreNoisePlayed = true;
     }
 
     this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : null;
@@ -689,7 +688,7 @@ class Guy {
           if (m.baby > max || m.baby < min) {
             console.log(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
             
-            viz.show(m.trait);
+            //viz.show(m.trait);
 
             if (volumeOn) {
                 sounds.monsterAlert.currentTime = 0;

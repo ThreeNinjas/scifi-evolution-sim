@@ -182,10 +182,14 @@ class Util {
         return d3.deviation(values);
     }
 
-    playNoise(noise) {
+    playNoise(noise, callback=null) {
         if (volumeOn) {
             noise.currentTime = 0;
             noise.play().catch(() => {});
+        }
+
+        if (callback) {
+            callback();
         }
         return;
     }

@@ -500,17 +500,22 @@ function mousePressed() {
         mouseY <= maxY
     ) {
         treeMode = !treeMode;
+        console.log('treeMode', treeMode);
     }
 
     //guys
     for (const [i, guy] of Object.entries(guys)) {
         if (dist(mouseX, mouseY, guy.pos.x, guy.pos.y) <= guy.size / 2) {
-            if (treeMode && treeGuy) {
+            if (treeMode) {
                 treeGuy = treeGuy === null ?  guy : null;
-                treeGuy.halo = 1;
-                console.log(`treeGuy: ${treeGuy.id}`);
-                console.log(treeGuy.parents);
-                console.log(treeGuy.children);
+
+                if (treeGuy) {
+                    treeGuy.halo = 1;
+                    console.log(`treeGuy: ${treeGuy.id}`);
+                    console.log(treeGuy.parents);
+                    console.log(treeGuy.children);
+                }
+                
             } else {
                 guy.halo = !guy.halo;
             
@@ -1178,7 +1183,7 @@ function drawHistogram() {
 
 
 function drawPing(guy) {
-    if (!guy.isHorny && forage.foodStorage.length == 0 && millis() - guy.lastPing > 10000) {
+    if (!guy.isHorny && forage.foodStorage.length == 0 && millis() - guy.lastPing > 20000) {
        return;
     }
     guy.lastPing = millis();
