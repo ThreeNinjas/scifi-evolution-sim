@@ -113,6 +113,13 @@ Tails for binary mutations
 Have the threshold for carnivory be 1 in (max population - current population). Closer it gets the more likely carnivory is
 Guys that aren't full killers, they take a nip off random guys
 Mutation viewer. Select a guy, highlight everyone with his same orbiters, hide everyone else.
+Avoid incest lol
+Keep track of lineage in an array of ids
+Highlight distal ends of tree mode
+When highlighting a guy or tree of guys, draw the guys, then cover the board with a translucent rectangle, then draw the highlighted guys again. Make them brighter than 
+everyone else so they stand out better.
+Find whatever is still auto haloing
+Message center
 
 
 x When the carnivores are the majority, evolve guys with defenses

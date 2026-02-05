@@ -182,11 +182,45 @@ class Util {
         return d3.deviation(values);
     }
 
-    playNoise(noise) {
+    playNoise(noise, callback=null) {
         if (volumeOn) {
             noise.currentTime = 0;
             noise.play().catch(() => {});
         }
+
+        if (callback) {
+            callback();
+        }
         return;
+    }
+
+    /**
+     * 
+     * @param {*} target = p5 Vector, ie the descendant, ancestor, mate, prey, etc
+     * @param {*} source p5 Vector, ie the guy 
+     * @param {*} distanceFromSource 
+     * @param {*} direction ie pointing away from the guy or pointing towards the guy
+     * @returns 
+     */
+    relationalArrow(target, source, distanceFromSource, direction='away') {
+        if (target && target.x === 0 && target.y === 0) return;
+
+        const d = p5.Vector.sub(target, source);
+        const angle = atan2(d.y, d.x);
+        const back = createVector(d.x, d.y).setMag(dist(source.x, source.y, target.x, target.y) - distanceFromSource);
+        const tip = p5.Vector.sub(target, back);
+
+        push();
+            strokeWeight(2);
+            translate(tip.x, tip.y);
+            rotate(angle);
+            if (direction == 'away') {
+                line(0, 0, -4, -4);
+                line(0, 0, -4, 4);
+            } else {
+                line(0, 0, 4, 4);
+                line(0, 0, 4, -4);
+            }
+        pop();
     }
 }

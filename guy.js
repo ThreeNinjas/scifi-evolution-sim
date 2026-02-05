@@ -40,15 +40,14 @@ class Guy {
     this.smartFoodFinder = util.coinToss(0, 1);
     this.resolute = util.chance(10); //if this is true, guy won't change its mind about food targets
     this.movesAwayFromBaby = util.chance(data.temp);
-    //this.carnivorous = guys.length > 100 && guys.filter(g => g.carnivorous).length < 2 ? util.chance(1, data.clouds) : 0;
-    this.carnivorous = guys.length > 100 ? util.chance(1, data.clouds) : false;
+    
+    this.carnivorous = getTimeIndex() < data.totalRainfall * 10 ? false : guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length));
     this.carnivoreNoisePlayed = false;
     if (this.carnivorous) {
         this.digestionRate = Math.abs(this.digestionRate);
         console.log(`Guy${this.id} is a carnivore.`);
-        this.halo = 1;
-        util.playNoise(sounds.carnivoreNoise);
-        this.carnivoreNoisePlayed = true;
+        util.playNoise(sounds.carnivoreNoise, () => this.carnivoreNoisePlayed = true);
+        //this.carnivoreNoisePlayed = true;
     }
 
     this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : null;
@@ -101,6 +100,10 @@ class Guy {
     this.mutationPackage = [];
 
     this.lastPing = 0;
+
+    //phylogeny
+    this.parents = [];
+    this.children = [];
   }
 
   drawMe() {
@@ -221,8 +224,6 @@ class Guy {
   arrow(target) {
     const isGuy = target && target.pos !== undefined;
 
-
-
     if (isGuy) {
       this.target.x = target.pos.x;
       this.target.y = target.pos.y;
@@ -230,7 +231,7 @@ class Guy {
     
     if (this.target.x === 0 && this.target.y === 0) return;
 
-    if (isGuy) {
+    if (isGuy && !treeMode) {
       stroke(this.color);
       line(this.pos.x, this.pos.y, target.pos.x, target.pos.y);
     }
@@ -294,7 +295,7 @@ class Guy {
   }
 
   static getGuyById(id) {
-    return guys.find((g) => g.id === id);
+    return byId[id];
   }
 
   move() {
@@ -587,6 +588,9 @@ class Guy {
 
     const child = new Guy();
     util.playNoise(sounds.birthBeep);
+    child.parents.push(parentA.id, parentB.id);
+    parentA.children.push(child.id);
+    parentB.children.push(child.id);
     child.mutationPackage = {
       binary: [],
       value: [],
@@ -627,7 +631,7 @@ class Guy {
         };
         const sign = util.chance(1, 2) ? 1 : -1;
         const percent = Math.abs(
-          util.randomNormal(0, util.randomNumber(0, util.coinToss(data.totalDryDays, 0.5)))
+          util.randomNormal(0, util.randomNumber(0.001, util.coinToss(data.totalDryDays, 0.5)))
         );
         child[trait] *= 1 + sign * percent;
         mutation.baby = child[trait];
@@ -664,7 +668,7 @@ class Guy {
         }
         mutation.baby = child[trait];
         child.mutationPackage.special.push(mutation);
-        viz.experiment.mutations[mutation.trait].push(mutation);
+        //viz.experiment.mutations[mutation.trait].push(mutation);
       }
     }
 
@@ -684,7 +688,7 @@ class Guy {
           if (m.baby > max || m.baby < min) {
             console.log(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
             
-            viz.show(m.trait);
+            //viz.show(m.trait);
 
             if (volumeOn) {
                 sounds.monsterAlert.currentTime = 0;
@@ -873,6 +877,28 @@ class Guy {
     }
 
     this.deathNoisePlayed = 1;
+  }
+
+  getAncestors() {
+    return this.getDescendants({}, new Set(), 'parents');
+  }
+
+  getDescendants(out = {}, visited = new Set(), which='children') {
+    visited.add(this.id);
+
+    for (let childId of this[which]) {
+        const child = Guy.getGuyById(childId);
+        if (!child || child.dead) continue;
+
+        if (!out[this.id]) out[this.id] = [];
+        out[this.id].push(childId);
+
+        if (!visited.has(childId)) {
+            visited.add(childId);
+            child.getDescendants(out, visited, which);
+        }
+    }
+    return out;
   }
 
   static whoIsDominant(a, b) {

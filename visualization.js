@@ -8,7 +8,7 @@ class Visualization {
         this.index = this.createIndex();
         this.index.currentId = this.uniqueID();
         this.experimentKey = `experiments:${this.index.currentId}`;
-        
+        this.traits;
         if (!this.index.ids.includes(this.index.currentId)) {
             this.index.ids.push(this.index.currentId);
         }
@@ -40,14 +40,16 @@ class Visualization {
             samples: {},
             mutations: {}
         }
-        let traits = {
+        this.traits = {
             binary: [...c.guys.traits.binary.concat(extraBinary)],
             value: [...c.guys.traits.value],
         };
-        traits.binary.push('carnivorous');
+        //this.traits.binary.push('carnivorous');
 
-        for (let types of Object.keys(c.guys.traits)) { 
-            for (let traits of c.guys.traits[types]) { 
+        this.traits.binary.push('isSexuallyMature');
+
+        for (let types of Object.keys(this.traits)) { 
+            for (let traits of this.traits[types]) { 
                 experiment.samples[traits] = [];
                 experiment.mutations[traits] = [];
             }
@@ -68,9 +70,23 @@ class Visualization {
 
         let aliveGuys = guys.filter(g => g.dead === 0);
 
-        
+        for (let trait of this.traits.binary) {
 
-        for (let trait of c.guys.traits.binary) {
+            if (trait === 'isSexuallyMature') {
+                if (this.experiment.samples[trait].length > 100) {
+                    this.experiment.samples[trait].shift();
+                }
+                this.experiment.samples[trait].push({
+                    t,
+                    true: aliveGuys.filter(g => g.isSexuallyMature()).length,
+                    false: aliveGuys.filter(g => !g.isSexuallyMature()).length,
+                });
+                continue;
+            }
+
+            if (this.experiment.samples[trait].length > 100) {
+                this.experiment.samples[trait].shift();
+            }
             this.experiment.samples[trait].push({
                 t,
                 true: aliveGuys.filter(g => g[trait]).length,
@@ -78,8 +94,11 @@ class Visualization {
             });
         }
 
-        for (let trait of c.guys.traits.value) {
+        for (let trait of this.traits.value) {
             let values = aliveGuys.map(g => g[trait]);
+            if (this.experiment.samples[trait].length > 100) {
+                this.experiment.samples[trait].shift();
+            }
             this.experiment.samples[trait].push({
                 t,
                 max: Math.max(...values),
