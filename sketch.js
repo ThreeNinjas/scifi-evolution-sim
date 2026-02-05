@@ -84,6 +84,10 @@ let muteIcon;
 let iconsReady;
 let volumeOn = false;
 let paused = false;
+let treeMode = false;
+let treeGuy = null;
+
+let byId;
 
 let valueToViz = 'velLimit';
 let vizValueDropdown;
@@ -118,6 +122,14 @@ function draw() {
     background(0);
     drawEnvironment();
 
+    if (!treeMode) {
+        treeGuy = null;
+    }
+
+    if (treeGuy && treeGuy.dead) {
+        treeGuy = null;
+    }
+
     forage.drawMe();
 
     // for (const guy of guys) {
@@ -127,6 +139,9 @@ function draw() {
     guys = guys.filter(g => !guysToRemove.has(g.id));
 
     guysToRemove.clear();
+
+    byId = {};
+    for (let g of guys) byId[g.id] = g;
 
     if (guys.length <= 1) {
         window.location.reload();
@@ -398,6 +413,11 @@ function draw() {
         showViz();
     }
 
+    if (treeMode && treeGuy) {
+        guys.filter(g => g.id !== treeGuy.id).forEach(g => g.halo = 0);
+        drawTree();
+    }
+
     drawControls();
 }
 
@@ -467,21 +487,74 @@ function mousePressed() {
         }
     }
 
+    //treeMode
+    //width - 80, y + 2 + yAddOn
+    let minX = 323 - 5;
+    let maxX = minX + 10;
+    let minY = 531 - 5;
+    let maxY = minY + 10;
+    if (
+        mouseX >= minX &&
+        mouseX <= maxX &&
+        mouseY >= minY &&
+        mouseY <= maxY
+    ) {
+        treeMode = !treeMode;
+    }
+
     //guys
     for (const [i, guy] of Object.entries(guys)) {
         if (dist(mouseX, mouseY, guy.pos.x, guy.pos.y) <= guy.size / 2) {
-            guy.halo = !guy.halo;
+            if (treeMode && treeGuy) {
+                treeGuy = treeGuy === null ?  guy : null;
+                treeGuy.halo = 1;
+                console.log(`treeGuy: ${treeGuy.id}`);
+                console.log(treeGuy.parents);
+                console.log(treeGuy.children);
+            } else {
+                guy.halo = !guy.halo;
             
-            if (guy.halo) {
-                console.log(guy, guy.calculateSensePerim(), guy.isHungry(), guy.isHorny);
-                console.log(`sensePerim: ${guy.calculateSensePerim()}, hungry: ${guy.isHungry()}, horny: ${guy.isHorny}`);
-                console.log(`size: ${guy.size}, adultSize: ${guy.adultSize}, sexually mature: ${guy.isSexuallyMature()}`);
-            }
-
-            if (paused) {
-                redraw();
+                if (guy.halo) {
+                    console.log(guy, guy.calculateSensePerim(), guy.isHungry(), guy.isHorny);
+                    console.log(`sensePerim: ${guy.calculateSensePerim()}, hungry: ${guy.isHungry()}, horny: ${guy.isHorny}`);
+                    console.log(`size: ${guy.size}, adultSize: ${guy.adultSize}, sexually mature: ${guy.isSexuallyMature()}`);
+                }
             }
         }
+    }
+
+    if (paused) {
+        redraw();
+    }
+}
+
+function drawTree() {
+    let descendants = treeGuy.getDescendants();
+    let ancestors = treeGuy.getAncestors();
+
+    let i = 0;
+    let arrowDirection;
+    for (let direction of [descendants, ancestors]) {
+        if (direction) {
+            if (i === 0) {
+                arrowDirection = 'away';
+                stroke(c.guys.colors.horny);
+            } else {
+                arrowDirection = 'towards'
+                stroke(c.guys.colors.gold);
+            } i++;
+
+            for (let [parentId, nodes] of Object.entries(direction)) {
+                let originGuy = Guy.getGuyById(parentId);
+
+                for (let node of nodes) {
+                    let nodeGuy = Guy.getGuyById(node);
+                    line(originGuy.pos.x, originGuy.pos.y, nodeGuy.pos.x, nodeGuy.pos.y);
+                    util.relationalArrow(nodeGuy.pos, originGuy.pos, dist(originGuy.pos.x, originGuy.pos.y, nodeGuy.pos.x, nodeGuy.pos.y) / 2, arrowDirection);
+                }
+            }
+        }
+        
     }
 }
 
@@ -556,16 +629,28 @@ async function loadWeather() {
 function loadIcons() {
   iconsReady = false;
 
-  loadImage('/assets/Speaker_Icon.png', img => {
-    volumeIcon = img;
-    iconsReady = !!(volumeIcon && muteIcon);
-  });
+  const assets = [
+    ['/assets/Speaker_Icon.png', img => volumeIcon = img],
+    ['/assets/Mute_Icon.png', img => muteIcon = img],
+    ['/assets/family-tree.png', img => treeIcon = img],
+  ];
 
-  loadImage('/assets/Mute_Icon.png', img => {
-    muteIcon = img;
-    iconsReady = !!(volumeIcon && muteIcon);
-  });
+  let remaining = assets.length;
+
+  const done = () => {
+    remaining--;
+    if (remaining === 0) iconsReady = true;
+  };
+
+  for (let [src, assign] of assets) {
+    loadImage(src, img => {
+      assign(img);
+      done();
+    });
+  }
 }
+
+
 
 
 function drawEnvironment() {
@@ -914,10 +999,11 @@ function drawControls() {
         fill(c.guys.colors.hungry);
         let  x = height/2 + 95;
         if (!paused) {
-            rect(width - 45, x + yAddOn, 10, 10);
-            stroke('black');
-            fill('black');
-            rect(width - 41, x + yAddOn, 2, 10);
+            translate(width - 45, x + yAddOn);
+            fill(c.guys.colors.hungry);
+            rect(0, 0, 2, 12);
+            fill(c.guys.colors.hungry);
+            rect(6, 0, 2, 12);
         } else {
             triangle(
                 width - 45,          x + yAddOn,
@@ -929,13 +1015,32 @@ function drawControls() {
     pop();
 
     //visualizer
-    if (viz.experiment.samples['velLimit'].length > 2) {
+    if (viz.experiment.samples['velLimit'].length > 0) {
         push();
         stroke(c.guys.colors.hungry);
         fill(c.guys.colors.hungry);
-        circle(width - 60, (height/2 + 100) + yAddOn, 10);
+        circle(width - 60, (height/2 + 100) + yAddOn, 12);
         pop();
     }
+
+    //tree mode
+    push();
+        let y = height/2 + 95;
+        //image(treeIcon, width -85, (y) + yAddOn, 10, 10);
+        fill(c.guys.colors.hungry);
+        noStroke();
+        translate(width - 80, y + 2 + yAddOn);
+        circle(0, 0, 5);
+        circle(-4, 8, 5);
+        circle(4, 8, 5);
+
+        if (treeMode) {
+            stroke(c.guys.colors.hungryVar2);
+            strokeWeight(1);
+            line(0, 0, -4, 8);
+            line(0, 0, 4, 8);
+        }
+    pop();
 }
 
 function drawGraphs() {

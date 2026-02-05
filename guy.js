@@ -101,6 +101,10 @@ class Guy {
     this.mutationPackage = [];
 
     this.lastPing = 0;
+
+    //phylogeny
+    this.parents = [];
+    this.children = [];
   }
 
   drawMe() {
@@ -221,8 +225,6 @@ class Guy {
   arrow(target) {
     const isGuy = target && target.pos !== undefined;
 
-
-
     if (isGuy) {
       this.target.x = target.pos.x;
       this.target.y = target.pos.y;
@@ -230,7 +232,7 @@ class Guy {
     
     if (this.target.x === 0 && this.target.y === 0) return;
 
-    if (isGuy) {
+    if (isGuy && !treeMode) {
       stroke(this.color);
       line(this.pos.x, this.pos.y, target.pos.x, target.pos.y);
     }
@@ -294,7 +296,7 @@ class Guy {
   }
 
   static getGuyById(id) {
-    return guys.find((g) => g.id === id);
+    return byId[id];
   }
 
   move() {
@@ -587,6 +589,9 @@ class Guy {
 
     const child = new Guy();
     util.playNoise(sounds.birthBeep);
+    child.parents.push(parentA.id, parentB.id);
+    parentA.children.push(child.id);
+    parentB.children.push(child.id);
     child.mutationPackage = {
       binary: [],
       value: [],
@@ -873,6 +878,28 @@ class Guy {
     }
 
     this.deathNoisePlayed = 1;
+  }
+
+  getAncestors() {
+    return this.getDescendants({}, new Set(), 'parents');
+  }
+
+  getDescendants(out = {}, visited = new Set(), which='children') {
+    visited.add(this.id);
+
+    for (let childId of this[which]) {
+        const child = Guy.getGuyById(childId);
+        if (!child || child.dead) continue;
+
+        if (!out[this.id]) out[this.id] = [];
+        out[this.id].push(childId);
+
+        if (!visited.has(childId)) {
+            visited.add(childId);
+            child.getDescendants(out, visited, which);
+        }
+    }
+    return out;
   }
 
   static whoIsDominant(a, b) {
