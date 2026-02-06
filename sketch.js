@@ -126,10 +126,6 @@ function draw() {
         treeGuy = null;
     }
 
-    if (treeGuy && treeGuy.dead) {
-        treeGuy = null;
-    }
-
     forage.drawMe();
 
     // for (const guy of guys) {
@@ -157,6 +153,10 @@ function draw() {
         //kill guys whose time is up or who have had their allotment of children
         if (getTimeIndex() - guy.birthday >= guy.lifeSpan || guy.offspringCount > guy.childrenAllowed) {
             guy.dead = 1;
+
+            if (treeGuy === guy) {
+                treeGuy = guy.getDescendants({}, new Set(), 'children', true);
+            }
 
             if (!guy.deathNoisePlayed) {
                 //return them to the environment
@@ -542,6 +542,7 @@ function mousePressed() {
 }
 
 function drawTree() {
+    if (!treeGuy || !treeMode) return;
     drawHighLightMask();
     treeGuy.drawMe();
     let descendants = treeGuy.getDescendants();

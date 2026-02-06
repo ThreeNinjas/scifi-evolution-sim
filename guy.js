@@ -883,11 +883,14 @@ class Guy {
     return this.getDescendants({}, new Set(), 'parents');
   }
 
-  getDescendants(out = {}, visited = new Set(), which='children') {
+  getDescendants(out = {}, visited = new Set(), which='children', returnEldestLiving=false) {
     visited.add(this.id);
 
     for (let childId of this[which]) {
         const child = Guy.getGuyById(childId);
+        if (returnEldestLiving && child && !child.dead) {
+            return child;
+        }
         if (!child || child.dead) continue;
 
         if (!out[this.id]) out[this.id] = [];
