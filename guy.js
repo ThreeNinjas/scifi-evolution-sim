@@ -901,6 +901,9 @@ class Guy {
             child.getDescendants(out, visited, which);
         }
     }
+    if (returnEldestLiving) {
+        return null;
+    }
     return out;
   }
 
@@ -982,12 +985,28 @@ class Guy {
     return guys.map((g) => g[trait]);
   }
 
-  static killThisGuy(guy) {
+  static killThisGuy(guy, returnNutrients=false) {
+    viz.currentDeathsCounted++;
+    viz.currentCumulativeLifeSpan += guy.age();
+    if (treeGuy === guy) {
+        treeGuy = guy.getDescendants({}, new Set(), 'children', true);
+        treeGuy.halo = 1;
+        util.playNoise(sounds.treeGuyTorchPassNoise);
+    }
     guy.dead = 1;
     stats.guys--;
 
     if (!guy.deathNoisePlayed) {
         guy.playDeathBeep();
+    }
+
+    if (returnNutrients) {
+        if (guy.stomachContents > 0) {
+            forage.populateMe(guy.stomachContents, guy.pos, guy.size);
+            guy.stomachContents = 0;
+        }
+
+        forage.populateMe(guy.size, guy.pos, guy.size);
     }
   }
 

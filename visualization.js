@@ -17,6 +17,8 @@ class Visualization {
 
         this.experiment = this.createExperiment();
         this.mutationsBucket = [];
+        this.currentCumulativeLifeSpan = 0;
+        this.currentDeathsCounted = 0;
     }
 
     createIndex() {
@@ -47,6 +49,8 @@ class Visualization {
         //this.traits.binary.push('carnivorous');
 
         this.traits.binary.push('isSexuallyMature');
+        this.traits.value.push('age');
+        this.traits.value.push('avgActualLifeSpan')
 
         for (let types of Object.keys(this.traits)) { 
             for (let traits of this.traits[types]) { 
@@ -71,17 +75,17 @@ class Visualization {
         let aliveGuys = guys.filter(g => g.dead === 0);
 
         for (let trait of this.traits.binary) {
-
-            if (trait === 'isSexuallyMature') {
-                if (this.experiment.samples[trait].length > 100) {
-                    this.experiment.samples[trait].shift();
-                }
-                this.experiment.samples[trait].push({
-                    t,
-                    true: aliveGuys.filter(g => g.isSexuallyMature()).length,
-                    false: aliveGuys.filter(g => !g.isSexuallyMature()).length,
-                });
-                continue;
+            let truesies;
+            let falsies;
+            switch (trait) {
+                case 'isSexuallyMature':
+                    truesies = aliveGuys.filter(g => g.isSexuallyMature()).length;
+                    falsies = aliveGuys.filter(g => !g.isSexuallyMature()).length;
+                    break;
+                default:
+                    truesies = aliveGuys.filter(g => g[trait]).length;
+                    falsies = aliveGuys.filter(g => !g[trait]).length;
+                    break;
             }
 
             if (this.experiment.samples[trait].length > 100) {
@@ -89,16 +93,32 @@ class Visualization {
             }
             this.experiment.samples[trait].push({
                 t,
-                true: aliveGuys.filter(g => g[trait]).length,
-                false: aliveGuys.filter(g => !g[trait]).length,
+                true: truesies,
+                false: falsies,
             });
         }
 
         for (let trait of this.traits.value) {
-            let values = aliveGuys.map(g => g[trait]);
+            let values;
+
             if (this.experiment.samples[trait].length > 100) {
                 this.experiment.samples[trait].shift();
             }
+            
+            switch (trait) {
+                case 'age':
+                    values = aliveGuys.map(g => g.age());
+                    break;
+                case 'avgActualLifeSpan':
+                    if (this.currentDeathsCounted > 0) {
+                        this.experiment.samples[trait].push(this.currentCumulativeLifeSpan / this.currentDeathsCounted);
+                    }
+                    continue;
+                default:
+                    values = aliveGuys.map(g => g[trait]);
+                    break;
+            }
+            
             this.experiment.samples[trait].push({
                 t,
                 max: Math.max(...values),

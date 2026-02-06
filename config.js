@@ -110,15 +110,12 @@ class Config {
 Put a limit on number of orbiters, or make them more rare.
 When guys are big, food moves to them...I can draw lines or something instead of animating forage
 Tails for binary mutations 
-Have the threshold for carnivory be 1 in (max population - current population). Closer it gets the more likely carnivory is
 Guys that aren't full killers, they take a nip off random guys
 Mutation viewer. Select a guy, highlight everyone with his same orbiters, hide everyone else.
 Avoid incest lol
-Keep track of lineage in an array of ids
 Highlight distal ends of tree mode
-When highlighting a guy or tree of guys, draw the guys, then cover the board with a translucent rectangle, then draw the highlighted guys again. Make them brighter than 
-everyone else so they stand out better.
-Find whatever is still auto haloing
+
+
 Message center
 
 
@@ -136,4 +133,9 @@ x PREFERENCES
 x make viz only consider alive guys
 x A way to visualize the current population, what traits are prevalent, a history of their prevalance, etc
 x carnivore: when food is scarce and starvation is imminent, eat another guy (which will take you to full right away)
+x pass on the mantle of treeGuy to a descendant
+x Find whatever is still auto haloing
+x When highlighting a guy or tree of guys, draw the guys, then cover the board with a translucent rectangle, then draw the highlighted guys again. Make them brighter than 
+everyone else so they stand out better.
+x Have the threshold for carnivory be 1 in (max population - current population). Closer it gets the more likely carnivory is
 */

@@ -16,6 +16,7 @@ let sounds = {
     penaltyOnBeep: new Audio('assets/penaltyOn.mp3'),
     penaltyOffBeep: new Audio('assets/penaltyOff.mp3'),
     carnivoreNoise: new Audio('assets/thatSFXguy/alert 02.mp3'),
+    treeGuyTorchPassNoise: new Audio('assets/input_failed2_clean.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -151,24 +152,25 @@ function draw() {
 
     for (let guy of guys) {
         //kill guys whose time is up or who have had their allotment of children
-        if (getTimeIndex() - guy.birthday >= guy.lifeSpan || guy.offspringCount > guy.childrenAllowed) {
-            guy.dead = 1;
+        if (!guy.dead && (getTimeIndex() - guy.birthday >= guy.lifeSpan || guy.offspringCount > guy.childrenAllowed)) {
+            Guy.killThisGuy(guy, true);
+            // guy.dead = 1;
 
-            if (treeGuy === guy) {
-                treeGuy = guy.getDescendants({}, new Set(), 'children', true);
-            }
+            // if (treeGuy === guy) {
+            //     treeGuy = guy.getDescendants({}, new Set(), 'children', true);
+            // }
 
-            if (!guy.deathNoisePlayed) {
-                //return them to the environment
-                if (guy.stomachContents > 0) {
-                    forage.populateMe(guy.stomachContents, guy.pos, guy.size);
-                    guy.stomachContents = 0;
-                }
+            // if (!guy.deathNoisePlayed) {
+            //     //return them to the environment
+            //     if (guy.stomachContents > 0) {
+            //         forage.populateMe(guy.stomachContents, guy.pos, guy.size);
+            //         guy.stomachContents = 0;
+            //     }
 
-                forage.populateMe(guy.size, guy.pos, guy.size);
-                stats.guys--;
-                guy.playDeathBeep();
-            }
+            //     forage.populateMe(guy.size, guy.pos, guy.size);
+            //     stats.guys--;
+            //     guy.playDeathBeep();
+            // }
         }
 
         //guys that aren't full grown, increment their growth
@@ -330,6 +332,9 @@ function draw() {
             }
         } else {
             if (guy.digestionProgress >= 1 && guy.dead == 0 && guy.stomachContents == 0) {
+                if (treeGuy === guy) {
+                    treeGuy = guy.getDescendants({}, new Set(), 'children', true);
+                }
                 Guy.killThisGuy(guy);
             }
         }
@@ -858,6 +863,7 @@ function histogramButtons() {
 }
 
 function showViz() {
+    let exceptions = ['avgActualLifeSpan'];
     push();
         stroke(c.guys.colors.horny);
         fill(0, 0, 0, 128);
@@ -867,7 +873,7 @@ function showViz() {
 
         vizValueDropdown.position(12, 78);
 
-        if (viz.traits.value.includes(valueToViz)) {
+        if (viz.traits.value.includes(valueToViz) && !exceptions.includes(valueToViz)) {
             drawMinMaxShape(valueToViz);
 
             stroke(c.guys.colors.hungryVar2);
@@ -883,6 +889,10 @@ function showViz() {
         
         if (valueToViz === 'preference') {
             drawPreferencePlot();
+        }
+
+        if (valueToViz == 'avgActualLifeSpan') {
+            drawSingleLine(viz.experiment.samples.avgActualLifeSpan);
         }
         
     pop();
@@ -921,6 +931,35 @@ function drawPreferencePlot() {
     }
 
     line(200, 0, 200, 100);
+}
+
+function drawSingleLine(values) {
+    let min = Math.min(...values);
+    let max = Math.max(...values);
+
+    if (min === max) {
+        return;
+    }
+
+    textSize(10);
+    push();
+        noStroke();
+        fill(c.guys.colors.gold);
+        textSize(16);
+        text(max, 1, 16);
+        text(min, 1, 99);
+    pop();
+
+    if (values.length > 2) {
+        noFill();
+        beginShape();
+            for (let i = 0; i < values.length; i++) {
+                let x = map(i, 0, values.length - 1, 0, width-20);
+                let y = map(values[i], min, max, 100, 0);
+                vertex(x, y);
+            }
+        endShape();
+    }
 }
 
 function drawIndividualLine(trait, stat) {
