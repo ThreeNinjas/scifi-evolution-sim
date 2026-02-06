@@ -481,9 +481,9 @@ function mousePressed() {
         viewerOn = !viewerOn;
 
         if (viewerOn) {
-            vizValueDropdown.show();
+            vizDropdownWrap.show();
         } else {
-            vizValueDropdown.hide();
+            vizDropdownWrap.hide();
         }
     }
 
@@ -607,6 +607,9 @@ async function loadWeather() {
     console.log(viz.experiment);
 
     vizValueDropdown = createSelect();
+    vizDropdownWrap = createDiv('');
+    vizDropdownWrap.id('vizDropdownWrap');
+    vizValueDropdown.parent(vizDropdownWrap);
 
     vizValueDropdown.changed(() => {
             valueToViz = vizValueDropdown.value();
@@ -619,7 +622,7 @@ async function loadWeather() {
         vizValueDropdown.option(traitLabel);
     }
 
-    vizValueDropdown.hide();
+    vizDropdownWrap.hide();
 
     valueToViz = traits[0];
 
@@ -871,7 +874,7 @@ function showViz() {
         translate(10, 100);
         rect(0, 0, width-20, 100);
 
-        vizValueDropdown.position(12, 78);
+        vizDropdownWrap.position(12, 53);
 
         if (viz.traits.value.includes(valueToViz) && !exceptions.includes(valueToViz)) {
             drawMinMaxShape(valueToViz);
