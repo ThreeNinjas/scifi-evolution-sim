@@ -63,8 +63,8 @@ class Forage {
             if (num === null && this.foodStorage.length >= chanceOfFood) break;
 
             if (util.chance(chanceOfFood)) {
-                let x = pos != null && size != null ? util.randomNumber(pos.x, pos.x + size) : util.randomNumber(config.bounds.x.min, config.bounds.x.max);
-                let y = pos != null && size != null ? util.randomNumber(pos.y, pos.y + size) : util.randomNumber(config.bounds.y.min, config.bounds.y.max);
+                let x = pos != null && size != null ? util.randomNumber(pos.x - size, pos.x + size) : util.randomNumber(config.bounds.x.min, config.bounds.x.max);
+                let y = pos != null && size != null ? util.randomNumber(pos.y - size, pos.y + size) : util.randomNumber(config.bounds.y.min, config.bounds.y.max);
 
                 if (x > config.bounds.x.max) {
                     x = config.bounds.x.max

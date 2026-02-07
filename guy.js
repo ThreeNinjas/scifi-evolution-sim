@@ -477,6 +477,7 @@ class Guy {
         this.target.x = 0;
         this.target.y = 0;
         this.seekPriority = null;
+        this.prey = null;
         return;
     }
     this.arrow(this.prey);
@@ -990,7 +991,9 @@ class Guy {
     viz.currentCumulativeLifeSpan += guy.age();
     if (treeGuy === guy) {
         treeGuy = guy.getDescendants({}, new Set(), 'children', true);
-        treeGuy.halo = 1;
+        if (treeGuy) {
+            treeGuy.halo = 1;
+        }
         util.playNoise(sounds.treeGuyTorchPassNoise);
     }
     guy.dead = 1;

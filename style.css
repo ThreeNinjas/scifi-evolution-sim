@@ -7,3 +7,29 @@ html, body {
 canvas {
   display: block;
 }
+
+#vizDropdownWrap select {
+    font-family: 'Antonio', sans-serif;
+    font-weight: 900;
+    font-size: 18px;
+    border-style: solid; 
+    border-color: #f80; 
+    /* border-width: 9px 4px 9px 4px;  */
+    border-width: 2px 29px 2px 0px;
+    border-radius: 0px 26px 26px 0px;
+    padding: 1px;
+    background-color: #f80;
+    
+}
+
+#vizDropdownWrap select option {
+    font-size: 8px;
+}
+
+/* .vizDropDownWrap { 
+    border-style: solid; 
+    border-color: #f80; 
+    border-width: 9px 4px 9px 4px; 
+    border-radius: 26px; 
+    padding: 8px;
+} */

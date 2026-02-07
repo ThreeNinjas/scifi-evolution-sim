@@ -104,7 +104,7 @@ class Visualization {
             if (this.experiment.samples[trait].length > 100) {
                 this.experiment.samples[trait].shift();
             }
-            
+
             switch (trait) {
                 case 'age':
                     values = aliveGuys.map(g => g.age());
@@ -178,7 +178,7 @@ class Visualization {
         valueToViz = trait;
         viewerOn = true;
         vizValueDropdown.value(valueToViz);
-        vizValueDropdown.show();
+        vizDropdownWrap.show();
     }
 }
 
