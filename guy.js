@@ -47,10 +47,11 @@ class Guy {
         this.digestionRate = Math.abs(this.digestionRate);
         console.log(`Guy${this.id} is a carnivore.`);
         util.playNoise(sounds.carnivoreNoise, () => this.carnivoreNoisePlayed = true);
-        //this.carnivoreNoisePlayed = true;
     }
 
     this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : null;
+
+    if (this.armored) this.carnivorous = false;
 
     //heritable - vectors
     this.velLimit = !util.chance(99) ? 5 : util.randomNormal(0.001, 0.25); // random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
@@ -525,7 +526,7 @@ class Guy {
                 this.stomachContents += this.prey.stomachContents + this.prey.size;
                 this.prey.stomachContents = 0;
                 Guy.killThisGuy(this.prey);
-                console.log(`Guy${this.id} just killed ${this.prey.id}.`);
+                console.log(`Guy${this.id} just killed Guy${this.prey.id}.`);
                 this.prey = undefined;
             }
         } 
@@ -676,6 +677,7 @@ class Guy {
     if (parentA.carnivorous || parentB.carnivorous) {
         child.carnivorous = util.coinToss(true, false);
         if (child.carnivorous && !child.carnivoreNoisePlayed) {
+            child.armored = false;
             util.playNoise(sounds.carnivoreNoise);
             child.carnivoreNoisePlayed = true;
         }
@@ -987,8 +989,8 @@ class Guy {
   }
 
   static killThisGuy(guy, returnNutrients=false) {
-    viz.currentDeathsCounted++;
-    viz.currentCumulativeLifeSpan += guy.age();
+    viz.experiment.currentDeathsCounted++;
+    viz.experiment.currentCumulativeLifeSpan += guy.age();
     if (treeGuy === guy) {
         treeGuy = guy.getDescendants({}, new Set(), 'children', true);
         if (treeGuy) {

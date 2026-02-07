@@ -8,7 +8,7 @@ class Visualization {
         this.index = this.createIndex();
         this.index.currentId = this.uniqueID();
         this.experimentKey = `experiments:${this.index.currentId}`;
-        this.traits;
+        this.traits = this.initTraits();
         if (!this.index.ids.includes(this.index.currentId)) {
             this.index.ids.push(this.index.currentId);
         }
@@ -16,9 +16,28 @@ class Visualization {
         //this.save(this.index, this.indexName);
 
         this.experiment = this.createExperiment();
-        this.mutationsBucket = [];
-        this.currentCumulativeLifeSpan = 0;
-        this.currentDeathsCounted = 0;
+    }
+
+    initTraits() {
+        let traits = {};
+
+        let extraBinary = [
+            'carnivorous', 
+            'isSexuallyMature'
+            
+        ];
+
+        let extraValue = [
+            'age',
+            'avgActualLifeSpan'
+        ];
+     
+        traits = {
+            binary: [...c.guys.traits.binary.concat(extraBinary)],
+            value: [...c.guys.traits.value.concat(extraValue)],
+        };
+
+        return traits;
     }
 
     createIndex() {
@@ -36,21 +55,13 @@ class Visualization {
     }
 
     createExperiment() {
-        let extraBinary = ['carnivorous'];
         let experiment = {
             id: this.index.currentId,
             samples: {},
-            mutations: {}
+            mutations: {},
+            currentCumulativeLifeSpan: 0,
+            currentDeathsCounted: 0,
         }
-        this.traits = {
-            binary: [...c.guys.traits.binary.concat(extraBinary)],
-            value: [...c.guys.traits.value],
-        };
-        //this.traits.binary.push('carnivorous');
-
-        this.traits.binary.push('isSexuallyMature');
-        this.traits.value.push('age');
-        this.traits.value.push('avgActualLifeSpan')
 
         for (let types of Object.keys(this.traits)) { 
             for (let traits of this.traits[types]) { 
@@ -111,7 +122,7 @@ class Visualization {
                     break;
                 case 'avgActualLifeSpan':
                     if (this.currentDeathsCounted > 0) {
-                        this.experiment.samples[trait].push(this.currentCumulativeLifeSpan / this.currentDeathsCounted);
+                        this.experiment.samples[trait].push(this.experiment.currentCumulativeLifeSpan / this.experiment.currentDeathsCounted);
                     }
                     continue;
                 default:

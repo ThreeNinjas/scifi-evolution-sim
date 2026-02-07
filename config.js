@@ -26,6 +26,7 @@ class Config {
                 'overRideMoveIntermittent',
                 'resolute',
                 'smartFoodFinder',
+                'armored',
             ], value: [
                 'adultSize',
                 'digestionRate',
