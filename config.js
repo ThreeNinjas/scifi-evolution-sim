@@ -115,10 +115,10 @@ Mutation viewer. Select a guy, highlight everyone with his same orbiters, hide e
 Avoid incest lol
 Highlight distal ends of tree mode
 Guy that runs away from carnies
-Bug: turning off tree mode doesn't get rid of the translucent mask?
+--> Bug: turning off tree mode doesn't get rid of the translucent mask?
 Omnivore. He eats guys when he's near starvation and can't find forage.
 For someday: allopatric speciation, somehow
-Bug: carnivores get stuck in some kind of limbo
+
 Add max and min to lifespan viz
 Indicate arrival of carnivory on these viz graphs: age, lifespan, sexual maturity....maybe all of them?
 Actual offspring count stats
@@ -128,15 +128,14 @@ Cause of death viz? Old age, starvation, murder, kids...doa
 Bug: dead carnivores are pinging
 Add carnivorous / armored to halo text
 Bug: how does digestion progress reach 11??
-Bug: doesn't refresh when it gets to 1 guy...
-Or 0 guys! Wtf!
+
 In some way mark when the last of the original cohort dies.... Maybe a generation tracker or something. 
 In tree mode, show what % of the population is in the current tree
 Try to find a way to identify the source of mutations, like a Genghis Khan effect
 Bug: how can you have negative stomach contents??
 Actual lifespan stuff should be in viz.experiments
 Enforce armored != carnivorous
-Work out treemode / highlight kinks
+
 Add armored to stats
 Herding behavior in herbivores
 Add fw puffers and stingrays to inat monitor
@@ -165,4 +164,8 @@ x Find whatever is still auto haloing
 x When highlighting a guy or tree of guys, draw the guys, then cover the board with a translucent rectangle, then draw the highlighted guys again. Make them brighter than 
 everyone else so they stand out better.
 x Have the threshold for carnivory be 1 in (max population - current population). Closer it gets the more likely carnivory is
+x Bug: carnivores get stuck in some kind of limbo
+x Bug: doesn't refresh when it gets to 1 guy...
+x Or 0 guys! Wtf!
+x Work out treemode / highlight kinks
 */

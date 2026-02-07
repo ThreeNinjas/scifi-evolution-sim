@@ -512,8 +512,23 @@ function mousePressed() {
         mouseY >= minY &&
         mouseY <= maxY
     ) {
-        treeMode = !treeMode;
-        console.log('treeMode', treeMode);
+        // treeMode = !treeMode;
+        // console.log('treeMode', treeMode);
+
+        if (treeMode == false) {
+            treeMode = true;
+
+            if (guysToHighlight.length == 1) {
+                treeGuy = guysToHighlight[0];
+            } else {
+                guysToHighlight = [];
+            }
+        } else {
+            treeMode = false;
+            treeGuy.halo = 0;
+            treeGuy = null;
+            guysToHighlight = [];
+        }
     }
 
     //guys
