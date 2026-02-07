@@ -140,7 +140,7 @@ function draw() {
     byId = {};
     for (let g of guys) byId[g.id] = g;
 
-    if (guys.length <= 1) {
+    if (guys.filter(g => !g.dead).length <= 1) {
         window.location.reload();
     }
 
