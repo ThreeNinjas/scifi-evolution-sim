@@ -50,7 +50,7 @@ class Guy {
     }
 
     this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : null;
-    this.runsFromPredators = util.chance(data.temp);
+    this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
 
     if (this.armored) this.carnivorous = false;
 
@@ -546,8 +546,6 @@ class Guy {
   }
 
   evadePredator() {
-    console.log(`${this.id} is evading ${this.beingChasedBy.id}`);
-    console.log(this.target.x, this.target.y);
     //make corners an array, loop through them with i and have bestCorner be the index
     util.playNoise(sounds.avoid);
     this.seekPriority = 'evade';
@@ -784,6 +782,7 @@ class Guy {
     stats.guys++;
 
     this.resetHorniness(mate);
+    Guy.enforceTradeOffs(child);
     guys.push(child);
 
     if (volumeOn && mutationHappened) {
@@ -1081,5 +1080,11 @@ class Guy {
         seekPriority: ${guy.seekPriority}; size: ${guy.size};
         target: ${guy.target.x},${guy.target.y}; prey: ${guy.prey};
     `);
+  }
+
+  static enforceTradeOffs(guy) {
+    if (guy.armored) {
+        guy.digestionRate += guy.digestionRate * (data.totalDryDays / 100);
+    }
   }
 }
