@@ -22,8 +22,10 @@ class Visualization {
         let traits = {};
 
         let extraBinary = [
+            'armored',
             'carnivorous', 
-            'isSexuallyMature'
+            'isSexuallyMature',
+            'runsFromPredators',
             
         ];
 

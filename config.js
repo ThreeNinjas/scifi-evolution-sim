@@ -21,12 +21,10 @@ class Config {
             },
             traits: {
                 binary: [
-                'armored',
                 'movesAwayFromBaby',
                 'overRideMove',
                 'overRideMoveIntermittent',
                 'resolute',
-                'runsFromPredators',
                 'smartFoodFinder',
                 'wander',
             ], value: [
@@ -115,7 +113,7 @@ class Config {
   * 
   * 
 
---->  
+--->  WHYYYYYY does the penalty turn off if the population is above 100??
 runsfromPredators needs to be rarer
 add a clear all halos button
 Put a limit on number of orbiters, or make them more rare.
@@ -146,6 +144,13 @@ Bug: how can you have negative stomach contents??
 Herding behavior in herbivores
 Add fw puffers and stingrays to inat monitor
 Have some sort of threshold system: once a certain threshold is reached (population or something) a new thing (food can move or something) gets 'unlocked'
+
+Running around should have a cost
+Noises when global max counts increment
+Change rpl in stats text to chance of food
+Move histogram buttons and put more useful stats there?
+
+WHYYYYYY does the penalty turn off if the population is above 100??
 
 
 Message center

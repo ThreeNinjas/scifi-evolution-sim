@@ -90,6 +90,7 @@ class Guy {
     this.deathNoisePlayed = 0;
 
     this.wanderStartingT = 0;
+    this.wanderNoisePlayed = false;
 
     this.reactionStartFrame = null;
 
@@ -211,8 +212,18 @@ class Guy {
     if (this.armored) {
         push();
             noFill();
-            strokeWeight(0.5);
+            strokeWeight(1);
             stroke(c.guys.colors.radioactive);
+            circle(this.pos.x, this.pos.y, this.size - (this.size * 0.4));
+            circle(this.pos.x, this.pos.y, this.size + (this.size * 0.5));
+        pop();
+    }
+
+    if (this.carnivorous) {
+        push();
+            noFill();
+            strokeWeight(1);
+            stroke(c.guys.colors.mars);
             circle(this.pos.x, this.pos.y, this.size - (this.size * 0.4));
             circle(this.pos.x, this.pos.y, this.size + (this.size * 0.5));
         pop();
@@ -266,6 +277,11 @@ class Guy {
     } else {
       line(0, 0, -4, -4);
       line(0, 0, -4, 4);
+
+      if (this.seekPriority == 'wander') {
+        line(5, 0, -4, -4);
+        line(5, 0, -4, 4);
+      }
     }
     pop();
   }
@@ -478,7 +494,16 @@ class Guy {
         this.prey = null;
         return;
     }
-    this.arrow(this.prey);
+
+    switch (this.seekPriority) {
+        case 'prey':
+            this.arrow(this.prey);
+            break;
+        case 'wander':
+            this.arrow(this.target);
+            break;
+    }
+    
     this.acc.set(this.target).sub(this.pos);
     this.acc.setMag(this.seekAccel);
 
@@ -562,9 +587,6 @@ class Guy {
     //make corners an array, loop through them with i and have bestCorner be the index
     util.playNoise(sounds.avoid);
     this.seekPriority = 'evade';
-    this.halo = 1;
-    this.beingChasedBy.halo = 1;
-    
 
     if (this.target.x == 0 && this.target.y === 0) {
         let away = p5.Vector.sub(this.pos, this.beingChasedBy.pos).normalize();
@@ -598,6 +620,7 @@ class Guy {
             break;
         case 'wander':
             this.wanderStartingT = 0;
+            this.wanderNoisePlayed = false;
             break;
     }
     this.isSeeking = 0;
@@ -743,14 +766,32 @@ class Guy {
       }
     }
 
-    if (parentA.carnivorous || parentB.carnivorous) {
-        child.carnivorous = util.coinToss(true, false);
-        if (child.carnivorous && !child.carnivoreNoisePlayed) {
+
+    //TODO refactor this and make it so I can add whatever traits that work this way in the future
+    // if (parentA.carnivorous || parentB.carnivorous) {
+    //     child.carnivorous = util.coinToss(true, false);
+    //     if (child.carnivorous && !child.carnivoreNoisePlayed) {
+    //         child.armored = false;
+    //         util.playNoise(sounds.carnivoreNoise);
+    //         child.carnivoreNoisePlayed = true;
+    //     }
+    // }
+
+    for (let trait of Guy.gatedTraits()) {
+        if (parentA[trait] || parentB[trait]) {
+            child[trait] = util.coinToss(true, false);
+        }
+
+        if (parentA[trait] || parentB[trait]) {
+            child[trait] = util.coinToss(true, false);
+        }
+    }
+
+    if (child.carnivorous && !child.carnivoreNoisePlayed) {
             child.armored = false;
             util.playNoise(sounds.carnivoreNoise);
             child.carnivoreNoisePlayed = true;
         }
-    }
 
     if (mutationHappened) {
       for (let type of Object.values(child.mutationPackage)) {
@@ -1110,5 +1151,13 @@ class Guy {
     if (guy.armored) {
         guy.digestionRate += guy.digestionRate * (data.totalDryDays / 100);
     }
+  }
+
+  static gatedTraits() {
+    return [
+        'armored',
+        'carnivorous',
+        'runsFromPredators',
+    ];
   }
 }
