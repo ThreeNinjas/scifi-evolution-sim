@@ -17,6 +17,7 @@ let sounds = {
     penaltyOffBeep: new Audio('assets/penaltyOff.mp3'),
     carnivoreNoise: new Audio('assets/thatSFXguy/alert 02.mp3'),
     treeGuyTorchPassNoise: new Audio('assets/input_failed2_clean.mp3'),
+    avoid: new Audio('assets/thatSFXguy/whubb 02.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -251,10 +252,24 @@ function draw() {
 
                         guy.isSeeking = 1;
                         guy.seekPriority = 'prey';
-                        
+
+                        //if the other guy's a runner...
+                        if (guy.prey.runsFromPredators) {
+                            if (dist(guy.pos.x, guy.pos.y, guy.prey.pos.x, guy.prey.pos.y) <= guy.prey.calculateSensePerim()) {
+                                guy.prey.beingChasedBy = guy;
+                            }
+                        }
                     }   
                 } else {
                     guy.seek();
+                }
+            }
+
+            if (guy.beingChasedBy) {
+                if (!guy.beingChasedBy.isHungry() || guy.beingChasedBy.dead || guy.beingChasedBy.prey != guy) {
+                    guy.beingChasedBy = null;
+                } else {
+                    guy.evadePredator();
                 }
             }
 
@@ -1271,7 +1286,7 @@ function drawPing(guy) {
     const alpha = Math.floor(255 * (1 - t));
     const hexAlpha = alpha.toString(16).padStart(2, '0');
 
-    const colorStub = guy.carnivorous ? '#ff22' : guy.isHorny ? '#ff3cd1' : '#339ccc'
+    const colorStub = guy.carnivorous ? '#ff2200' : guy.isHorny ? '#ff3cd1' : '#339ccc'
     push();
         noFill();
         stroke(`${colorStub}${hexAlpha}`);

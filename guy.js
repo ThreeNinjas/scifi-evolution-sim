@@ -50,6 +50,7 @@ class Guy {
     }
 
     this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : null;
+    this.runsFromPredators = util.chance(data.temp);
 
     if (this.armored) this.carnivorous = false;
 
@@ -93,6 +94,8 @@ class Guy {
     this.seekPriority = null; //food|mate|baby|prey
 
     this.prey = undefined;
+    this.beingChasedBy = undefined;
+    this.chosenCorner = null;
 
     this.potentialMates = [];
     this.mateTimer = 0;
@@ -151,36 +154,27 @@ class Guy {
       noFill();
       circle(this.pos.x, this.pos.y, this.size * 2);
       pop();
-      // push();
-      //     stroke('#ffdf27ff');
-      //     noFill();
-      //     circle(this.pos.x, this.pos.y, this.size * 2);
-      //     textSize(14);
-      //     let startY = this.pos.y + (this.size * 2);
-      //     let haloData = [];
-      //     if (this.mutationPackage.length > 0) {
-      //         for (let datum of this.mutationPackage) {
-      //             haloData.push(`::${datum.trait}::`);
-      //             haloData.push(`A: ${datum.mom}`);
-      //             haloData.push(`B: ${datum.dad}`);
-      //             haloData.push(`C: ${datum.baby}`);
-      //         }
-      //     } else {
-      //         haloData = [
-      //             `DP:${this.digestionProgress.toFixed(4)}`,
-      //             `SP:${this.calculateSensePerim().toFixed(4)}`,
-      //             `V:${this.vel.mag().toFixed(4)}`,
-      //             `VL:${this.velLimit.toFixed(4)}`,
-      //             `NM:${this.noiseMagnitude.toFixed(4)}`,
-      //             `SA:${this.seekAccel.toFixed(4)}`,
-      //             `${this.overRideMove}, ${this.overRideMoveIntermittent}, ${this.resolute}`,
-      //         ];
-      //     }
+      push();
+          stroke(c.guys.colors.hungry);
+          noFill();
+          circle(this.pos.x, this.pos.y, this.size * 2);
+          textSize(14);
+          let startY = this.pos.y + (this.size * 2);
+          let haloData = [];
+            if (this.carnivorous) haloData.push('carnivorous');
+            if (this.armored) haloData.push('armored');
+            if (this.children.length > 0) haloData.push(`${this.children.length} children`);
+            if (this.orbiters.length > 0) {
+            for (let orbiter of this.orbiters) {
+                haloData.push(`${orbiter.trait}, ${orbiter.delta.toFixed(4)}`);
+            }
+            }
 
-      // for (let datum of haloData) {
-      //     //text(datum, this.pos.x-10, startY);
-      //     startY += 14;
-      // }
+
+      for (let datum of haloData) {
+          text(datum, this.pos.x-10, startY);
+          startY += 14;
+      }
       // text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
       // text(`SP:${this.calculateSensePerim().toFixed(4)}`, this.pos.x-10, (this.pos.y + this.size * 2) + 14);
       // text(`V:${this.vel.mag().toFixed(4)}`, this.pos.x - 10, (this.pos.y + this.size * 2) + 28);
@@ -190,7 +184,7 @@ class Guy {
       // if (this.isSeeking == 1) {
       //     line(this.pos.x, this.pos.y, this.target.x, this.target.y);
       // }
-      //pop();
+      pop();
     }
 
     if (debug) {
@@ -517,8 +511,10 @@ class Guy {
       this.vel.y = 0;
     }
 
+    let distToTarget = this.seekPriority === 'evade' ? 20 : 5;
+
     //if you have reached your target:
-    if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= 5) {
+    if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= distToTarget) {
         //if you are carnivorous and seeking prey and that prey has not died:
         if (this.carnivorous && this.seekPriority == 'prey' && this.prey && !this.prey.dead) {
             //you found your guy, eat that fucker! unless he's armored
@@ -530,13 +526,64 @@ class Guy {
                 this.prey = undefined;
             }
         } 
+
+        //if you are being chased by a predator 
+        if (this.seekPriority == 'evade') {
+            console.log(`${this.id} is still evading ${this.beingChasedBy.id}`);
+            //and he's still targeting you and he's not dead
+            if (this.beingChasedBy.prey == this && !this.beingChasedBy.dead) {
+                if (this.chosenCorner !== null) {
+                    this.chosenCorner++;
+                    if (this.chosenCorner > c.corners.length - 1) this.chosenCorner = 0;
+                    this.target = c.corners[this.chosenCorner].copy();
+                    console.log(`new target: ${this.target.x}, ${this.target.y}`);
+                }
+                return;
+            }
+        }
         this.nullifyTarget();
     }
   }
 
+  evadePredator() {
+    console.log(`${this.id} is evading ${this.beingChasedBy.id}`);
+    console.log(this.target.x, this.target.y);
+    //make corners an array, loop through them with i and have bestCorner be the index
+    util.playNoise(sounds.avoid);
+    this.seekPriority = 'evade';
+    this.halo = 1;
+    this.beingChasedBy.halo = 1;
+    
+
+    if (this.target.x == 0 && this.target.y === 0) {
+        let away = p5.Vector.sub(this.pos, this.beingChasedBy.pos).normalize();
+        let bestCorner = null;
+        let bestScore = -Infinity;
+
+        for (let i = 0; i < c.corners.length; i++) {
+            let dir = p5.Vector.sub(c.corners[i], this.pos).normalize();
+            let score = away.dot(dir);
+            if (score > bestScore) {
+                bestScore = score;
+                bestCorner = c.corners[i].copy();
+                this.target = bestCorner;   
+                this.chosenCorner = i;
+            }
+        }
+    }
+
+     
+    this.seek();
+  }
+
   nullifyTarget() {
-    if (this.seekPriority == 'prey') {
-        this.prey = null;
+    switch (this.seekPriority) {
+        case 'prey':
+            this.prey = null;
+            break;
+        case 'evade':
+            this.beingChasedBy = null;
+            this.chosenCorner = null;
     }
     this.isSeeking = 0;
     this.target.x = 0;

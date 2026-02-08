@@ -121,7 +121,7 @@ class Visualization {
                     values = aliveGuys.map(g => g.age());
                     break;
                 case 'avgActualLifeSpan':
-                    if (this.currentDeathsCounted > 0) {
+                    if (this.experiment.currentDeathsCounted > 0) {
                         this.experiment.samples[trait].push(this.experiment.currentCumulativeLifeSpan / this.experiment.currentDeathsCounted);
                     }
                     continue;
