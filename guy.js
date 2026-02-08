@@ -591,6 +591,16 @@ class Guy {
   }
 
   chooseMate() {
+    let speciationTraits = [
+        'carnivorous',
+        'armored'
+    ];
+
+    for (let trait of speciationTraits) {
+        if (this[trait] && pt.speciationThresholdReached(trait)) {
+            this.potentialMates = this.potentialMates.filter(g => g[trait]);
+        }
+    }
     if (!this.preference || this.potentialMates.length < 2) {
       return util.closestGuyByColor(this.color, this.potentialMates);
     }
@@ -614,10 +624,7 @@ class Guy {
       }
     }
 
-    // if (volumeOn) {
-    //   sounds.prefBeep.currentTime = 0;
-    //   sounds.prefBeep.play().catch(() => {});
-    // }
+    util.playNoise(sounds.prefBeep);
 
     return bestGuy;
   }

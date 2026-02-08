@@ -17,4 +17,8 @@ class PhaseTransducer {
     armored() {
         this.carnivory && this.maxPercentOfCarnivores > 50;
     }
+
+    speciationThresholdReached(trait) {
+        return guys.filter(g => g[trait]).length > guys.length * 0.2;
+    }
 }

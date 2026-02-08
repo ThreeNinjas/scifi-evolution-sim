@@ -114,7 +114,7 @@ class Config {
   * 
   * 
 
---->  armor needs a cost
+--->  armoreds and carnivores needs to choose each other
 runsfromPredators needs to be rarer
 add a clear all halos button
 Put a limit on number of orbiters, or make them more rare.
@@ -180,4 +180,5 @@ x Actual lifespan stuff should be in viz.experiments
 x Add carnivorous / armored to halo text
 x Guy that runs away from carnies
 x give orbiters an expiration date
+x armor needs a cost
 */
