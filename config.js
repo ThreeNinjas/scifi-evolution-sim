@@ -28,6 +28,7 @@ class Config {
                 'resolute',
                 'runsFromPredators',
                 'smartFoodFinder',
+                'wander',
             ], value: [
                 'adultSize',
                 'digestionRate',

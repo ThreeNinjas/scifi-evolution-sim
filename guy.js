@@ -40,6 +40,7 @@ class Guy {
     this.smartFoodFinder = util.coinToss(0, 1);
     this.resolute = util.chance(10); //if this is true, guy won't change its mind about food targets
     this.movesAwayFromBaby = util.chance(data.temp);
+    this.wander = util.chance(data.clouds);
     
     this.carnivorous = getTimeIndex() < data.totalRainfall * 10 ? false : guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length));
     this.carnivoreNoisePlayed = false;
@@ -51,8 +52,8 @@ class Guy {
 
     this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : null;
     this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
-
     if (this.armored) this.carnivorous = false;
+    if (this.carnivorous) this.armored = false;
 
     //heritable - vectors
     this.velLimit = !util.chance(99) ? 5 : util.randomNormal(0.001, 0.25); // random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
@@ -88,10 +89,12 @@ class Guy {
     this.offspringCount = 0;
     this.deathNoisePlayed = 0;
 
+    this.wanderStartingT = 0;
+
     this.reactionStartFrame = null;
 
     this.target = createVector(0, 0);
-    this.seekPriority = null; //food|mate|baby|prey
+    this.seekPriority = null; //food|mate|baby|prey|evade|wander
 
     this.prey = undefined;
     this.beingChasedBy = undefined;
@@ -511,7 +514,17 @@ class Guy {
       this.vel.y = 0;
     }
 
-    let distToTarget = this.seekPriority === 'evade' ? 20 : 5;
+    let distToTarget;
+
+    switch(this.seekPriority) {
+        case 'evade':
+        case 'wander':
+            distToTarget = 20;
+            break;
+        default:
+            distToTarget = 5;
+            break;
+    }
 
     //if you have reached your target:
     if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= distToTarget) {
@@ -582,6 +595,10 @@ class Guy {
         case 'evade':
             this.beingChasedBy = null;
             this.chosenCorner = null;
+            break;
+        case 'wander':
+            this.wanderStartingT = 0;
+            break;
     }
     this.isSeeking = 0;
     this.target.x = 0;

@@ -298,10 +298,24 @@ function draw() {
                         }
                     }
                 } else {
+                    if (guy.seekPriority !== 'wander') {
+                        guy.target.x = 0;
+                        guy.target.y = 0;
+                    }
                     guy.move();
                     guy.mate = null;
-                    guy.target.x = 0;
-                    guy.target.y = 0;
+
+                    if (guy.wander) {
+                        guy.wanderStartingT++;
+                        if (guy.wanderStartingT > guy.reactionTime * 2) {
+                            if (!guy.seekPriority) {
+                                guy.seekPriority = 'wander';
+                                guy.target.x = c.corners[util.randomNumber(0, c.corners.length - 1)].x;
+                                guy.target.y = c.corners[util.randomNumber(0, c.corners.length - 1)].y;
+                            }
+                            guy.seek();
+                        }
+                    }
                 }
 
                 const foodToEat = guy.intersectsFood(forage.foodStorage);
