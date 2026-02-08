@@ -130,6 +130,7 @@ function draw() {
         treeGuy = null;
     }
 
+    forage.checkPenaltyStatus();
     forage.drawMe();
 
     // for (const guy of guys) {

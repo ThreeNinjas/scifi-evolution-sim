@@ -24,39 +24,10 @@ class Forage {
 
         if (this.penaltyActive) {
             chanceOfFood = this.chanceOfFood / 2;
-
-            if (guys.length > 100) {
-                if (this.startOfPenalty == null) this.startOfPenalty = frameCount;
-
-                if (frameCount - this.startOfPenalty >= this.penaltyLength) {
-                    this.penaltyActive = false;
-                    this.startOfPenalty = null;
-                    chanceOfFood = this.chanceOfFood;
-                    util.playNoise(sounds.penaltyOffBeep);
-                }
-            } 
-        } else {
-            if (guys.length > 100) {
-                this.penaltyActive = true;
-                this.startOfPenalty = frameCount;
-                chanceOfFood = this.chanceOfFood / 2;
-                util.playNoise(sounds.penaltyOnBeep);
-            }
-        }
-
-        if (this.penaltyActive && this.startOfPenalty == null && guys.length > 100) {
-            this.startOfPenalty = frameCount;
-        }
-
-        if (this.penaltyActive && frameCount > this.startOfPenalty + this.penaltyLength) {
-            this.startOfPenalty = null;
-            this.penaltyActive = false;
-
-            util.playNoise(sounds.penaltyOffBeep);
         }
 
         const max = num === null
-            ? chanceOfFood
+            ? Math.floor(chanceOfFood)
             : Math.floor(num / this.foodSize);
 
         for (let i = 0; i < max; i++) {
@@ -94,6 +65,43 @@ class Forage {
         let chanceOfFood = start + (start * data.totalRainfall/100);
         chanceOfFood -= data.daysSinceRain;
         return Math.abs(chanceOfFood);
+    }
+
+    activatePenalty() {
+        if (!this.penaltyActive) {
+            this.penaltyActive = true;
+            this.startOfPenalty = frameCount;
+            util.playNoise(sounds.penaltyOnBeep);
+        }
+    }
+
+    deactivatePenalty() {
+        if (this.penaltyActive) {
+            this.penaltyActive = false;
+            this.startOfPenalty = null;
+            util.playNoise(sounds.penaltyOffBeep);
+        }
+    }
+
+    checkPenaltyStatus() {
+        switch (true) {
+            case !this.penaltyActive && guys.length < 100:
+                this.deactivatePenalty();
+                break;
+            case !this.penaltyActive && guys.length >= 100:
+                this.activatePenalty();
+                break;
+            case this.penaltyActive && guys.length >= 100:
+                this.startOfPenalty = frameCount;
+                break;
+            case this.penaltyActive && guys.length < 100 && this.penaltyTimeHasPassed():
+                this.deactivatePenalty();
+                break;
+        }
+    }
+
+    penaltyTimeHasPassed() {
+        return frameCount - this.startOfPenalty >= this.penaltyLength;
     }
 
     drawMe() {

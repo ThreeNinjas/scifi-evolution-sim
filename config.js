@@ -114,6 +114,7 @@ class Config {
   * 
 
 --->  WHYYYYYY does the penalty turn off if the population is above 100??
+*** visual indicator of evadePredator()
 runsfromPredators needs to be rarer
 add a clear all halos button
 Put a limit on number of orbiters, or make them more rare.
