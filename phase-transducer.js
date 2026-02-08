@@ -7,6 +7,7 @@ class PhaseTransducer {
         this.carnivorous = false;
         this.percentOfCarnivores = 0;
         this.maxPercentOfCarnivores = 0;
+        this.orbiterLifeSpan = data.totalDryDays * 100;
     }
 
     getCarnivorousThreshold() {

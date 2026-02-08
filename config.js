@@ -114,8 +114,8 @@ class Config {
   * 
   * 
 
----> Guy that runs away from carnies
-
+--->  give orbiters an expiration date
+armor needs a cost
 add a clear all halos button
 Put a limit on number of orbiters, or make them more rare.
 When guys are big, food moves to them...I can draw lines or something instead of animating forage
@@ -178,4 +178,5 @@ x Add armored to stats
 x Enforce armored != carnivorous
 x Actual lifespan stuff should be in viz.experiments
 x Add carnivorous / armored to halo text
+x Guy that runs away from carnies
 */

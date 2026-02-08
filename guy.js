@@ -752,6 +752,7 @@ class Guy {
     for (const m of child.mutationPackage.value) {
         child.orbiters.push({
             trait: m.trait,
+            t: getTimeIndex(),
             angle: 0,
             delta: (m.percentChange / 100) / 10,
             color: parentA.color,
@@ -761,7 +762,7 @@ class Guy {
 
     for (const orbiterArray of [parentA.orbiters, parentB.orbiters]) {
       for (const o of orbiterArray) {
-        if (!child.orbiters.some((c) => c.trait === o.trait)) {
+        if (!child.orbiters.some((c) => c.trait === o.trait) && getTimeIndex() - o.t < pt.orbiterLifeSpan) {
           child.orbiters.push({ ...o });
         }
       }

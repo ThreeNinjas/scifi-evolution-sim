@@ -36,6 +36,7 @@ let c; //maybe rename config below later....
 let guys = [];
 /** @@type {Forage[]} */
 let forage;
+let pt;
 let diameter = 10;
 let data = null;
 
@@ -665,6 +666,8 @@ async function loadWeather() {
         maxX: config.bounds.x.max,
         maxY: config.bounds.y.max,
     });
+
+    pt = new PhaseTransducer();
 
     frameRate(data.temp);
     i = 0;
