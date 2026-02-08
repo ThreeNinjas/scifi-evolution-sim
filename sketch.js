@@ -18,11 +18,12 @@ let sounds = {
     carnivoreNoise: new Audio('assets/thatSFXguy/alert 02.mp3'),
     treeGuyTorchPassNoise: new Audio('assets/input_failed2_clean.mp3'),
     avoid: new Audio('assets/thatSFXguy/whubb 02.mp3'),
+    wander: new Audio('assets/deskviewer1.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
     sound.preload = 'auto';
-    sound.volume = 0.25;
+    sound.volume = 0.125;
 }
 
 for (let sound of [sounds.deathBeep, sounds.birthBeep, sounds.carnivoreNoise]) {
@@ -247,6 +248,9 @@ function draw() {
                 if (!guy.prey) {
                     //choose the guy with the fullest stomach as prey
                     guy.prey = guys.filter(g => g.stomachContents < guy.size && !g.dead && g !== guy).reduce((a, b) => !a || b.stomachContents > a.stomachContents ? b : a, null);
+                    if (pt.speciationThresholdReached('carnivorous')) {
+                        //guy.prey = guy.prey.filter   
+                    }
                     if (guy.prey) {
                         guy.target.x = guy.prey.pos.x;
                         guy.target.y = guy.prey.pos.y;
@@ -280,6 +284,7 @@ function draw() {
                 sensedFood = guy.sensesFood(forage.foodStorage);
 
                 if (sensedFood) {
+                    guy.wanderNoisePlayed = false;
                     if (guy.reactionStartFrame === null && guy.seekPriority !== 'food') {
                         guy.reactionStartFrame = frameCount;
                     }
@@ -298,10 +303,26 @@ function draw() {
                         }
                     }
                 } else {
+                    if (guy.seekPriority !== 'wander') {
+                        guy.target.x = 0;
+                        guy.target.y = 0;
+                    }
                     guy.move();
                     guy.mate = null;
-                    guy.target.x = 0;
-                    guy.target.y = 0;
+
+                    if (guy.wander) {
+                        guy.wanderStartingT++;
+                        if (guy.wanderStartingT > guy.reactionTime * 2) {
+                            if (guy.seekPriority !== 'wander') {
+                                guy.seekPriority = 'wander'; 
+                                guy.target.x = c.corners[util.randomNumber(0, c.corners.length - 1)].x;
+                                guy.target.y = c.corners[util.randomNumber(0, c.corners.length - 1)].y;
+                            }
+                            //push(); stroke('white'); line(guy.pos.x, guy.pos.y, guy.target.x, guy.target.y); pop();
+                            util.playNoise(sounds.wander, () => guy.wanderNoisePlayed = true);
+                            guy.seek();
+                        }
+                    }
                 }
 
                 const foodToEat = guy.intersectsFood(forage.foodStorage);
