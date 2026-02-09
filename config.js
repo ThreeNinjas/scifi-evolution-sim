@@ -114,12 +114,11 @@ class Config {
   * 
   * 
 
---->  
+--->  When guys are big, food moves to them...I can draw lines or something instead of animating forage
 *** 
 
 add a clear all halos button
-Put a limit on number of orbiters, or make them more rare.
-When guys are big, food moves to them...I can draw lines or something instead of animating forage
+
 Tails for binary mutations 
 Guys that aren't full killers, they take a nip off random guys
 Mutation viewer. Select a guy, highlight everyone with his same orbiters, hide everyone else.
@@ -193,4 +192,5 @@ x armoreds and carnivores needs to choose each other
 x WHYYYYYY does the penalty turn off if the population is above 100??
 x visual indicator of evadePredator()
 x runsfromPredators needs to be rarer
+x Put a limit on number of orbiters, or make them more rare.
 */

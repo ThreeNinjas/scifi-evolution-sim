@@ -1179,4 +1179,9 @@ class Guy {
         'runsFromPredators',
     ];
   }
+
+  static godMode() {
+    guys.filter(g => g.id > 1).forEach(g => g.dead = 1);
+    guys.forEach(g => g.size = 12);
+  }
 }
