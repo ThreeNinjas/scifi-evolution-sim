@@ -282,6 +282,14 @@ class Guy {
         line(5, 0, -4, -4);
         line(5, 0, -4, 4);
       }
+
+      if (this.seekPriority == 'evade') {
+        push();
+            stoke(c.guys.colors.mars);
+            line(10, 0, 4, -6);
+            line(10, 0, 4, 6);
+        pop();
+      }
     }
     pop();
   }
@@ -587,7 +595,7 @@ class Guy {
     //make corners an array, loop through them with i and have bestCorner be the index
     util.playNoise(sounds.avoid);
     this.seekPriority = 'evade';
-
+    this.arrow();
     if (this.target.x == 0 && this.target.y === 0) {
         let away = p5.Vector.sub(this.pos, this.beingChasedBy.pos).normalize();
         let bestCorner = null;

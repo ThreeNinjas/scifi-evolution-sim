@@ -130,7 +130,6 @@ function draw() {
         treeGuy = null;
     }
 
-    forage.checkPenaltyStatus();
     forage.drawMe();
 
     // for (const guy of guys) {
@@ -353,8 +352,14 @@ function draw() {
         guy.digestionProgress += guy.isSexuallyMature() ? guy.digestionRate : guy.digestionRate / 4;
 
         if (guy.stomachContents > 0 && !guy.dead) {
-            //Penalizing speeds faster than the fastest guy at initialization
-            const penalty = Math.max(0, guy.vel.mag() - viz.experiment.samples.velLimit[0].max);
+            //Penalizing speed, the closer you get to the initial limit, the higher the metabolic cost
+            const penalty = Math.pow(guy.vel.mag() / viz.experiment.samples.velLimit[0].max, 3);
+            /**
+             * Just so you remember how this works lol
+                1 / 5 ^ 3 = 0.008
+                5 / 5 ^ 3 = 1
+                6 / 5 ^ 3 = 1.728
+             */
             guy.stomachContents -= penalty * 0.001;
             guy.stomachContents = Math.max(0, guy.stomachContents);
         }
