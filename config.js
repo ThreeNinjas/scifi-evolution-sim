@@ -17,6 +17,7 @@ class Config {
                 gold: '#ffaa00',
                 mars: '#ff2200',
                 radioactive: '#88ffff',
+                blue: '#5566ff',
                 orbiters: []
             },
             traits: {
@@ -115,7 +116,7 @@ class Config {
 
 --->  
 *** 
-runsfromPredators needs to be rarer
+
 add a clear all halos button
 Put a limit on number of orbiters, or make them more rare.
 When guys are big, food moves to them...I can draw lines or something instead of animating forage
@@ -191,4 +192,5 @@ x armor needs a cost
 x armoreds and carnivores needs to choose each other
 x WHYYYYYY does the penalty turn off if the population is above 100??
 x visual indicator of evadePredator()
+x runsfromPredators needs to be rarer
 */

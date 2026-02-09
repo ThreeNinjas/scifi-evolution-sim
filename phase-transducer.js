@@ -4,7 +4,14 @@
 
 class PhaseTransducer {
     constructor() {
-        this.carnivorous = false;
+        this.thresholds = {
+            carnivore: {passed: false, color: c.guys.colors.mars},
+            carnivoreOnCarnivore: {passed: false, color: c.guys.colors.gold},
+            armored: {passed: false, color: c.guys.colors.blue},
+        };
+        this.armored = false;
+        this.carnivore = true;
+        this.carnivoreOnCarnivore = false;
         this.percentOfCarnivores = 0;
         this.maxPercentOfCarnivores = 0;
         this.orbiterLifeSpan = data.totalDryDays * 100;

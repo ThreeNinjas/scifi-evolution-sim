@@ -48,12 +48,20 @@ class Guy {
         this.digestionRate = Math.abs(this.digestionRate);
         console.log(`Guy${this.id} is a carnivore.`);
         util.playNoise(sounds.carnivoreNoise, () => this.carnivoreNoisePlayed = true);
+
+        if (!pt.thresholds.carnivore.passed) {
+            pt.thresholds.carnivore.passed = true;
+        }
     }
 
     this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : null;
     this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
     if (this.armored) this.carnivorous = false;
     if (this.carnivorous) this.armored = false;
+
+    if (this.armored && !pt.thresholds.armored.passed) {
+        pt.thresholds.armored.passed = true;
+    }
 
     //heritable - vectors
     this.velLimit = !util.chance(99) ? 5 : util.randomNormal(0.001, 0.25); // random(0.00001, 0.25); //0.00001; // constrain(0.5 * util.logNormalMultiplier(), 0.5, data.vis);
@@ -790,8 +798,11 @@ class Guy {
             child[trait] = util.coinToss(true, false);
         }
 
-        if (parentA[trait] || parentB[trait]) {
-            child[trait] = util.coinToss(true, false);
+        if (parentA[trait] && parentB[trait]) {
+            child[trait] = true;
+            if (trait == 'carnivorous' && !pt.thresholds.carnivoreOnCarnivore.passed) {
+                pt.thresholds.carnivoreOnCarnivore.passed = true;
+            }
         }
     }
 

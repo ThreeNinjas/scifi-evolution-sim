@@ -205,7 +205,11 @@ function draw() {
         //hey, there's no need to check the position of every other guy when all you want to find is another currently horny guy!
         //just like real life!
         if (guy.isHorny) {
-            const hornyGuys = guys.filter(g => g.isHorny);
+            let hornyGuys = guys.filter(g => g.isHorny);
+
+            if (pt.carnivoreOnCarnivore && guy.carnivorous) hornyGuys = hornyGuys.filter(g => g.carnivorous);
+            if (pt.carnivoreOnCarnivore && !guy.carnivorous) hornyGuys = hornyGuys.filter(g => !g.carnivorous);
+
             for (let otherGuy of hornyGuys) {
                 if (otherGuy === guy || guy.seekPriority == 'baby') continue;
                 if (guy.senses(otherGuy) && !guy.isSeeking && !guy.mate) {
@@ -247,10 +251,16 @@ function draw() {
                 guy.isHorny = false;
                 if (!guy.prey) {
                     //choose the guy with the fullest stomach as prey
-                    guy.prey = guys.filter(g => g.stomachContents < guy.size && !g.dead && g !== guy).reduce((a, b) => !a || b.stomachContents > a.stomachContents ? b : a, null);
-                    if (pt.speciationThresholdReached('carnivorous')) {
-                        //guy.prey = guy.prey.filter   
+                    let potentialPrey;
+
+                    if (pt.carnivoreOnCarnivore) {
+                        potentialPrey = guys.filter(g => !g.carnivorous);
+                    } else {
+                        potentialPrey = guys;
                     }
+
+                    guy.prey = potentialPrey.filter(g => g.stomachContents < guy.size && !g.dead && g !== guy).reduce((a, b) => !a || b.stomachContents > a.stomachContents ? b : a, null);
+                    
                     if (guy.prey) {
                         guy.target.x = guy.prey.pos.x;
                         guy.target.y = guy.prey.pos.y;
@@ -353,15 +363,18 @@ function draw() {
 
         if (guy.stomachContents > 0 && !guy.dead) {
             //Penalizing speed, the closer you get to the initial limit, the higher the metabolic cost
-            const penalty = Math.pow(guy.vel.mag() / viz.experiment.samples.velLimit[0].max, 3);
+            //suspending the laws of physics for mating purposes, just like irl
+            if (!guy.mate) {
+                const penalty = Math.pow(guy.vel.mag() / viz.experiment.samples.velLimit[0].max, 3);
+                guy.stomachContents -= penalty * 0.001;
+                guy.stomachContents = Math.max(0, guy.stomachContents);
+            }
             /**
              * Just so you remember how this works lol
                 1 / 5 ^ 3 = 0.008
                 5 / 5 ^ 3 = 1
                 6 / 5 ^ 3 = 1.728
              */
-            guy.stomachContents -= penalty * 0.001;
-            guy.stomachContents = Math.max(0, guy.stomachContents);
         }
         if (guy.stomachContents > 0 && guy.dead == 0) {
             if (guy.digestionProgress >= 1) {
@@ -475,6 +488,8 @@ function draw() {
     drawBars();
 
     drawControls();
+
+    drawThresholdBars();
 }
 
 function weatherHasChanged(prevData) {
@@ -1403,4 +1418,23 @@ function drawBars() {
             }
         pop();
     }   
+}
+
+function drawThresholdBars() {
+    let startingX = 0;
+    push();
+        translate(10, 520);
+        for (let th of Object.values(pt.thresholds)) {
+            noFill();
+            stroke(th.color);
+            rect(startingX, 0, 40, 10);
+            
+            if (th.passed) {
+                fill(th.color);
+                rect(startingX, 0, 40, 10);
+            }
+            startingX += 45;
+        }
+        
+    pop();
 }
