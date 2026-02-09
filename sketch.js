@@ -289,6 +289,10 @@ function draw() {
             }
 
             //hungry herbivores
+            if (guy.gravityBites.length > 0) {
+                    guy.gravityFeed();
+                }
+                
             if (guy.isHungry() && guy.seekPriority !== 'baby' && !guy.carnivorous) {
                 guy.isHorny = false;
                 sensedFood = guy.sensesFood(forage.foodStorage);

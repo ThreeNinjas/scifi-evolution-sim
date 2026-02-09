@@ -97,6 +97,8 @@ class Guy {
     this.offspringCount = 0;
     this.deathNoisePlayed = 0;
 
+    this.gravityBites = [];
+
     this.wanderStartingT = 0;
     this.wanderNoisePlayed = false;
 
@@ -898,13 +900,9 @@ class Guy {
   sensesFood(foods) {
     let potentialFoods = [];
     for (let food of foods) {
-      if (
-        dist(this.pos.x, this.pos.y, food.x, food.y) <
-        this.calculateSensePerim()
-      ) {
+      if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.calculateSensePerim()) {
         this.isSeeking = 1;
-        //
-        if (this.smartFoodFinder) {
+        if (this.smartFoodFinder || this.size >= 12) {
           potentialFoods.push({
             x: food.x,
             y: food.y,
@@ -918,10 +916,46 @@ class Guy {
     }
 
     if (potentialFoods.length > 0) {
-      return potentialFoods.reduce((a, b) => (a.dist < b.dist ? a : b));
+        if (this.size < 12) {
+            return potentialFoods.reduce((a, b) => (a.dist < b.dist ? a : b));
+        }
+        this.gravityFeed(potentialFoods);
+        return;
     }
 
     return null;
+  }
+
+  gravityFeed(potentialFoods = null) {
+    if (potentialFoods) {
+        for (let pf of potentialFoods) {
+            if (this.isHungry() && dist(this.pos.x, this.pos.y, pf.x, pf.y) <= this.size * 5) {
+                let bite = {
+                    id: pf.id,
+                    pos: createVector(pf.x, pf.y),
+                    acc: createVector(0, 0),
+                    vel: createVector(0, 0),
+                    color: c.forage.color,
+                };
+                this.gravityBites.push(bite);
+                this.eat(pf.id);
+            }
+        }
+    }
+
+    for (let b of this.gravityBites) { 
+        //draw the new particles
+        push();
+        stroke(c.forage.color);
+        circle(b.pos.x, b.pos.y, 1);
+        if (dist(this.pos.x, this.pos.y, b.pos.x, b.pos.y) <= this.size) {
+            const i = this.gravityBites.findIndex(f => f.id === b.id);
+            this.gravityBites.splice(i, 1);
+        } else {
+            b.pos.add(p5.Vector.sub(this.pos, b.pos).limit(5));
+        }
+        pop();
+    }
   }
 
   senses(other) {
@@ -1182,6 +1216,6 @@ class Guy {
 
   static godMode() {
     guys.filter(g => g.id > 1).forEach(g => g.dead = 1);
-    guys.forEach(g => g.size = 12);
+    guys.forEach(g => g.size = 15);
   }
 }
