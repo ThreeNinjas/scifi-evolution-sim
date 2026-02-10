@@ -3,7 +3,7 @@ const debug = params.get('debug');
 let numberOfGuys = params.get('guys') || null;
 let globalMaxGuys = 0;
 let font;
-
+let traits;
 let viz;
 
 let sounds = {
@@ -153,6 +153,22 @@ function draw() {
 
     guysToHighlight = treeMode && treeGuy ? treeGuy : guys.filter(g => g.halo == 1);
 
+    if (pt.thresholds.armored.passed && guys.filter(g => g.carnivorous).length == 0) {
+        pt.thresholds.carnivoresExtinct.passed = true;
+        pt.thresholds.carnivore.passed = false;
+        pt.thresholds.carnivoreOnCarnivore.passed = false;
+    }
+
+    if (pt.thresholds.carnivoresExtinct.passed && pt.thresholds.armored.passed && guys.filter(g => g.armored).length == 0 && guys.filter(g => g.carnivorous).length == 0) {
+        pt.thresholds.carnivoresExtinct.passed = false;
+        pt.thresholds.carnivore.passed = false;
+        pt.thresholds.armored.passed = false;
+    }
+
+    if (guys.length > Math.floor(Math.abs(data.temp))) {
+        pt.thresholds.populationBoom.passed = true;
+    }
+
     for (let guy of guys) {
         //kill guys whose time is up or who have had their allotment of children
         if (!guy.dead && (getTimeIndex() - guy.birthday >= guy.lifeSpan || guy.offspringCount > guy.childrenAllowed)) {
@@ -207,8 +223,8 @@ function draw() {
         if (guy.isHorny) {
             let hornyGuys = guys.filter(g => g.isHorny);
 
-            if (pt.carnivoreOnCarnivore && guy.carnivorous) hornyGuys = hornyGuys.filter(g => g.carnivorous);
-            if (pt.carnivoreOnCarnivore && !guy.carnivorous) hornyGuys = hornyGuys.filter(g => !g.carnivorous);
+            if (pt.thresholds.carnivoreOnCarnivore.passed && guy.carnivorous) hornyGuys = hornyGuys.filter(g => g.carnivorous);
+            if (pt.thresholds.carnivoreOnCarnivore.passed && !guy.carnivorous) hornyGuys = hornyGuys.filter(g => !g.carnivorous);
 
             for (let otherGuy of hornyGuys) {
                 if (otherGuy === guy || guy.seekPriority == 'baby') continue;
@@ -253,7 +269,7 @@ function draw() {
                     //choose the guy with the fullest stomach as prey
                     let potentialPrey;
 
-                    if (pt.carnivoreOnCarnivore) {
+                    if (pt.thresholds.carnivoreOnCarnivore.passed) {
                         potentialPrey = guys.filter(g => !g.carnivorous);
                     } else {
                         potentialPrey = guys;
@@ -289,7 +305,7 @@ function draw() {
             }
 
             //hungry herbivores
-            if (guy.gravityBites.length > 0) {
+            if (guy.gravityBites.length > 0 && !guy.carnivorous) {
                     guy.gravityFeed();
                 }
                 
@@ -501,6 +517,71 @@ function weatherHasChanged(prevData) {
     return JSON.stringify(data) !== prevData;
 }
 
+function keyPressed() {
+    if (key === 'm') {
+        volumeOn = !volumeOn;
+    }
+
+    if (key === ' ') {
+        handlePause();
+    }
+
+    if (keyIsDown(SHIFT) && key === 'V' && viewerOn) { 
+        let i = traits.findIndex(f => f == valueToViz); 
+        if (i == traits.length - 1) { console.log('lol', i);
+            i = 0;
+        } else { console.log('haha', i);
+            i++;
+        }
+        viz.show(traits[i]);
+    }
+
+    if (key === 'v') {
+        handleVizMode();
+    }
+
+    if (key === 't') {
+        handleTreeMode();
+    }
+}
+
+function handlePause() {
+    paused = !paused;
+
+    if (paused) {
+        noLoop();
+    } else {
+        loop();
+    }
+}
+
+function handleVizMode() {
+    viewerOn = !viewerOn;
+
+    if (viewerOn) {
+        vizDropdownWrap.show();
+    } else {
+        vizDropdownWrap.hide();
+    }
+}
+
+function handleTreeMode() {
+    if (treeMode == false) {
+        treeMode = true;
+
+        if (guysToHighlight.length == 1) {
+            treeGuy = guysToHighlight[0];
+        } else {
+            guysToHighlight = [];
+        }
+    } else {
+        treeMode = false;
+        treeGuy.halo = 0;
+        treeGuy = null;
+        guysToHighlight = [];
+    }
+}
+
 function mousePressed() {
     let yAddOn = 30;
     //mute button
@@ -525,13 +606,7 @@ function mousePressed() {
         mouseY >= (height/2 + 95)  + yAddOn &&
         mouseY <= ((height/2 + 95) + 10) + yAddOn
         ) {
-            paused = !paused;
-
-            if (paused) {
-                noLoop();
-            } else {
-                loop();
-            }
+            handlePause();
         }
 
     //viz button
@@ -540,13 +615,7 @@ function mousePressed() {
         dist(mouseX, mouseY, width - 60, (height/2 + 100) + yAddOn) <= 10 / 2
 
     ) {
-        viewerOn = !viewerOn;
-
-        if (viewerOn) {
-            vizDropdownWrap.show();
-        } else {
-            vizDropdownWrap.hide();
-        }
+        handleVizMode();
     }
 
     //historgram switcher
@@ -577,20 +646,7 @@ function mousePressed() {
         // treeMode = !treeMode;
         // console.log('treeMode', treeMode);
 
-        if (treeMode == false) {
-            treeMode = true;
-
-            if (guysToHighlight.length == 1) {
-                treeGuy = guysToHighlight[0];
-            } else {
-                guysToHighlight = [];
-            }
-        } else {
-            treeMode = false;
-            treeGuy.halo = 0;
-            treeGuy = null;
-            guysToHighlight = [];
-        }
+        handleTreeMode();
     }
 
     //guys
@@ -693,7 +749,7 @@ async function loadWeather() {
         });
 
     //let traits = c.guys.traits.value.sort((a, b) => a.localeCompare(b));
-    let traits = viz.traits.value.concat(viz.traits.binary).sort((a, b) => a.localeCompare(b));
+    traits = viz.traits.value.concat(viz.traits.binary).sort((a, b) => a.localeCompare(b));
     
     for (let traitLabel of traits) {
         vizValueDropdown.option(traitLabel);
@@ -894,7 +950,7 @@ function statsText() {
         text("TIME INDEX: " + getTimeIndex(), leftMargin, startingY);
         text("GUYS: " + guys.filter(g => g.dead == 0).length, leftMargin, startingY + 20);
         text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
-        text(`RPL: ${(forage.replenishRate*10000).toFixed(3)}`, leftMargin, startingY + 60);
+        text(`COF: ${forage.chanceOfFood}`, leftMargin, startingY + 60);
 
         let middleMargin = leftMargin + 110;
         

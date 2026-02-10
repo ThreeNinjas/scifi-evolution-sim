@@ -5,9 +5,11 @@
 class PhaseTransducer {
     constructor() {
         this.thresholds = {
+            populationBoom: {passed: false, color: c.guys.colors.horny},
             carnivore: {passed: false, color: c.guys.colors.mars},
             carnivoreOnCarnivore: {passed: false, color: c.guys.colors.gold},
             armored: {passed: false, color: c.guys.colors.blue},
+            carnivoresExtinct: {passed: false, color: c.guys.colors.radioactive}
         };
         this.armored = false;
         this.carnivore = true;

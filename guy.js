@@ -122,6 +122,8 @@ class Guy {
     //phylogeny
     this.parents = [];
     this.children = [];
+
+    Guy.enforceTradeOffs(this);
   }
 
   drawMe() {
@@ -295,7 +297,8 @@ class Guy {
 
       if (this.seekPriority == 'evade') {
         push();
-            stoke(c.guys.colors.mars);
+            stroke(c.guys.colors.radioactive);
+            strokeWeight(1);
             line(10, 0, 4, -6);
             line(10, 0, 4, 6);
         pop();
@@ -796,6 +799,10 @@ class Guy {
     // }
 
     for (let trait of Guy.gatedTraits()) {
+        if (trait === 'armored' && pt.thresholds.carnivoresExtinct.passed) {
+            //if this threshold is passed, we don't need these rules
+            continue;
+        }
         if (parentA[trait] || parentB[trait]) {
             child[trait] = util.coinToss(true, false);
         }
@@ -927,6 +934,7 @@ class Guy {
   }
 
   gravityFeed(potentialFoods = null) {
+    if (this.carnivorous) return;
     if (potentialFoods) {
         for (let pf of potentialFoods) {
             if (this.isHungry() && dist(this.pos.x, this.pos.y, pf.x, pf.y) <= this.size * 5) {
@@ -1203,6 +1211,9 @@ class Guy {
   static enforceTradeOffs(guy) {
     if (guy.armored) {
         guy.digestionRate += guy.digestionRate * (data.totalDryDays / 100);
+    }
+    if (guy.carnivore) {
+        guy.runsFromPredators = 0;
     }
   }
 
