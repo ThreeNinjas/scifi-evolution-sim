@@ -143,9 +143,16 @@ function draw() {
     byId = {};
     for (let g of guys) byId[g.id] = g;
 
-    if (guys.filter(g => !g.dead).length <= 1) {
-        window.location.reload();
+    // if (guys.filter(g => !g.dead).length <= 1) {
+    //     window.location.reload();
+    // }
+
+    if (!window.__reloading && guys.filter(g => !g.dead).length <= 1) {
+        console.log('reload lol if you see me you are fucked haha');
+        window.__reloading = true;
+        window.top.location.href = window.location.href;
     }
+
 
     if (guys.length > globalMaxGuys) {
         globalMaxGuys = guys.length;
