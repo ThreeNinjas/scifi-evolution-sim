@@ -9,16 +9,16 @@ let viz;
 let sounds = {
     mutationBeep: new Audio('/assets/alert12.mp3'),
     prefBeep: new Audio('/assets/computerbeep_39.mp3'),
-    deathBeep: new Audio('assets/communications_end_transmission.mp3'),
-    birthBeep: new Audio('assets/hailbeep4_clean.mp3'),
-    monsterAlert: new Audio('assets/input_ok_3_clean.mp3'),
-    weatherUpdated: new Audio('assets/ds9intercom.mp3'),
-    penaltyOnBeep: new Audio('assets/penaltyOn.mp3'),
-    penaltyOffBeep: new Audio('assets/penaltyOff.mp3'),
-    carnivoreNoise: new Audio('assets/thatSFXguy/alert 02.mp3'),
-    treeGuyTorchPassNoise: new Audio('assets/input_failed2_clean.mp3'),
-    avoid: new Audio('assets/thatSFXguy/whubb 02.mp3'),
-    wander: new Audio('assets/deskviewer1.mp3'),
+    deathBeep: new Audio('/assets/communications_end_transmission.mp3'),
+    birthBeep: new Audio('/assets/hailbeep4_clean.mp3'),
+    monsterAlert: new Audio('/assets/input_ok_3_clean.mp3'),
+    weatherUpdated: new Audio('/assets/ds9intercom.mp3'),
+    penaltyOnBeep: new Audio('/assets/penaltyOn.mp3'),
+    penaltyOffBeep: new Audio('/assets/penaltyOff.mp3'),
+    carnivoreNoise: new Audio('/assets/thatSFXguy/alert 02.mp3'),
+    treeGuyTorchPassNoise: new Audio('/assets/input_failed2_clean.mp3'),
+    avoid: new Audio('/assets/thatSFXguy/whubb 02.mp3'),
+    wander: new Audio('/assets/deskviewer1.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -528,9 +528,9 @@ function keyPressed() {
 
     if (keyIsDown(SHIFT) && key === 'V' && viewerOn) { 
         let i = traits.findIndex(f => f == valueToViz); 
-        if (i == traits.length - 1) { console.log('lol', i);
+        if (i == traits.length - 1) {
             i = 0;
-        } else { console.log('haha', i);
+        } else {
             i++;
         }
         viz.show(traits[i]);
@@ -950,7 +950,7 @@ function statsText() {
         text("TIME INDEX: " + getTimeIndex(), leftMargin, startingY);
         text("GUYS: " + guys.filter(g => g.dead == 0).length, leftMargin, startingY + 20);
         text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
-        text(`COF: ${forage.chanceOfFood}`, leftMargin, startingY + 60);
+        text(`CHOF: ${forage.chanceOfFood.toFixed(3)}`, leftMargin, startingY + 60);
 
         let middleMargin = leftMargin + 110;
         
@@ -1483,7 +1483,7 @@ function drawBars() {
 function drawThresholdBars() {
     let startingX = 0;
     push();
-        translate(10, 520);
+        translate(10, 525);
         for (let th of Object.values(pt.thresholds)) {
             noFill();
             stroke(th.color);
