@@ -799,7 +799,6 @@ function loadIcons() {
   const assets = [
     ['/assets/Speaker_Icon.png', img => volumeIcon = img],
     ['/assets/Mute_Icon.png', img => muteIcon = img],
-    ['/assets/family-tree.png', img => treeIcon = img],
   ];
 
   let remaining = assets.length;
