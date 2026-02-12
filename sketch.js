@@ -104,7 +104,7 @@ TODO: visual indicators of certain traits
 */
 
 async function setup() { 
-    font = await loadFont("/assets/Antonio-Regular.ttf");
+    font = await loadFont("assets/Antonio-Regular.ttf");
     colorMode(HSB, 360, 100, 100);
     
     frameRate(60);
