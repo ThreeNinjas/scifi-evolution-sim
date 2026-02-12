@@ -7,18 +7,18 @@ let traits;
 let viz;
 
 let sounds = {
-    mutationBeep: new Audio('/assets/alert12.mp3'),
-    prefBeep: new Audio('/assets/computerbeep_39.mp3'),
-    deathBeep: new Audio('/assets/communications_end_transmission.mp3'),
-    birthBeep: new Audio('/assets/hailbeep4_clean.mp3'),
-    monsterAlert: new Audio('/assets/input_ok_3_clean.mp3'),
-    weatherUpdated: new Audio('/assets/ds9intercom.mp3'),
-    penaltyOnBeep: new Audio('/assets/penaltyOn.mp3'),
-    penaltyOffBeep: new Audio('/assets/penaltyOff.mp3'),
-    carnivoreNoise: new Audio('/assets/thatSFXguy/alert 02.mp3'),
-    treeGuyTorchPassNoise: new Audio('/assets/input_failed2_clean.mp3'),
-    avoid: new Audio('/assets/thatSFXguy/whubb 02.mp3'),
-    wander: new Audio('/assets/deskviewer1.mp3'),
+    mutationBeep: new Audio('assets/alert12.mp3'),
+    prefBeep: new Audio('assets/computerbeep_39.mp3'),
+    deathBeep: new Audio('assets/communications_end_transmission.mp3'),
+    birthBeep: new Audio('assets/hailbeep4_clean.mp3'),
+    monsterAlert: new Audio('assets/input_ok_3_clean.mp3'),
+    weatherUpdated: new Audio('assets/ds9intercom.mp3'),
+    penaltyOnBeep: new Audio('assets/penaltyOn.mp3'),
+    penaltyOffBeep: new Audio('assets/penaltyOff.mp3'),
+    carnivoreNoise: new Audio('assets/thatSFXguy/alert 02.mp3'),
+    treeGuyTorchPassNoise: new Audio('assets/input_failed2_clean.mp3'),
+    avoid: new Audio('assets/thatSFXguy/whubb 02.mp3'),
+    wander: new Audio('assets/deskviewer1.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -804,8 +804,8 @@ function loadIcons() {
   iconsReady = false;
 
   const assets = [
-    ['/assets/Speaker_Icon.png', img => volumeIcon = img],
-    ['/assets/Mute_Icon.png', img => muteIcon = img],
+    ['assets/Speaker_Icon.png', img => volumeIcon = img],
+    ['assets/Mute_Icon.png', img => muteIcon = img],
   ];
 
   let remaining = assets.length;
