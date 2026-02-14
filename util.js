@@ -1,6 +1,15 @@
 class Util {
     randomNumber(x, y) {
-        return Math.floor(Math.random() * (y -x + 1)) + x;
+        let min;
+        let max;
+        if (x > y) {
+            max = x;
+            min = y;
+        } else {
+            min = x;
+            max = y;
+        }
+        return Math.floor(Math.random() * (max -min + 1)) + min;
     }
 
     randomColor(temp = 95, hum = 100) {

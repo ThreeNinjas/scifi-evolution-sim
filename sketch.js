@@ -1,5 +1,7 @@
 const params = new URLSearchParams(window.location.search);
 const debug = params.get('debug');
+const jason = params.get('jason');
+const local = params.get('local');
 let numberOfGuys = params.get('guys') || null;
 let globalMaxGuys = 0;
 let font;
@@ -63,7 +65,7 @@ let weatherUpdateInFlight = false;
 let viewerOn = false;
 
 const serverURL =
-    window.location.hostname === "127.0.0.1" ? "http://localhost:3000/" : "http://199.19.74.165:3000/";
+    local == 1 ? "http://localhost:3000/" : "http://199.19.74.165:3000/";
 
 let config = {
     bounds: {
@@ -391,7 +393,7 @@ function draw() {
         if (guy.stomachContents > 0 && !guy.dead) {
             //Penalizing speed, the closer you get to the initial limit, the higher the metabolic cost
             //suspending the laws of physics for mating purposes, just like irl
-            if (!guy.mate) {
+            if (!guy.mate && jason != 2) {
                 const penalty = Math.pow(guy.vel.mag() / viz.experiment.samples.velLimit[0].max, 3);
                 guy.stomachContents -= penalty * 0.001;
                 guy.stomachContents = Math.max(0, guy.stomachContents);
@@ -1078,10 +1080,10 @@ function drawPreferencePlot() {
 }
 
 function drawSingleLine(values) {
-    let min = Math.min(...values);
+    let minimum = Math.min(...values);
     let max = Math.max(...values);
 
-    if (min === max) {
+    if (minimum === max) {
         return;
     }
 
@@ -1091,7 +1093,7 @@ function drawSingleLine(values) {
         fill(c.guys.colors.gold);
         textSize(16);
         text(max, 1, 16);
-        text(min, 1, 99);
+        text(minimum, 1, 99);
     pop();
 
     if (values.length > 2) {
@@ -1099,7 +1101,7 @@ function drawSingleLine(values) {
         beginShape();
             for (let i = 0; i < values.length; i++) {
                 let x = map(i, 0, values.length - 1, 0, width-20);
-                let y = map(values[i], min, max, 100, 0);
+                let y = map(values[i], minimum, max, 100, 0);
                 vertex(x, y);
             }
         endShape();
@@ -1107,10 +1109,10 @@ function drawSingleLine(values) {
 }
 
 function drawIndividualLine(trait, stat) {
-    let min = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
+    let minimum = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
     let max = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
 
-    if (min === max) {
+    if (minimum === max) {
         return;
     }
     
@@ -1128,7 +1130,7 @@ function drawIndividualLine(trait, stat) {
         beginShape();
             for (let i = 0; i < viz.experiment.samples[trait].length; i++) {
                 let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
-                let y = map(viz.experiment.samples[trait][i][stat], min, max, 100, 0);
+                let y = map(viz.experiment.samples[trait][i][stat], minimum, max, 100, 0);
                 vertex(x, y);
             }
         endShape();
@@ -1136,10 +1138,10 @@ function drawIndividualLine(trait, stat) {
 }
 
 function drawMinMaxShape(trait) {
-    let min = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
+    let minimum = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
     let max = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
 
-    if (min === max) {
+    if (minimum === max) {
         return;
     }
 
@@ -1148,12 +1150,12 @@ function drawMinMaxShape(trait) {
         beginShape();
             for (let i = 0; i < viz.experiment.samples[trait].length; i++) {
                 let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
-                let y = map(viz.experiment.samples[trait][i].max, min, max, 100, 0);
+                let y = map(viz.experiment.samples[trait][i].max, minimum, max, 100, 0);
                 vertex(x, y);
             }
             for (let i = viz.experiment.samples[trait].length - 1; i >= 0; i--) {
                 let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
-                let y = map(viz.experiment.samples[trait][i].min, min, max, 100, 0);
+                let y = map(viz.experiment.samples[trait][i].min, minimum, max, 100, 0);
                 vertex(x, y);
             }
         endShape(CLOSE);
@@ -1162,9 +1164,9 @@ function drawMinMaxShape(trait) {
 
 function drawBinaryLine(trait) {
     const props = viz.experiment.samples[trait].map(d => d.true / (d.true + d.false));
-    let min =  0; //Math.min(...props);
+    let minimum =  0; //Math.min(...props);
     let max = 1; //Math.max(...props);
-    if (min === max) return;
+    if (minimum === max) return;
 
     let h = 100;
     let w = width - 20;
@@ -1178,7 +1180,7 @@ function drawBinaryLine(trait) {
         vertex(1, 1);
         for (let i = 0; i < props.length; i++) {
             let x = map(i, 0, props.length - 1, 1, w - 1);
-            let y = map(props[i], min, max, h - 1, 1);
+            let y = map(props[i], minimum, max, h - 1, 1);
             vertex(x, y);
         }
         vertex(w - 1, 1);
