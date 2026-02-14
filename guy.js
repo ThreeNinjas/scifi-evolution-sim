@@ -177,6 +177,7 @@ class Guy {
           textSize(14);
           let startY = this.pos.y + (this.size * 2);
           let haloData = [];
+          haloData.push(this.age().toFixed(0));
             if (this.carnivorous) haloData.push('carnivorous');
             if (this.armored) haloData.push('armored');
             if (this.children.length > 0) haloData.push(`${this.children.length} children`);
@@ -185,7 +186,7 @@ class Guy {
                 haloData.push(`${orbiter.trait}, ${orbiter.delta.toFixed(4)}`);
             }
             }
-
+        fill(c.guys.colors.hungryVar2);
 
       for (let datum of haloData) {
           text(datum, this.pos.x-10, startY);
@@ -948,7 +949,6 @@ class Guy {
                 };
                 this.gravityBites.push(bite);
                 this.eat(pf.id);
-                this.stomachContents -= forage.foodSize;
             }
         }
     }
@@ -969,7 +969,6 @@ class Guy {
         if (d <= this.size) {
             const i = this.gravityBites.findIndex(f => f.id === b.id);
             this.gravityBites.splice(i, 1);
-            this.stomachContents += forage.foodSize;
         } else {
             b.pos.add(direction.limit(speed));
         }

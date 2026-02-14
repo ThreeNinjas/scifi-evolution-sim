@@ -585,8 +585,10 @@ function handleTreeMode() {
         }
     } else {
         treeMode = false;
-        treeGuy.halo = 0;
+        if (treeGuy) {
+            treeGuy.halo = 0;
         treeGuy = null;
+        }
         guysToHighlight = [];
     }
 }
