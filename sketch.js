@@ -21,6 +21,7 @@ let sounds = {
     treeGuyTorchPassNoise: new Audio('assets/input_failed2_clean.mp3'),
     avoid: new Audio('assets/thatSFXguy/whubb 02.mp3'),
     wander: new Audio('assets/deskviewer1.mp3'),
+    forage: new Audio('assets/scrscroll1.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -28,7 +29,7 @@ for (let sound of Object.values(sounds)) {
     sound.volume = 0.125;
 }
 
-for (let sound of [sounds.deathBeep, sounds.birthBeep, sounds.carnivoreNoise]) {
+for (let sound of [sounds.deathBeep, sounds.birthBeep, sounds.carnivoreNoise, sounds.forage]) {
     sound.volume = 0.125;
 }
 
@@ -40,6 +41,7 @@ let guys = [];
 /** @@type {Forage[]} */
 let forage;
 let pt;
+let mc = new MessageCenter();
 let diameter = 10;
 let data = null;
 
@@ -481,6 +483,7 @@ function draw() {
                         sounds.weatherUpdated.currentTime = 0;
                         sounds.weatherUpdated.play().catch(() => {});
                         console.log(data);
+                        mc.addToQueue('Updated weather.')
                     }
                 }).finally(() => {
                     weatherUpdateInFlight = false;
@@ -519,6 +522,8 @@ function draw() {
     drawControls();
 
     drawThresholdBars();
+
+    drawMessageCenter();
 }
 
 function weatherHasChanged(prevData) {
@@ -671,6 +676,7 @@ function mousePressed() {
                     console.log(`treeGuy: ${treeGuy.id}`);
                     console.log(treeGuy.parents);
                     console.log(treeGuy.children);
+                    mc.addToQueue(`treeGuy: ${treeGuy.id}`);
                 }
                 
             } else {
@@ -742,13 +748,13 @@ async function loadWeather() {
     console.log(url);
     data = await updateWeather();
 
+    mc.addToQueue('Updated weather.');
     console.log(data);
+
     c = new Config();
     c.generateOrbiterColors();
 
     viz  = new Visualization();
-    console.log(viz.index);
-    console.log(viz.experiment);
 
     vizValueDropdown = createSelect();
     vizDropdownWrap = createDiv('');
@@ -964,7 +970,7 @@ function statsText() {
 
         let middleMargin = leftMargin + 110;
         
-        text(`GDR: ${(Guy.getGlobalDigestionRate()*10000).toFixed(3)}`, middleMargin, startingY);
+        text(`CLD: ${data.clouds}`, middleMargin, startingY);
         text(`TMP: ${data.temp}`, middleMargin, startingY + 20);
         text(`HUM: ${data.hum}`, middleMargin, startingY + 40);
         text(`VIS: ${data.vis}`, middleMargin, startingY + 60);
@@ -1389,7 +1395,7 @@ function drawHistogram() {
 
 
 function drawPing(guy) {
-    if (!guy.isHorny && forage.foodStorage.length == 0 && millis() - guy.lastPing > 20000) {
+    if (!guy.isHorny && forage.foodStorage.length == 0 && millis() - guy.lastPing > 40000) {
        return;
     }
     guy.lastPing = millis();
@@ -1506,5 +1512,23 @@ function drawThresholdBars() {
             startingX += 45;
         }
         
+    pop();
+}
+
+function drawMessageCenter() {
+    mc.manageQueue();
+    push();
+        translate(10, 424);
+        
+        if (mc.currentMessage != '') {
+            fill('black');
+            stroke('red');
+            textSize(16);
+
+            rect(0, 0, textWidth(mc.currentMessage) + 4, (textAscent(mc.currentMessage) + textDescent(mc.currentMessage)) + 4);
+            
+            fill('red');
+            text(mc.currentMessage, 2, 2 + textAscent(mc.currentMessage));
+        }
     pop();
 }

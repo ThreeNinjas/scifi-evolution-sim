@@ -47,6 +47,7 @@ class Guy {
     if (this.carnivorous) {
         this.digestionRate = Math.abs(this.digestionRate);
         console.log(`Guy${this.id} is a carnivore.`);
+        mc.addToQueue(`Guy${this.id} is a carnivore.`);
         util.playNoise(sounds.carnivoreNoise, () => this.carnivoreNoisePlayed = true);
 
         if (!pt.thresholds.carnivore.passed) {
@@ -583,20 +584,19 @@ class Guy {
                 this.prey.stomachContents = 0;
                 Guy.killThisGuy(this.prey);
                 console.log(`Guy${this.id} just killed Guy${this.prey.id}.`);
+                mc.addToQueue(`Guy${this.id} just killed Guy${this.prey.id}.`);
                 this.prey = undefined;
             }
         } 
 
         //if you are being chased by a predator 
         if (this.seekPriority == 'evade') {
-            console.log(`${this.id} is still evading ${this.beingChasedBy.id}`);
             //and he's still targeting you and he's not dead
             if (this.beingChasedBy.prey == this && !this.beingChasedBy.dead) {
                 if (this.chosenCorner !== null) {
                     this.chosenCorner++;
                     if (this.chosenCorner > c.corners.length - 1) this.chosenCorner = 0;
                     this.target = c.corners[this.chosenCorner].copy();
-                    console.log(`new target: ${this.target.x}, ${this.target.y}`);
                 }
                 return;
             }
@@ -687,6 +687,7 @@ class Guy {
     }
 
     util.playNoise(sounds.prefBeep);
+    mc.addToQueue(`Guy${this.id} like a guy with a ${util.biggerSmaller(this.preferenceDirection)} ${this.preference}.`);
 
     return bestGuy;
   }
@@ -827,6 +828,7 @@ class Guy {
         for (let m of type) {
             let min = Math.min(...Guy.getCurrentRangeFor(m.trait));
             let max = Math.max(...Guy.getCurrentRangeFor(m.trait));
+            mc.addToQueue(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
           if (m.baby > max || m.baby < min) {
             console.log(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
             
@@ -1174,12 +1176,15 @@ class Guy {
   static killThisGuy(guy, returnNutrients=false) {
     viz.experiment.currentDeathsCounted++;
     viz.experiment.currentCumulativeLifeSpan += guy.age();
+    
     if (treeGuy === guy) {
+        const oldTreeGuyId = guy.id;
         treeGuy = guy.getDescendants({}, new Set(), 'children', true);
         if (treeGuy) {
             treeGuy.halo = 1;
         }
         util.playNoise(sounds.treeGuyTorchPassNoise);
+        mc.addToQueue(`TreeGuy${oldTreeGuyId} has passed the torch to TreeGuy${treeGuy.id}`);
     }
     guy.dead = 1;
     stats.guys--;
