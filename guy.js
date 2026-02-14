@@ -944,23 +944,34 @@ class Guy {
                     acc: createVector(0, 0),
                     vel: createVector(0, 0),
                     color: c.forage.color,
+                    dist: pf.dist,
                 };
                 this.gravityBites.push(bite);
                 this.eat(pf.id);
+                this.stomachContents -= forage.foodSize;
             }
         }
     }
 
     for (let b of this.gravityBites) { 
-        //draw the new particles
+        /**
+         * we have secretly already eaten the food particles, and now we are animating them to create
+         * the illusion that it's being pulled in by the gravity of the guy
+         */
         push();
         stroke(c.forage.color);
         circle(b.pos.x, b.pos.y, 1);
-        if (dist(this.pos.x, this.pos.y, b.pos.x, b.pos.y) <= this.size) {
+        let d = dist(this.pos.x, this.pos.y, b.pos.x, b.pos.y);
+        let t = 1 - constrain(d / b.dist, 0, 1);
+        let speed = lerp(0.00001, d, t*t);
+        let direction = p5.Vector.sub(this.pos, b.pos);
+        
+        if (d <= this.size) {
             const i = this.gravityBites.findIndex(f => f.id === b.id);
             this.gravityBites.splice(i, 1);
+            this.stomachContents += forage.foodSize;
         } else {
-            b.pos.add(p5.Vector.sub(this.pos, b.pos).limit(5));
+            b.pos.add(direction.limit(speed));
         }
         pop();
     }
@@ -1227,6 +1238,11 @@ class Guy {
 
   static godMode() {
     guys.filter(g => g.id > 1).forEach(g => g.dead = 1);
-    guys.forEach(g => g.size = 15);
+    guys.forEach(g => {
+        g.size = 15;
+        //g.senseDistanceMultiplier = 1;
+        g.velLimit = 2;
+        g.seekAccel = 2;
+    });
   }
 }
