@@ -232,4 +232,8 @@ class Util {
             }
         pop();
     }
+
+    biggerSmaller(data) {
+        return data == -1 ? 'smaller' : 'bigger';
+    }
 }

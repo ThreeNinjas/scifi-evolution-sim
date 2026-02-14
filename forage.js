@@ -60,6 +60,10 @@ class Forage {
                 this.numberOfFood += this.foodSize;
             }
         }
+
+        if (!num && !pos && !size) {
+            util.playNoise(sounds.forage);
+        }
     }
 
     calculateChanceOfFood() {
