@@ -21,7 +21,7 @@ let sounds = {
     treeGuyTorchPassNoise: new Audio('assets/input_failed2_clean.mp3'),
     avoid: new Audio('assets/thatSFXguy/whubb 02.mp3'),
     wander: new Audio('assets/deskviewer1.mp3'),
-    forage: new Audio('assets/Bluezone_BC0302_industrial_lever_switch_small_003.wav'),
+    forage: new Audio('assets/scrscroll1.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -29,7 +29,7 @@ for (let sound of Object.values(sounds)) {
     sound.volume = 0.125;
 }
 
-for (let sound of [sounds.deathBeep, sounds.birthBeep, sounds.carnivoreNoise]) {
+for (let sound of [sounds.deathBeep, sounds.birthBeep, sounds.carnivoreNoise, sounds.forage]) {
     sound.volume = 0.125;
 }
 
@@ -483,6 +483,7 @@ function draw() {
                         sounds.weatherUpdated.currentTime = 0;
                         sounds.weatherUpdated.play().catch(() => {});
                         console.log(data);
+                        mc.addToQueue('Updated weather.')
                     }
                 }).finally(() => {
                     weatherUpdateInFlight = false;
@@ -969,7 +970,7 @@ function statsText() {
 
         let middleMargin = leftMargin + 110;
         
-        text(`GDR: ${(Guy.getGlobalDigestionRate()*10000).toFixed(3)}`, middleMargin, startingY);
+        text(`CLD: ${data.clouds}`, middleMargin, startingY);
         text(`TMP: ${data.temp}`, middleMargin, startingY + 20);
         text(`HUM: ${data.hum}`, middleMargin, startingY + 40);
         text(`VIS: ${data.vis}`, middleMargin, startingY + 60);
