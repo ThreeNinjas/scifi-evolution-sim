@@ -1,14 +1,16 @@
 const params = new URLSearchParams(window.location.search);
 const debug = params.get('debug');
+const jason = params.get('jason');
+const local = params.get('local');
 let numberOfGuys = params.get('guys') || null;
 let globalMaxGuys = 0;
 let font;
-
+let traits;
 let viz;
 
 let sounds = {
-    mutationBeep: new Audio('/assets/alert12.mp3'),
-    prefBeep: new Audio('/assets/computerbeep_39.mp3'),
+    mutationBeep: new Audio('assets/alert12.mp3'),
+    prefBeep: new Audio('assets/computerbeep_39.mp3'),
     deathBeep: new Audio('assets/communications_end_transmission.mp3'),
     birthBeep: new Audio('assets/hailbeep4_clean.mp3'),
     monsterAlert: new Audio('assets/input_ok_3_clean.mp3'),
@@ -63,7 +65,7 @@ let weatherUpdateInFlight = false;
 let viewerOn = false;
 
 const serverURL =
-    window.location.hostname === "127.0.0.1" ? "http://localhost:3000/" : "http://199.19.74.165:3000/";
+    local == 1 ? "http://localhost:3000/" : "http://199.19.74.165:3000/";
 
 let config = {
     bounds: {
@@ -104,7 +106,7 @@ TODO: visual indicators of certain traits
 */
 
 async function setup() { 
-    font = await loadFont("/assets/Antonio-Regular.ttf");
+    font = await loadFont("assets/Antonio-Regular.ttf");
     colorMode(HSB, 360, 100, 100);
     
     frameRate(60);
@@ -143,15 +145,38 @@ function draw() {
     byId = {};
     for (let g of guys) byId[g.id] = g;
 
-    if (guys.filter(g => !g.dead).length <= 1) {
-        window.location.reload();
+    // if (guys.filter(g => !g.dead).length <= 1) {
+    //     window.location.reload();
+    // }
+
+    if (!window.__reloading && guys.filter(g => !g.dead).length <= 1) {
+        console.log('reload lol if you see me you are fucked haha');
+        window.__reloading = true;
+        window.top.location.href = window.location.href;
     }
+
 
     if (guys.length > globalMaxGuys) {
         globalMaxGuys = guys.length;
     }
 
     guysToHighlight = treeMode && treeGuy ? treeGuy : guys.filter(g => g.halo == 1);
+
+    if (pt.thresholds.armored.passed && guys.filter(g => g.carnivorous).length == 0) {
+        pt.thresholds.carnivoresExtinct.passed = true;
+        pt.thresholds.carnivore.passed = false;
+        pt.thresholds.carnivoreOnCarnivore.passed = false;
+    }
+
+    if (pt.thresholds.carnivoresExtinct.passed && pt.thresholds.armored.passed && guys.filter(g => g.armored).length == 0 && guys.filter(g => g.carnivorous).length == 0) {
+        pt.thresholds.carnivoresExtinct.passed = false;
+        pt.thresholds.carnivore.passed = false;
+        pt.thresholds.armored.passed = false;
+    }
+
+    if (guys.length > Math.floor(Math.abs(data.temp))) {
+        pt.thresholds.populationBoom.passed = true;
+    }
 
     for (let guy of guys) {
         //kill guys whose time is up or who have had their allotment of children
@@ -207,8 +232,8 @@ function draw() {
         if (guy.isHorny) {
             let hornyGuys = guys.filter(g => g.isHorny);
 
-            if (pt.carnivoreOnCarnivore && guy.carnivorous) hornyGuys = hornyGuys.filter(g => g.carnivorous);
-            if (pt.carnivoreOnCarnivore && !guy.carnivorous) hornyGuys = hornyGuys.filter(g => !g.carnivorous);
+            if (pt.thresholds.carnivoreOnCarnivore.passed && guy.carnivorous) hornyGuys = hornyGuys.filter(g => g.carnivorous);
+            if (pt.thresholds.carnivoreOnCarnivore.passed && !guy.carnivorous) hornyGuys = hornyGuys.filter(g => !g.carnivorous);
 
             for (let otherGuy of hornyGuys) {
                 if (otherGuy === guy || guy.seekPriority == 'baby') continue;
@@ -253,7 +278,7 @@ function draw() {
                     //choose the guy with the fullest stomach as prey
                     let potentialPrey;
 
-                    if (pt.carnivoreOnCarnivore) {
+                    if (pt.thresholds.carnivoreOnCarnivore.passed) {
                         potentialPrey = guys.filter(g => !g.carnivorous);
                     } else {
                         potentialPrey = guys;
@@ -289,7 +314,7 @@ function draw() {
             }
 
             //hungry herbivores
-            if (guy.gravityBites.length > 0) {
+            if (guy.gravityBites.length > 0 && !guy.carnivorous) {
                     guy.gravityFeed();
                 }
                 
@@ -368,7 +393,7 @@ function draw() {
         if (guy.stomachContents > 0 && !guy.dead) {
             //Penalizing speed, the closer you get to the initial limit, the higher the metabolic cost
             //suspending the laws of physics for mating purposes, just like irl
-            if (!guy.mate) {
+            if (!guy.mate && jason != 2) {
                 const penalty = Math.pow(guy.vel.mag() / viz.experiment.samples.velLimit[0].max, 3);
                 guy.stomachContents -= penalty * 0.001;
                 guy.stomachContents = Math.max(0, guy.stomachContents);
@@ -501,6 +526,71 @@ function weatherHasChanged(prevData) {
     return JSON.stringify(data) !== prevData;
 }
 
+function keyPressed() {
+    if (key === 'm') {
+        volumeOn = !volumeOn;
+    }
+
+    if (key === ' ') {
+        handlePause();
+    }
+
+    if (keyIsDown(SHIFT) && key === 'V' && viewerOn) { 
+        let i = traits.findIndex(f => f == valueToViz); 
+        if (i == traits.length - 1) {
+            i = 0;
+        } else {
+            i++;
+        }
+        viz.show(traits[i]);
+    }
+
+    if (key === 'v') {
+        handleVizMode();
+    }
+
+    if (key === 't') {
+        handleTreeMode();
+    }
+}
+
+function handlePause() {
+    paused = !paused;
+
+    if (paused) {
+        noLoop();
+    } else {
+        loop();
+    }
+}
+
+function handleVizMode() {
+    viewerOn = !viewerOn;
+
+    if (viewerOn) {
+        vizDropdownWrap.show();
+    } else {
+        vizDropdownWrap.hide();
+    }
+}
+
+function handleTreeMode() {
+    if (treeMode == false) {
+        treeMode = true;
+
+        if (guysToHighlight.length == 1) {
+            treeGuy = guysToHighlight[0];
+        } else {
+            guysToHighlight = [];
+        }
+    } else {
+        treeMode = false;
+        treeGuy.halo = 0;
+        treeGuy = null;
+        guysToHighlight = [];
+    }
+}
+
 function mousePressed() {
     let yAddOn = 30;
     //mute button
@@ -525,13 +615,7 @@ function mousePressed() {
         mouseY >= (height/2 + 95)  + yAddOn &&
         mouseY <= ((height/2 + 95) + 10) + yAddOn
         ) {
-            paused = !paused;
-
-            if (paused) {
-                noLoop();
-            } else {
-                loop();
-            }
+            handlePause();
         }
 
     //viz button
@@ -540,13 +624,7 @@ function mousePressed() {
         dist(mouseX, mouseY, width - 60, (height/2 + 100) + yAddOn) <= 10 / 2
 
     ) {
-        viewerOn = !viewerOn;
-
-        if (viewerOn) {
-            vizDropdownWrap.show();
-        } else {
-            vizDropdownWrap.hide();
-        }
+        handleVizMode();
     }
 
     //historgram switcher
@@ -577,20 +655,7 @@ function mousePressed() {
         // treeMode = !treeMode;
         // console.log('treeMode', treeMode);
 
-        if (treeMode == false) {
-            treeMode = true;
-
-            if (guysToHighlight.length == 1) {
-                treeGuy = guysToHighlight[0];
-            } else {
-                guysToHighlight = [];
-            }
-        } else {
-            treeMode = false;
-            treeGuy.halo = 0;
-            treeGuy = null;
-            guysToHighlight = [];
-        }
+        handleTreeMode();
     }
 
     //guys
@@ -693,7 +758,7 @@ async function loadWeather() {
         });
 
     //let traits = c.guys.traits.value.sort((a, b) => a.localeCompare(b));
-    let traits = viz.traits.value.concat(viz.traits.binary).sort((a, b) => a.localeCompare(b));
+    traits = viz.traits.value.concat(viz.traits.binary).sort((a, b) => a.localeCompare(b));
     
     for (let traitLabel of traits) {
         vizValueDropdown.option(traitLabel);
@@ -741,9 +806,8 @@ function loadIcons() {
   iconsReady = false;
 
   const assets = [
-    ['/assets/Speaker_Icon.png', img => volumeIcon = img],
-    ['/assets/Mute_Icon.png', img => muteIcon = img],
-    ['/assets/family-tree.png', img => treeIcon = img],
+    ['assets/Speaker_Icon.png', img => volumeIcon = img],
+    ['assets/Mute_Icon.png', img => muteIcon = img],
   ];
 
   let remaining = assets.length;
@@ -894,7 +958,7 @@ function statsText() {
         text("TIME INDEX: " + getTimeIndex(), leftMargin, startingY);
         text("GUYS: " + guys.filter(g => g.dead == 0).length, leftMargin, startingY + 20);
         text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
-        text(`RPL: ${(forage.replenishRate*10000).toFixed(3)}`, leftMargin, startingY + 60);
+        text(`CHOF: ${forage.chanceOfFood.toFixed(3)}`, leftMargin, startingY + 60);
 
         let middleMargin = leftMargin + 110;
         
@@ -1016,10 +1080,10 @@ function drawPreferencePlot() {
 }
 
 function drawSingleLine(values) {
-    let min = Math.min(...values);
+    let minimum = Math.min(...values);
     let max = Math.max(...values);
 
-    if (min === max) {
+    if (minimum === max) {
         return;
     }
 
@@ -1029,7 +1093,7 @@ function drawSingleLine(values) {
         fill(c.guys.colors.gold);
         textSize(16);
         text(max, 1, 16);
-        text(min, 1, 99);
+        text(minimum, 1, 99);
     pop();
 
     if (values.length > 2) {
@@ -1037,7 +1101,7 @@ function drawSingleLine(values) {
         beginShape();
             for (let i = 0; i < values.length; i++) {
                 let x = map(i, 0, values.length - 1, 0, width-20);
-                let y = map(values[i], min, max, 100, 0);
+                let y = map(values[i], minimum, max, 100, 0);
                 vertex(x, y);
             }
         endShape();
@@ -1045,10 +1109,10 @@ function drawSingleLine(values) {
 }
 
 function drawIndividualLine(trait, stat) {
-    let min = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
+    let minimum = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
     let max = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
 
-    if (min === max) {
+    if (minimum === max) {
         return;
     }
     
@@ -1066,7 +1130,7 @@ function drawIndividualLine(trait, stat) {
         beginShape();
             for (let i = 0; i < viz.experiment.samples[trait].length; i++) {
                 let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
-                let y = map(viz.experiment.samples[trait][i][stat], min, max, 100, 0);
+                let y = map(viz.experiment.samples[trait][i][stat], minimum, max, 100, 0);
                 vertex(x, y);
             }
         endShape();
@@ -1074,10 +1138,10 @@ function drawIndividualLine(trait, stat) {
 }
 
 function drawMinMaxShape(trait) {
-    let min = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
+    let minimum = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
     let max = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
 
-    if (min === max) {
+    if (minimum === max) {
         return;
     }
 
@@ -1086,12 +1150,12 @@ function drawMinMaxShape(trait) {
         beginShape();
             for (let i = 0; i < viz.experiment.samples[trait].length; i++) {
                 let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
-                let y = map(viz.experiment.samples[trait][i].max, min, max, 100, 0);
+                let y = map(viz.experiment.samples[trait][i].max, minimum, max, 100, 0);
                 vertex(x, y);
             }
             for (let i = viz.experiment.samples[trait].length - 1; i >= 0; i--) {
                 let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
-                let y = map(viz.experiment.samples[trait][i].min, min, max, 100, 0);
+                let y = map(viz.experiment.samples[trait][i].min, minimum, max, 100, 0);
                 vertex(x, y);
             }
         endShape(CLOSE);
@@ -1100,9 +1164,9 @@ function drawMinMaxShape(trait) {
 
 function drawBinaryLine(trait) {
     const props = viz.experiment.samples[trait].map(d => d.true / (d.true + d.false));
-    let min =  0; //Math.min(...props);
+    let minimum =  0; //Math.min(...props);
     let max = 1; //Math.max(...props);
-    if (min === max) return;
+    if (minimum === max) return;
 
     let h = 100;
     let w = width - 20;
@@ -1116,7 +1180,7 @@ function drawBinaryLine(trait) {
         vertex(1, 1);
         for (let i = 0; i < props.length; i++) {
             let x = map(i, 0, props.length - 1, 1, w - 1);
-            let y = map(props[i], min, max, h - 1, 1);
+            let y = map(props[i], minimum, max, h - 1, 1);
             vertex(x, y);
         }
         vertex(w - 1, 1);
@@ -1427,7 +1491,7 @@ function drawBars() {
 function drawThresholdBars() {
     let startingX = 0;
     push();
-        translate(10, 520);
+        translate(10, 525);
         for (let th of Object.values(pt.thresholds)) {
             noFill();
             stroke(th.color);

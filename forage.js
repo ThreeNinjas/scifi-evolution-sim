@@ -63,6 +63,7 @@ class Forage {
     calculateChanceOfFood() {
         let start = (Math.floor(data.hum) - data.totalDryDays);
         let chanceOfFood = start + (start * data.totalRainfall/100);
+        chanceOfFood += (chanceOfFood * data.rain24HrTotal/100);
         chanceOfFood -= data.daysSinceRain;
         return Math.abs(chanceOfFood);
     }
