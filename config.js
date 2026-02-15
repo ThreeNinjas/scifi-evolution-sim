@@ -18,6 +18,7 @@ class Config {
                 mars: '#ff2200',
                 radioactive: '#88ffff',
                 blue: '#5566ff',
+                moonlitViolet: '#9966ff',
                 orbiters: []
             },
             traits: {

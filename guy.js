@@ -47,7 +47,7 @@ class Guy {
     if (this.carnivorous) {
         this.digestionRate = Math.abs(this.digestionRate);
         console.log(`Guy${this.id} is a carnivore.`);
-        mc.addToQueue(`Guy${this.id} is a carnivore.`);
+        mc.addToQueue({message: `Guy${this.id} is a carnivore`, category: 'murder'});
         util.playNoise(sounds.carnivoreNoise, () => this.carnivoreNoisePlayed = true);
 
         if (!pt.thresholds.carnivore.passed) {
@@ -61,7 +61,10 @@ class Guy {
     if (this.carnivorous) this.armored = false;
 
     if (this.armored && !pt.thresholds.armored.passed) {
+        console.log('armored');
+        this.halo = 1;
         pt.thresholds.armored.passed = true;
+        util.playNoise(sounds.armored);
     }
 
     //heritable - vectors
@@ -584,7 +587,7 @@ class Guy {
                 this.prey.stomachContents = 0;
                 Guy.killThisGuy(this.prey);
                 console.log(`Guy${this.id} just killed Guy${this.prey.id}.`);
-                mc.addToQueue(`Guy${this.id} just killed Guy${this.prey.id}.`);
+                mc.addToQueue({message: `Guy${this.id} just killed Guy${this.prey.id}`, category: 'murder'});
                 this.prey = undefined;
             }
         } 
@@ -687,7 +690,7 @@ class Guy {
     }
 
     util.playNoise(sounds.prefBeep);
-    mc.addToQueue(`Guy${this.id} like a guy with a ${util.biggerSmaller(this.preferenceDirection)} ${this.preference}.`);
+    mc.addToQueue({message: `Guy${this.id} like a guy with a ${util.biggerSmaller(this.preferenceDirection)} ${this.preference}`, category: 'mating'});
 
     return bestGuy;
   }
@@ -828,7 +831,7 @@ class Guy {
         for (let m of type) {
             let min = Math.min(...Guy.getCurrentRangeFor(m.trait));
             let max = Math.max(...Guy.getCurrentRangeFor(m.trait));
-            mc.addToQueue(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
+            mc.addToQueue({message: `Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`, category: 'mutation'});
           if (m.baby > max || m.baby < min) {
             console.log(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
             
@@ -1184,7 +1187,7 @@ class Guy {
             treeGuy.halo = 1;
         }
         util.playNoise(sounds.treeGuyTorchPassNoise);
-        mc.addToQueue(`TreeGuy${oldTreeGuyId} has passed the torch to TreeGuy${treeGuy.id}`);
+        mc.addToQueue({message: `TreeGuy${oldTreeGuyId} has passed the torch to TreeGuy${treeGuy.id}`, category: ''});
     }
     guy.dead = 1;
     stats.guys--;

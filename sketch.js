@@ -22,6 +22,7 @@ let sounds = {
     avoid: new Audio('assets/thatSFXguy/whubb 02.mp3'),
     wander: new Audio('assets/deskviewer1.mp3'),
     forage: new Audio('assets/scrscroll1.mp3'),
+    armored: new Audio('assets/thatSFXguy/beep 09.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -479,11 +480,10 @@ function draw() {
 
                     data = newData;
 
-                    if (volumeOn && weatherHasChanged(prevData)) {
-                        sounds.weatherUpdated.currentTime = 0;
-                        sounds.weatherUpdated.play().catch(() => {});
+                    if (weatherHasChanged(prevData)) {
+                        mc.addToQueue({message: 'Updated weather', category: 'weather'});
+                        util.playNoise(sounds.weatherUpdated);
                         console.log(data);
-                        mc.addToQueue('Updated weather.')
                     }
                 }).finally(() => {
                     weatherUpdateInFlight = false;
@@ -676,7 +676,7 @@ function mousePressed() {
                     console.log(`treeGuy: ${treeGuy.id}`);
                     console.log(treeGuy.parents);
                     console.log(treeGuy.children);
-                    mc.addToQueue(`treeGuy: ${treeGuy.id}`);
+                    mc.addToQueue({message: `treeGuy: ${treeGuy.id}`, category: ''});
                 }
                 
             } else {
@@ -739,7 +739,7 @@ function drawHighLightMask() {
 }
 async function updateWeather() {
     return await fetch(`${serverURL}weather/guys`)
-        .then(r => r.json());
+        .then(r => r.json())
 }
 
 async function loadWeather() {
@@ -748,7 +748,7 @@ async function loadWeather() {
     console.log(url);
     data = await updateWeather();
 
-    mc.addToQueue('Updated weather.');
+    mc.addToQueue({message: 'Updated weather', category: 'weather'});
     console.log(data);
 
     c = new Config();
@@ -1518,17 +1518,20 @@ function drawThresholdBars() {
 function drawMessageCenter() {
     mc.manageQueue();
     push();
-        translate(10, 424);
+        translate(15, 34);
         
-        if (mc.currentMessage != '') {
-            fill('black');
-            stroke('red');
+        if (mc.currentMessage) {
+            fill(mc.mapCategoryToColor(mc.currentMessage.category));
+            stroke(mc.mapCategoryToColor(mc.currentMessage.category));
             textSize(16);
 
-            rect(0, 0, textWidth(mc.currentMessage) + 4, (textAscent(mc.currentMessage) + textDescent(mc.currentMessage)) + 4);
+            rect(0, 0, textWidth(mc.currentMessage.message) + 40, (textAscent(mc.currentMessage.message) + textDescent(mc.currentMessage.message)) + 20, 0, 26, 26, 0);
             
-            fill('red');
-            text(mc.currentMessage, 2, 2 + textAscent(mc.currentMessage));
+            fill('black');
+            noStroke();
+            text(mc.currentMessage.message, 5, 10 + textAscent(mc.currentMessage.message));
+
+            rect(textWidth(mc.currentMessage.message) + 15, 0, 3, (textAscent(mc.currentMessage.message) + textDescent(mc.currentMessage.message)) + 20)
         }
     pop();
 }
