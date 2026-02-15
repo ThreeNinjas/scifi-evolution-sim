@@ -23,7 +23,7 @@ class Guy {
     this.digestionRate = this.getDigestionRate();
     this.lifeSpan = util.randomNormal(data.temp, data.vis);
     this.childrenAllowed = Math.abs(
-      Math.floor(util.randomNormal(data.temp / 5, data.vis))
+      Math.round(util.randomNormal(data.temp / 5, data.vis))
     );
     this.reactionTime = constrain(Math.abs(Math.floor(util.randomNormal(data.temp, data.hum))), 30, 20000);
 
@@ -55,16 +55,19 @@ class Guy {
         }
     }
 
-    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : null;
+    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : false;
     this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
     if (this.armored) this.carnivorous = false;
-    if (this.carnivorous) this.armored = false;
+    //if (this.carnivorous) this.armored = false;
 
     if (this.armored && !pt.thresholds.armored.passed) {
         console.log('armored');
+        console.log(this);
+        mc.addToQueue({message: `Guy${this.id} is armored`})
         this.halo = 1;
         pt.thresholds.armored.passed = true;
         util.playNoise(sounds.armored);
+        paused = true;
     }
 
     //heritable - vectors
@@ -586,8 +589,8 @@ class Guy {
                 this.stomachContents += this.prey.stomachContents + this.prey.size;
                 this.prey.stomachContents = 0;
                 Guy.killThisGuy(this.prey);
-                console.log(`Guy${this.id} just killed Guy${this.prey.id}.`);
-                mc.addToQueue({message: `Guy${this.id} just killed Guy${this.prey.id}`, category: 'murder'});
+                // console.log(`Guy${this.id} just killed Guy${this.prey.id}.`);
+                // mc.addToQueue({message: `Guy${this.id} just killed Guy${this.prey.id}`, category: 'murder'});
                 this.prey = undefined;
             }
         } 
@@ -754,6 +757,11 @@ class Guy {
           util.randomNormal(0, util.randomNumber(0.001, util.coinToss(data.totalDryDays, 0.5)))
         );
         child[trait] *= 1 + sign * percent;
+        
+        switch (trait) {
+            case 'childrenAllowed':
+                child[trait] = Math.round(child[trait]);
+        }
         mutation.baby = child[trait];
         mutation.mutated = child[trait];
         mutation.percentChange = util.percentChange(
@@ -804,8 +812,8 @@ class Guy {
     // }
 
     for (let trait of Guy.gatedTraits()) {
-        if (trait === 'armored' && pt.thresholds.carnivoresExtinct.passed) {
-            //if this threshold is passed, we don't need these rules
+        if (trait === 'armored' /* && (pt.thresholds.carnivoresExtinct.passed || !pt.thresholds.armored.passed) */ ) {
+            //if this carnivores are extinct, or this is the first armored, we don't need these rules
             continue;
         }
         if (parentA[trait] || parentB[trait]) {
@@ -822,6 +830,8 @@ class Guy {
 
     if (child.carnivorous && !child.carnivoreNoisePlayed) {
             child.armored = false;
+            mc.addToQueue({message: `Guy${child.id} is a carnivore.`, category: 'murder'})
+            mc.addToQueue({message: `${Math.round((guys.filter(g => g.carnivorous).length / guys.length) * 100)}% of the population are carnivores`, category: 'murder'})
             util.playNoise(sounds.carnivoreNoise);
             child.carnivoreNoisePlayed = true;
         }
@@ -831,7 +841,7 @@ class Guy {
         for (let m of type) {
             let min = Math.min(...Guy.getCurrentRangeFor(m.trait));
             let max = Math.max(...Guy.getCurrentRangeFor(m.trait));
-            mc.addToQueue({message: `Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`, category: 'mutation'});
+            mc.addToQueue({message: `Guy${child.id} had a mutation on ${m.trait}: ${typeof m.baby === 'number' ? parseFloat(m.baby.toFixed(6)): m.baby}`, category: 'mutation'});
           if (m.baby > max || m.baby < min) {
             console.log(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
             
@@ -1234,6 +1244,7 @@ class Guy {
         guy.runsFromPredators = 0;
     }
   }
+  //0.00009508575103562424
 
   static gatedTraits() {
     return [
@@ -1243,13 +1254,22 @@ class Guy {
     ];
   }
 
-  static godMode() {
-    guys.filter(g => g.id > 1).forEach(g => g.dead = 1);
-    guys.forEach(g => {
-        g.size = 15;
-        //g.senseDistanceMultiplier = 1;
-        g.velLimit = 2;
-        g.seekAccel = 2;
-    });
-  }
+  static godMode(i) {
+//     guys.filter(g => g.id > 1).forEach(g => g.dead = 1);
+//     guys.forEach(g => {
+//         g.size = 15;
+//         //g.senseDistanceMultiplier = 1;
+//         g.velLimit = 2;
+//         g.seekAccel = 2;
+//     });
+    guys[i].size = 50;
+    guys[i].stomachContents = 40;
+    guys[i].pos.x = c.corners[i].x;
+    guys[i].pos.y = c.corners[i].y;
+    guys[i].dead = 1;
+    console.log(guys[i]);
+    console.log(c.corners[i]);
+    console.log(c.corners);
+    //withArenaClip() => forage.populateMe(guys[i].stomachContents, guys[i].pos, guys[i].size))
+    }
 }

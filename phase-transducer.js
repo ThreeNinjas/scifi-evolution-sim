@@ -11,9 +11,6 @@ class PhaseTransducer {
             armored: {passed: false, color: c.guys.colors.blue},
             carnivoresExtinct: {passed: false, color: c.guys.colors.radioactive}
         };
-        this.armored = false;
-        this.carnivore = true;
-        this.carnivoreOnCarnivore = false;
         this.percentOfCarnivores = 0;
         this.maxPercentOfCarnivores = 0;
         this.orbiterLifeSpan = data.totalDryDays * 100;

@@ -1522,7 +1522,7 @@ function drawMessageCenter() {
         
         if (mc.currentMessage) {
             fill(mc.mapCategoryToColor(mc.currentMessage.category));
-            stroke(mc.mapCategoryToColor(mc.currentMessage.category));
+            //stroke(mc.mapCategoryToColor(mc.currentMessage.category));
             textSize(16);
 
             rect(0, 0, textWidth(mc.currentMessage.message) + 40, (textAscent(mc.currentMessage.message) + textDescent(mc.currentMessage.message)) + 20, 0, 26, 26, 0);
@@ -1531,7 +1531,7 @@ function drawMessageCenter() {
             noStroke();
             text(mc.currentMessage.message, 5, 10 + textAscent(mc.currentMessage.message));
 
-            rect(textWidth(mc.currentMessage.message) + 15, 0, 3, (textAscent(mc.currentMessage.message) + textDescent(mc.currentMessage.message)) + 20)
+            rect(textWidth(mc.currentMessage.message) + 15, 0, 6, (textAscent(mc.currentMessage.message) + textDescent(mc.currentMessage.message)) + 20)
         }
     pop();
 }
