@@ -9,11 +9,20 @@ class MessageCenter {
         this.messageExpiresAt = this.messageDuration;
     }
 
-    addToQueue(message) {
+    addToQueue(message, category=null) {
+        const newMessage = {
+            message,
+            category,
+        };
+
         if (this.activeQueue.length === 0) {
             this.messageExpiresAt = millis() + this.messageDuration;
+            this.activeQueue.push(newMessage);
+        } else {
+            this.activeQueue.push(newMessage);
+            this.activeQueue.shift(newMessage);
         }
-        this.activeQueue.push(message);
+        
     }
 
     manageQueue() {

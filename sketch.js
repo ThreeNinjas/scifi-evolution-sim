@@ -481,7 +481,7 @@ function draw() {
                     data = newData;
 
                     if (weatherHasChanged(prevData)) {
-                        mc.addToQueue({message: 'Updated weather', category: 'weather'});
+                        mc.addToQueue('Updated weather', 'weather');
                         util.playNoise(sounds.weatherUpdated);
                         console.log(data);
                     }
@@ -676,7 +676,7 @@ function mousePressed() {
                     console.log(`treeGuy: ${treeGuy.id}`);
                     console.log(treeGuy.parents);
                     console.log(treeGuy.children);
-                    mc.addToQueue({message: `treeGuy: ${treeGuy.id}`, category: ''});
+                    mc.addToQueue(`treeGuy: ${treeGuy.id}`, '');
                 }
                 
             } else {
@@ -748,7 +748,7 @@ async function loadWeather() {
     console.log(url);
     data = await updateWeather();
 
-    mc.addToQueue({message: 'Updated weather', category: 'weather'});
+    mc.addToQueue('Updated weather', 'weather');
     console.log(data);
 
     c = new Config();
