@@ -55,7 +55,7 @@ class Guy {
         }
     }
 
-    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 2 ? util.coinToss(true, false) : false;
+    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 3 ? util.coinToss(true, false) : false;
     this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
     if (this.armored) this.carnivorous = false;
     //if (this.carnivorous) this.armored = false;
@@ -811,7 +811,7 @@ class Guy {
     //     }
     // }
 
-    for (let trait of Guy.gatedTraits()) {
+    for (let trait of Guy.gatedTraits()) { continue;
         if (trait === 'armored' /* && (pt.thresholds.carnivoresExtinct.passed || !pt.thresholds.armored.passed) */ ) {
             //if this carnivores are extinct, or this is the first armored, we don't need these rules
             continue;
@@ -876,7 +876,7 @@ class Guy {
     }
     
 
-    if (util.chance(1, 1000)) {
+    if (util.chance(1, data.clouds)) {
       child.color = util.randomColor();
     }
     child.color = parentA.hasDominantColor
@@ -1239,8 +1239,10 @@ class Guy {
   static enforceTradeOffs(guy) {
     if (guy.armored) {
         guy.digestionRate += guy.digestionRate * (data.totalDryDays / 100);
+        guy.carnivorous = false;
+        guy.runsFromPredators = util.coinToss(true, false);
     }
-    if (guy.carnivore) {
+    if (guy.carnivorous) {
         guy.runsFromPredators = 0;
     }
   }

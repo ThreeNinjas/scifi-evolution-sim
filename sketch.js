@@ -481,6 +481,7 @@ function draw() {
                     data = newData;
 
                     if (weatherHasChanged(prevData)) {
+                        forage.chanceOfFood = forage.calculateChanceOfFood();
                         mc.addToQueue('Updated weather', 'weather');
                         util.playNoise(sounds.weatherUpdated);
                         console.log(data);
@@ -527,7 +528,7 @@ function draw() {
 }
 
 function weatherHasChanged(prevData) {
-    forage.calculateChanceOfFood();
+    //forage.chanceOfFood = forage.calculateChanceOfFood();
     return JSON.stringify(data) !== prevData;
 }
 
@@ -1523,6 +1524,7 @@ function drawMessageCenter() {
         if (mc.currentMessage) {
             fill(mc.mapCategoryToColor(mc.currentMessage.category));
             //stroke(mc.mapCategoryToColor(mc.currentMessage.category));
+            noStroke();
             textSize(16);
 
             rect(0, 0, textWidth(mc.currentMessage.message) + 40, (textAscent(mc.currentMessage.message) + textDescent(mc.currentMessage.message)) + 20, 0, 26, 26, 0);

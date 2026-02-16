@@ -9,7 +9,7 @@ class MessageCenter {
         this.messageExpiresAt = this.messageDuration;
     }
 
-    addToQueue(message, category=null) {
+    addToQueue(message, category='none') {
         const newMessage = {
             message,
             category,
