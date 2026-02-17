@@ -139,6 +139,17 @@ class Guy {
       this.orbiter();
     }
 
+    if (godMode) {
+        if (this.gravityBites.length > 0) {
+            for (let gb of this.gravityBites) {
+                push();
+                stroke('white');
+                line(this.pos.x, this.pos.y, gb.pos.x, gb.pos.y);
+                pop();
+            }
+        }
+    }
+
     stroke(!this.dead ? this.color : c.guys.colors.dead);
 
     fill(!this.dead ? this.color : c.guys.colors.dead);
@@ -943,53 +954,61 @@ class Guy {
             return potentialFoods.reduce((a, b) => (a.dist < b.dist ? a : b));
         }
         this.gravityFeed(potentialFoods);
-        return;
+        return null;
     }
 
     return null;
   }
 
   gravityFeed(potentialFoods = null) {
-    if (this.carnivorous) return;
-    if (potentialFoods) {
-        for (let pf of potentialFoods) {
-            if (this.isHungry() && dist(this.pos.x, this.pos.y, pf.x, pf.y) <= this.size * 5) {
-                let bite = {
-                    id: pf.id,
-                    pos: createVector(pf.x, pf.y),
-                    acc: createVector(0, 0),
-                    vel: createVector(0, 0),
-                    color: c.forage.color,
-                    dist: pf.dist,
-                };
-                this.gravityBites.push(bite);
-                this.eat(pf.id);
+        if (this.carnivorous) return;
+        if (potentialFoods) {
+            for (let pf of potentialFoods) {
+                if (this.isHungry()) {
+                    if (dist(this.pos.x, this.pos.y, pf.x, pf.y) <= this.size * 5) {
+                        let bite = {
+                            id: pf.id,
+                            pos: createVector(pf.x, pf.y),
+                            acc: createVector(0, 0),
+                            vel: createVector(0, 0),
+                            color: c.forage.color,
+                            dist: pf.dist,
+                        };
+                        this.gravityBites.push(bite);
+                        this.eat(pf.id);
+                    }
+                } else {
+
+                }
             }
         }
-    }
 
-    for (let b of this.gravityBites) { 
-        /**
-         * we have secretly already eaten the food particles, and now we are animating them to create
-         * the illusion that it's being pulled in by the gravity of the guy
-         */
-        push();
-        stroke(c.forage.color);
-        circle(b.pos.x, b.pos.y, 1);
-        let d = dist(this.pos.x, this.pos.y, b.pos.x, b.pos.y);
-        let t = 1 - constrain(d / b.dist, 0, 1);
-        let speed = lerp(0.00001, d, t*t);
-        let direction = p5.Vector.sub(this.pos, b.pos);
-        
-        if (d <= this.size) {
-            const i = this.gravityBites.findIndex(f => f.id === b.id);
-            this.gravityBites.splice(i, 1);
-        } else {
-            b.pos.add(direction.limit(speed));
+
+
+        for (let b of this.gravityBites) { 
+            /**
+             * we have secretly already eaten the food particles, and now we are animating them to create
+             * the illusion that it's being pulled in by the gravity of the guy
+             */
+            push();
+            stroke(c.forage.color);
+            
+            circle(b.pos.x, b.pos.y, 1);
+            let d = dist(this.pos.x, this.pos.y, b.pos.x, b.pos.y);
+            b.dist = Math.max(b.dist, d);
+            let t = 1 - constrain(d / b.dist, 0, 1);
+            let speed = lerp(0.01, d, t*t);
+            let direction = p5.Vector.sub(this.pos, b.pos);
+            
+            if (d <= this.size) {
+                const i = this.gravityBites.findIndex(f => f.id === b.id);
+                this.gravityBites.splice(i, 1);
+            } else {
+                b.pos.add(direction.limit(speed));
+            }
+            pop();
         }
-        pop();
     }
-  }
 
   senses(other) {
     return (
@@ -1187,6 +1206,7 @@ class Guy {
   }
 
   static killThisGuy(guy, returnNutrients=false) {
+    if (!guy) return; 
     viz.experiment.currentDeathsCounted++;
     viz.experiment.currentCumulativeLifeSpan += guy.age();
     
@@ -1257,21 +1277,22 @@ class Guy {
   }
 
   static godMode(i) {
-//     guys.filter(g => g.id > 1).forEach(g => g.dead = 1);
-//     guys.forEach(g => {
-//         g.size = 15;
-//         //g.senseDistanceMultiplier = 1;
-//         g.velLimit = 2;
-//         g.seekAccel = 2;
-//     });
-    guys[i].size = 50;
-    guys[i].stomachContents = 40;
-    guys[i].pos.x = c.corners[i].x;
-    guys[i].pos.y = c.corners[i].y;
-    guys[i].dead = 1;
-    console.log(guys[i]);
-    console.log(c.corners[i]);
-    console.log(c.corners);
+    //godMode = true;
+    guys.filter(g => g.id > 10).forEach(g => g.dead = 1);
+    guys.forEach(g => {
+        g.size = 15;
+        //g.senseDistanceMultiplier = 1;
+        g.velLimit = 2;
+        g.seekAccel = 2;
+    });
+    // guys[i].size = 50;
+    // guys[i].stomachContents = 40;
+    // guys[i].pos.x = c.corners[i].x;
+    // guys[i].pos.y = c.corners[i].y;
+    // guys[i].dead = 1;
+    // console.log(guys[i]);
+    // console.log(c.corners[i]);
+    // console.log(c.corners);
     //withArenaClip() => forage.populateMe(guys[i].stomachContents, guys[i].pos, guys[i].size))
     }
 }

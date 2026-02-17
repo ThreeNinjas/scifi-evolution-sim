@@ -7,6 +7,7 @@ let globalMaxGuys = 0;
 let font;
 let traits;
 let viz;
+let godMode = false;
 
 let sounds = {
     mutationBeep: new Audio('assets/alert12.mp3'),
@@ -321,10 +322,11 @@ function draw() {
                     guy.gravityFeed();
                 }
                 
+            
             if (guy.isHungry() && guy.seekPriority !== 'baby' && !guy.carnivorous) {
                 guy.isHorny = false;
                 sensedFood = guy.sensesFood(forage.foodStorage);
-
+                if (godMode) console.log(guy.gravityBites);
                 if (sensedFood) {
                     guy.wanderNoisePlayed = false;
                     if (guy.reactionStartFrame === null && guy.seekPriority !== 'food') {
