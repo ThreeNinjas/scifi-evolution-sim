@@ -137,6 +137,7 @@ function draw() {
     }
 
     forage.drawMe();
+    forage.checkPenaltyStatus();
 
     // for (const guy of guys) {
     //     guy.move();
@@ -741,8 +742,32 @@ function drawHighLightMask() {
     pop();
 }
 async function updateWeather() {
-    return await fetch(`${serverURL}weather/guys`)
-        .then(r => r.json())
+    let oldData = data;
+
+    try {
+        const nextData = await fetch(`${serverURL}weather/guys`)
+            .then(r => r.json());
+        data = nextData && nextData.error ? oldData : nextData;
+        return data;
+    } catch (e) {
+        data = oldData;
+        if (!data) {
+            data = {
+                temp: 46,
+                pres: 29.42,
+                hum: 53
+            };
+        }
+        return data;
+    }
+    // await fetch(`${serverURL}weather/guys`)
+    //     .then(r => {
+    //         r.json();
+    //         if (r.error) {
+    //             r = oldData;
+    //         }
+    //         return r;
+    //     })
 }
 
 async function loadWeather() {
