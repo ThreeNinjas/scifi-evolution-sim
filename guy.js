@@ -18,7 +18,8 @@ class Guy {
         0.0005
       )
     );
-    this.color = util.randomColor(data.temp, data.hum);
+    this.color = util.randomHexColor(data.temp);
+    this.skinColor = util.randomHexColor(data.hum);
     this.senseDistanceMultiplier = util.randomNormal(1, 0.5);
     this.digestionRate = this.getDigestionRate();
     this.lifeSpan = util.randomNormal(data.temp, data.vis);
@@ -55,7 +56,8 @@ class Guy {
         }
     }
 
-    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 3 ? util.coinToss(true, false) : false;
+    //this.armored = guys.filter(g => g.carnivorous).length > guys.length / 3 ? util.coinToss(true, false) : false;
+    this.armored = (getTimeIndex() < data.totalRainfall * 10) && pt.thresholds.carnivore.passed ? false : guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length));
     this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
     if (this.armored) this.carnivorous = false;
     //if (this.carnivorous) this.armored = false;
@@ -149,9 +151,9 @@ class Guy {
             }
         }
     }
-
-    stroke(!this.dead ? this.color : c.guys.colors.dead);
-
+    
+    stroke(!this.dead ? this.skinColor : c.guys.colors.dead);
+    strokeWeight(1);
     fill(!this.dead ? this.color : c.guys.colors.dead);
     circle(this.pos.x, this.pos.y, this.size);
 
@@ -873,7 +875,7 @@ class Guy {
             t: getTimeIndex(),
             angle: 0,
             delta: (m.percentChange / 100) / 10,
-            color: parentA.color,
+            color: util.randomHexColor(),
             rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
         });
     }
@@ -887,14 +889,17 @@ class Guy {
     }
     
 
-    if (util.chance(1, data.clouds)) {
-      child.color = util.randomColor();
-    }
+    
     child.color = parentA.hasDominantColor
       ? parentA.color
       : parentB.hasDominantColor
       ? parentB.color
       : util.coinToss(parentA, parentB).color;
+
+    if (util.chance(1, data.clouds)) {
+        mc.addToQueue(`Guy${child.id} has mutated its color`);
+      child.color = util.randomHexColor(data.temp);
+    }
 
     child.pos.x = this.pos.x + 10;
     child.pos.y = this.pos.y + 10;
@@ -1125,6 +1130,21 @@ class Guy {
         return null;
     }
     return out;
+  }
+
+  initiateWander(message) {
+    if (message === 'horny') console.log('horny wander');
+    this.wanderStartingT++;
+    if (this.wanderStartingT > this.reactionTime * 2) {
+        if (this.seekPriority !== 'wander') {
+            this.seekPriority = 'wander'; 
+            this.target.x = c.corners[util.randomNumber(0, c.corners.length - 1)].x;
+            this.target.y = c.corners[util.randomNumber(0, c.corners.length - 1)].y;
+        }
+        //push(); stroke('white'); line(this.pos.x, this.pos.y, this.target.x, this.target.y); pop();
+        util.playNoise(sounds.wander, () => this.wanderNoisePlayed = true);
+        this.seek();
+    }
   }
 
   static whoIsDominant(a, b) {

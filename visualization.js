@@ -31,7 +31,7 @@ class Visualization {
 
         let extraValue = [
             'age',
-            'avgActualLifeSpan'
+            'avgActualLifeSpan',
         ];
      
         traits = {

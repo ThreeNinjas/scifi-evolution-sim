@@ -21,6 +21,19 @@ class Util {
         );
     }
 
+    randomHexColor(temp = 95, hum = 100) {
+        temp = map(temp, 0, 95, 0, 255);
+        hum = map(hum, 0, 100, 0, 255);
+        let r = Math.floor(random(0, temp + 1)).toString(16).padStart(2, '0');
+        let g = Math.floor(random(0, temp + 1)).toString(16).padStart(2, '0');
+        let b = Math.floor(random(0, temp + 1)).toString(16).padStart(2, '0');
+        let alpha = Math.floor(hum).toString(16).padStart(2, '0');
+        
+        //console.log(temp, hum, r, g, b, alpha);
+        
+        return `#${r}${g}${b}${alpha}`;
+    }
+
     closestGuyByColor(targetColor, guys) {
         let bestGuy = null;
         let bestDist = Infinity;

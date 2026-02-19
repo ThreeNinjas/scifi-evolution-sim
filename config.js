@@ -152,7 +152,19 @@ Noises when global max counts increment
 Change rpl in stats text to chance of food
 Move histogram buttons and put more useful stats there?
 
-WHYYYYYY does the penalty turn off if the population is above 100??
+Bug: guy got BLOATED from eatia much much smaller guy
+
+Use thresholds to insert traits into the c traits
+
+Put %change instead of abs values on mutation messages
+
+Recalculate chance of food on weather update
+
+Make a comparison algorithm so guys can choose mates similar to themselves
+
+Implement wander for mating
+
+Need a way to save a comprehensive snapshot of everything, to a file. A
 
 
 Message center
@@ -194,4 +206,5 @@ x WHYYYYYY does the penalty turn off if the population is above 100??
 x visual indicator of evadePredator()
 x runsfromPredators needs to be rarer
 x Put a limit on number of orbiters, or make them more rare.
+x Lax the restrictions on armored. If the carnivory threshold is passed, you can be armored
 */

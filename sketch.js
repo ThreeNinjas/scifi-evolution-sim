@@ -167,6 +167,14 @@ function draw() {
 
     guysToHighlight = treeMode && treeGuy ? treeGuy : guys.filter(g => g.halo == 1);
 
+    if (pt.thresholds.carnivore.passed && !c.guys.traits.binary.includes('carnivorous')) {
+        c.guys.traits.binary.push('carnivorous');
+    }
+
+    if (pt.thresholds.armored.passed && !c.guys.traits.binary.includes('armored')) {
+        c.guys.traits.binary.push('armored');
+    }
+
     if (pt.thresholds.armored.passed && guys.filter(g => g.carnivorous).length == 0) {
         pt.thresholds.carnivoresExtinct.passed = true;
         pt.thresholds.carnivore.passed = false;
@@ -266,6 +274,10 @@ function draw() {
                             text('!!', otherGuy.pos.x, otherGuy.pos.y+20);
                         pop();
                     }
+                } else {
+                    if (guy.wander) {
+                        guy.initiateWander('horny');
+                    }
                 }
             }
         }
@@ -356,17 +368,7 @@ function draw() {
                     guy.mate = null;
 
                     if (guy.wander) {
-                        guy.wanderStartingT++;
-                        if (guy.wanderStartingT > guy.reactionTime * 2) {
-                            if (guy.seekPriority !== 'wander') {
-                                guy.seekPriority = 'wander'; 
-                                guy.target.x = c.corners[util.randomNumber(0, c.corners.length - 1)].x;
-                                guy.target.y = c.corners[util.randomNumber(0, c.corners.length - 1)].y;
-                            }
-                            //push(); stroke('white'); line(guy.pos.x, guy.pos.y, guy.target.x, guy.target.y); pop();
-                            util.playNoise(sounds.wander, () => guy.wanderNoisePlayed = true);
-                            guy.seek();
-                        }
+                        guy.initiateWander();
                     }
                 }
 
