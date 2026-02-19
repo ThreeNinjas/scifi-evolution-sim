@@ -14,6 +14,7 @@ class PhaseTransducer {
         this.percentOfCarnivores = 0;
         this.maxPercentOfCarnivores = 0;
         this.orbiterLifeSpan = data.totalDryDays * 100;
+        this.mutationRateHalvedAt = null;
     }
 
     getCarnivorousThreshold() {
@@ -26,5 +27,62 @@ class PhaseTransducer {
 
     speciationThresholdReached(trait) {
         return guys.filter(g => g[trait]).length > guys.length * 0.2;
+    }
+
+    monitorMutationRate() {
+        if (getTimeIndex() > this.mutationRateHalvedAt + 2000) {
+            console.log('restoring mutation rate');
+            c.guys.mutationRate = c.guys.mutationRate * 2;
+            this.mutationRateHalvedAt = null
+        }
+        //some guys have rafted in
+        //mutation rate is lowered
+        let courseOfAction = [
+            () => this.raft(),
+            () => this.mutationRateChange()
+        ];
+        let globalSameCount = 0;
+        let sameTraits = [];
+        for (let [trait, samples] of Object.entries(viz.experiment.samples)) {
+            let sameCount = 0;
+            if (c.guys.traits.value.includes(trait)) {
+                for (let sample of Object.values(samples)) {
+                    if (sample.min === sample.max) {
+                        sameCount++;
+                    } else {
+                        sameCount = 0;
+                    }
+                }
+                if (sameCount > 10) {
+                    globalSameCount++;
+                    sameTraits.push(trait);
+                }
+            }
+            
+        }
+        if (globalSameCount >= 3) {
+            c.guys.mutationRate = c.guys.mutationRate / 2;
+            random(courseOfAction)();
+        }
+    }
+
+    raft() { 
+        console.log('doing a raft');
+        for (let i = 0; i < data.vis * 2; i++) { console.log('lol');
+            let newGuy = new Guy();
+            newGuy.velLimit = viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5;
+            newGuy.color = '#14e718ff'
+            newGuy.adultSize = 13;
+
+            guys.push(newGuy);
+            stats.guys++;
+        }
+    }
+
+    mutationRateChange() {
+        console.log('changing mutation rate');
+        c.guys.mutationRate = c.guys.mutationRate / 2;
+        this.mutationRateHalvedAt = getTimeIndex();
+        return;
     }
 }

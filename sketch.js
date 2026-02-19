@@ -474,6 +474,7 @@ function draw() {
     if (frameCount % 1000 === 0) {
         viz.houseKeeping();
         viz.takeSnapshot(guys);
+        pt.monitorMutationRate();
         
         if (!weatherUpdateInFlight) {
             weatherUpdateInFlight = true;

@@ -56,8 +56,8 @@ class Guy {
         }
     }
 
-    //this.armored = guys.filter(g => g.carnivorous).length > guys.length / 3 ? util.coinToss(true, false) : false;
-    this.armored = (getTimeIndex() < data.totalRainfall * 10) && pt.thresholds.carnivore.passed ? false : guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length));
+    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 3 ? util.coinToss(true, false) : false;
+    //this.armored = getTimeIndex() < data.totalRainfall * 10 ? false : ( guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length) ) );
     this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
     if (this.armored) this.carnivorous = false;
     //if (this.carnivorous) this.armored = false;
@@ -823,6 +823,14 @@ class Guy {
     //         child.carnivoreNoisePlayed = true;
     //     }
     // }
+
+    if (parentA.carnivorous && parentB.carnivorous) {
+        child.carnivorous = true;
+
+        if (!pt.thresholds.carnivoreOnCarnivore.passed) {
+            pt.thresholds.carnivoreOnCarnivore.passed = true;
+        }
+    }
 
     for (let trait of Guy.gatedTraits()) { continue;
         if (trait === 'armored' /* && (pt.thresholds.carnivoresExtinct.passed || !pt.thresholds.armored.passed) */ ) {
