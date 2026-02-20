@@ -19,7 +19,7 @@ class Guy {
       )
     );
     this.color = util.randomHexColor(data.temp);
-    this.skinColor = util.randomHexColor(data.hum);
+    this.skinColor = util.randomHexColor(data.hum, data.temp);
     this.senseDistanceMultiplier = util.randomNormal(1, 0.5);
     this.digestionRate = this.getDigestionRate();
     this.lifeSpan = util.randomNormal(data.temp, data.vis);
@@ -774,6 +774,12 @@ class Guy {
         switch (trait) {
             case 'childrenAllowed':
                 child[trait] = Math.round(child[trait]);
+                break;
+            case 'adultSize':
+            case 'growthRate':
+            case 'digestionRate':
+                child[trait] = Math.abs(child[trait]);
+                break;
         }
         mutation.baby = child[trait];
         mutation.mutated = child[trait];
@@ -1063,7 +1069,7 @@ class Guy {
   }
 
   isSexuallyMature() {
-    return this.size >= this.adultSize - this.adultSize * 0.1;
+    return (this.size >= this.adultSize - this.adultSize * 0.1) && this.age() > 18;
   }
 
   calculateSensePerim() {
@@ -1141,7 +1147,6 @@ class Guy {
   }
 
   initiateWander(message) {
-    if (message === 'horny') console.log('horny wander');
     this.wanderStartingT++;
     if (this.wanderStartingT > this.reactionTime * 2) {
         if (this.seekPriority !== 'wander') {

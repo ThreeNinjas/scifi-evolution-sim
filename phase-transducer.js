@@ -67,8 +67,7 @@ class PhaseTransducer {
     }
 
     raft() { 
-        console.log('doing a raft');
-        for (let i = 0; i < data.vis * 2; i++) { console.log('lol');
+        for (let i = 0; i < data.vis * 2; i++) {
             let newGuy = new Guy();
             newGuy.velLimit = viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5;
             newGuy.color = '#14e718ff'
@@ -77,12 +76,16 @@ class PhaseTransducer {
             guys.push(newGuy);
             stats.guys++;
         }
+        console.log('raft event');
+        mc.addToQueue(`${data.vis * 2} strange new guys have arrived!!`);
+        return;
     }
 
     mutationRateChange() {
         console.log('changing mutation rate');
-        c.guys.mutationRate = c.guys.mutationRate / 2;
+        c.guys.mutationRate = constrain(c.guys.mutationRate / 2, c.guys.traits.binary.length + c.guys.traits.value.length, Infinity);
         this.mutationRateHalvedAt = getTimeIndex();
+        mc.addToQueue(`The mutation rate is now ${c.guys.mutationRate}`);
         return;
     }
 }
