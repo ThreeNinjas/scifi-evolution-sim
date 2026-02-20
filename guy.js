@@ -19,7 +19,7 @@ class Guy {
       )
     );
     this.color = util.randomHexColor(data.temp);
-    this.skinColor = util.randomHexColor(data.hum);
+    this.skinColor = util.randomHexColor(data.hum, data.temp);
     this.senseDistanceMultiplier = util.randomNormal(1, 0.5);
     this.digestionRate = this.getDigestionRate();
     this.lifeSpan = util.randomNormal(data.temp, data.vis);
@@ -56,8 +56,8 @@ class Guy {
         }
     }
 
-    //this.armored = guys.filter(g => g.carnivorous).length > guys.length / 3 ? util.coinToss(true, false) : false;
-    this.armored = (getTimeIndex() < data.totalRainfall * 10) && pt.thresholds.carnivore.passed ? false : guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length));
+    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 3 ? util.coinToss(true, false) : false;
+    //this.armored = getTimeIndex() < data.totalRainfall * 10 ? false : ( guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length) ) );
     this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
     if (this.armored) this.carnivorous = false;
     //if (this.carnivorous) this.armored = false;
@@ -774,6 +774,12 @@ class Guy {
         switch (trait) {
             case 'childrenAllowed':
                 child[trait] = Math.round(child[trait]);
+                break;
+            case 'adultSize':
+            case 'growthRate':
+            case 'digestionRate':
+                child[trait] = Math.abs(child[trait]);
+                break;
         }
         mutation.baby = child[trait];
         mutation.mutated = child[trait];
@@ -823,6 +829,14 @@ class Guy {
     //         child.carnivoreNoisePlayed = true;
     //     }
     // }
+
+    if (parentA.carnivorous && parentB.carnivorous) {
+        child.carnivorous = true;
+
+        if (!pt.thresholds.carnivoreOnCarnivore.passed) {
+            pt.thresholds.carnivoreOnCarnivore.passed = true;
+        }
+    }
 
     for (let trait of Guy.gatedTraits()) { continue;
         if (trait === 'armored' /* && (pt.thresholds.carnivoresExtinct.passed || !pt.thresholds.armored.passed) */ ) {
@@ -1055,7 +1069,7 @@ class Guy {
   }
 
   isSexuallyMature() {
-    return this.size >= this.adultSize - this.adultSize * 0.1;
+    return (this.size >= this.adultSize - this.adultSize * 0.1) && this.age() > 18;
   }
 
   calculateSensePerim() {
@@ -1133,7 +1147,6 @@ class Guy {
   }
 
   initiateWander(message) {
-    if (message === 'horny') console.log('horny wander');
     this.wanderStartingT++;
     if (this.wanderStartingT > this.reactionTime * 2) {
         if (this.seekPriority !== 'wander') {

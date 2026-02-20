@@ -474,6 +474,7 @@ function draw() {
     if (frameCount % 1000 === 0) {
         viz.houseKeeping();
         viz.takeSnapshot(guys);
+        pt.monitorMutationRate();
         
         if (!weatherUpdateInFlight) {
             weatherUpdateInFlight = true;
@@ -723,7 +724,9 @@ function drawTree() {
 
             for (let [parentId, nodes] of Object.entries(direction)) {
                 let originGuy = Guy.getGuyById(parentId);
-                originGuy.drawMe();
+                if (originGuy) {
+                    originGuy.drawMe();
+                }
                 for (let node of nodes) {
                     let nodeGuy = Guy.getGuyById(node);
                     nodeGuy.drawMe();
