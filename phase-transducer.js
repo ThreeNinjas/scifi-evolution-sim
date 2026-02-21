@@ -30,8 +30,9 @@ class PhaseTransducer {
     }
 
     monitorMutationRate() {
-        if (getTimeIndex() > this.mutationRateHalvedAt + 2000) {
+        if (getTimeIndex() > this.mutationRateHalvedAt + 500) {
             console.log('restoring mutation rate');
+            mc.addToQueue('Mutation rate restored.');
             c.guys.mutationRate = c.guys.mutationRate * 2;
             this.mutationRateHalvedAt = null
         }
@@ -67,7 +68,8 @@ class PhaseTransducer {
     }
 
     raft() { 
-        for (let i = 0; i < data.vis * 2; i++) {
+        let newGuysCount = guys.length - (guys.length * 0.25);
+        for (let i = 0; i < newGuysCount; i++) {
             let newGuy = new Guy();
             newGuy.velLimit = viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5;
             newGuy.color = '#14e718ff'
@@ -77,15 +79,15 @@ class PhaseTransducer {
             stats.guys++;
         }
         console.log('raft event');
-        mc.addToQueue(`${data.vis * 2} strange new guys have arrived!!`);
+        mc.addToQueue(`${newGuysCount} strange new guys have arrived!!`, 'mutation');
         return;
     }
 
     mutationRateChange() {
         console.log('changing mutation rate');
-        c.guys.mutationRate = constrain(c.guys.mutationRate / 2, c.guys.traits.binary.length + c.guys.traits.value.length, Infinity);
+        c.guys.mutationRate = constrain(c.guys.mutationRate / 2, (c.guys.traits.binary.length + c.guys.traits.value.length) * 5, data.hum * 3);
         this.mutationRateHalvedAt = getTimeIndex();
-        mc.addToQueue(`The mutation rate is now ${c.guys.mutationRate}`);
+        mc.addToQueue(`Increased radiation is causing mutations.`, 'mutation');
         return;
     }
 }
