@@ -35,7 +35,39 @@ class Util {
       .padStart(2, "0");
     let alpha = Math.floor(hum).toString(16).padStart(2, "0");
 
-    //console.log(temp, hum, r, g, b, alpha);
+    return `#${r}${g}${b}${alpha}`;
+  }
+
+  redShift(temp = 95, hum = 100) {
+    temp = map(temp, 0, 95, 0, 255);
+    hum = map(hum, 0, 100, 0, 255);
+    let r = Math.floor(255)
+      .toString(16)
+      .padStart(2, "0");
+    let g = Math.floor(random(0, temp + 1))
+      .toString(16)
+      .padStart(2, "0");
+    let b = Math.floor(random(0, temp + 1))
+      .toString(16)
+      .padStart(2, "0");
+    let alpha = Math.floor(hum).toString(16).padStart(2, "0");
+
+    return `#${r}${g}${b}${alpha}`;
+  }
+
+  blueShift(temp = 95, hum = 100) {
+    temp = map(temp, 0, 95, 0, 255);
+    hum = map(hum, 0, 100, 0, 255);
+    let r = Math.floor(0)
+      .toString(16)
+      .padStart(2, "0");
+    let g = Math.floor(random(0, temp + 1))
+      .toString(16)
+      .padStart(2, "0");
+    let b = Math.floor(random(0, temp + 1))
+      .toString(16)
+      .padStart(2, "0");
+    let alpha = Math.floor(hum).toString(16).padStart(2, "0");
 
     return `#${r}${g}${b}${alpha}`;
   }
@@ -256,22 +288,5 @@ class Util {
 
   biggerSmaller(data) {
     return data == -1 ? "smaller" : "bigger";
-  }
-
-  findLeastRedGuys(guys) {
-    const withIndex = guys.map((obj, index) => ({ obj, index }));
-    let out = [];
-
-    withIndex.sort((a, b) => {
-      const aVal = parseInt(a.obj.color.slice(1, 3), 16);
-      const bVal = parseInt(b.obj.color.slice(1, 3), 16);
-      return aVal - bVal;
-    });
-
-    for (let guy of withIndex) {
-      out.push(guy.obj);
-    }
-
-    return out;
   }
 }

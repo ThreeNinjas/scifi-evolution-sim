@@ -910,8 +910,8 @@ class Guy {
       ? parentB.color
       : util.coinToss(parentA, parentB).color;
 
-    if (util.chance(1, data.clouds)) {
-        mc.addToQueue(`Guy${child.id} has mutated its color`);
+    if (data.clouds > 1 && util.chance(1, data.clouds)) {
+        mc.addToQueue(`Guy${child.id} had a mutation on color`);
       child.color = util.randomHexColor(data.temp);
     }
 
@@ -1069,7 +1069,7 @@ class Guy {
   }
 
   isSexuallyMature() {
-    return (this.size >= this.adultSize - this.adultSize * 0.1) && this.age() > 18;
+    return (this.size >= this.adultSize - this.adultSize * 0.1) && this.age() > 1;
   }
 
   calculateSensePerim() {
@@ -1309,15 +1309,32 @@ class Guy {
     ];
   }
 
+  static findLeastRedGuys(guys) { console.log('flrg');
+    const withIndex = guys.map((obj, index) => ({ obj, index }));
+    let out = [];
+
+    withIndex.sort((a, b) => {
+      const aVal = parseInt(a.obj.color.slice(1, 3), 16);
+      const bVal = parseInt(b.obj.color.slice(1, 3), 16);
+      return aVal - bVal;
+    });
+
+    for (let guy of withIndex) {
+      out.push(guy.obj);
+    }
+
+    return out;
+  }
+
   static godMode(i) {
     //godMode = true;
-    guys.filter(g => g.id > 10).forEach(g => g.dead = 1);
-    guys.forEach(g => {
-        g.size = 15;
-        //g.senseDistanceMultiplier = 1;
-        g.velLimit = 2;
-        g.seekAccel = 2;
-    });
+    // guys.filter(g => g.id > 10).forEach(g => g.dead = 1);
+    // guys.forEach(g => {
+    //     g.size = 15;
+    //     //g.senseDistanceMultiplier = 1;
+    //     g.velLimit = 2;
+    //     g.seekAccel = 2;
+    // });
     // guys[i].size = 50;
     // guys[i].stomachContents = 40;
     // guys[i].pos.x = c.corners[i].x;
@@ -1327,5 +1344,29 @@ class Guy {
     // console.log(c.corners[i]);
     // console.log(c.corners);
     //withArenaClip() => forage.populateMe(guys[i].stomachContents, guys[i].pos, guys[i].size))
+
+    pt.thresholds.carnivoreOnCarnivore.passed = false;
+
+    for (let guy of guys) {
+        guy.size = 10;
+        //guy.birthday = -18;
+        guy.velLimit = 2;
+        guy.seekAccel = 1;
+        if (guy.id > guys.length / 2) {
+            guy.color = util.redShift();
+        } else {
+            guy.color = util.blueShift();
+        }
+
+        if (util.chance(25)) {
+            guy.carnivorous = true;
+        }
+    }
+    }
+
+    static redGuys() {
+        let herbivores = guys.filter(g => !g.carnivorous);
+        console.log('red: ', herbivores.filter(g => g.color.includes('#ff')).length);
+        console.log('non-red: ', herbivores.filter(g => !g.color.includes('#ff')).length);
     }
 }

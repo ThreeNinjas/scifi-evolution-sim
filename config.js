@@ -115,7 +115,7 @@ class Config {
   * 
   * 
 
---->  When guys are big, food moves to them...I can draw lines or something instead of animating forage
+--->  create a class for penalty periods, so far there's one in forage (penalty) and one in phase-transducer (lower mutation rate)
 *** 
 
 add a clear all halos button

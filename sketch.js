@@ -298,7 +298,7 @@ function draw() {
                     if (pt.thresholds.carnivoreOnCarnivore.passed) {
                         potentialPrey = guys.filter(g => !g.carnivorous);
                         //take the least red guys
-                        potentialPrey = util.findLeastRedGuys(potentialPrey);
+                        potentialPrey = Guy.findLeastRedGuys(potentialPrey);
                         potentialPrey.splice(potentialPrey.length / 2);
                     } else {
                         potentialPrey = guys;
