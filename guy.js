@@ -359,33 +359,23 @@ class Guy {
       return this.drawMe();
     }
 
-    // if (this.overRideMove) {
-    //     return;
-    // }
+    this.brownianMotion();
 
-    // if (this.overRideMoveIntermittent) {
-    //     if (util.coinToss('oven', 'toaster oven') == 'oven') {
-    //         return;
-    //     }
-    // }
+    this.noise.rotate(this.noiseRotate);
+    this.noise.setMag(this.noiseMagnitude);
+    this.acc.add(this.noise);
+  }
 
-    for (const key of ["x", "y"]) {
-      switch (util.randomNumber(0, 2)) {
-        case 0:
-          break;
-        case 1:
-          if (this.pos[key] < config.bounds[key].max) {
-            this.pos[key]++;
-          }
-          break;
-        case 2:
-          if (this.pos[key] > config.bounds[key].min) {
-            this.pos[key]--;
-          }
-          break;
-      }
+  brownianMotion() {
+    let x = util.randomNumber(-1, 1);
+    let y = util.randomNumber(-1, 1);
+    let action = util.coinToss('add', 'subtract');
+
+    if (action === 'add') {
+        this.pos.add(createVector(x, y));
+    } else {
+        this.pos.sub(createVector(x, y));
     }
-    //this.drawMe();
   }
 
   /**
@@ -406,7 +396,7 @@ class Guy {
    *      -higher value = potential for a hungrier dog
    *      -lower value = this dog is not food motivated
    *
-   * 5. The ratio of the respecitve magnitudes of this.acc and this.noise is the most important factor in determining seek efficiency.
+   * 5. The ratio of the respectve magnitudes of this.acc and this.noise is the most important factor in determining seek efficiency.
    *      -acc > noise = more intentional seeking behavior
    *      -evenly matched = wandering with bias
    *      -acc < noise = chaos lol
