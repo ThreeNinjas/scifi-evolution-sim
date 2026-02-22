@@ -11,26 +11,19 @@ class Forage {
         this.foodStorage = [];
         this.foodSize = 0.25;
 
-        this.startOfPenalty = 0;
-        this.penaltyLength = data.clouds * 10;
-        this.penaltyActive = false;
-        
+        this.penalty = new Phase(max(data.clouds / 10, 30));
 
         this.populateMe();
     }
 
     populateMe(num = null, pos = null, size = null) {
-        let chanceOfFood = this.chanceOfFood;
+        let chanceOfFood = this.calculateChanceOfFood();
 
-        if (this.penaltyActive) {
-            chanceOfFood = this.chanceOfFood / 2;
-        }
-
-        const max = num === null
+        const maximum = num === null
             ? Math.floor(chanceOfFood)
             : Math.floor(num / this.foodSize);
 
-        for (let i = 0; i < max; i++) {
+        for (let i = 0; i < maximum; i++) {
             if (num === null && this.foodStorage.length >= chanceOfFood) break;
 
             if (util.chance(chanceOfFood)) {
@@ -71,44 +64,29 @@ class Forage {
         let chanceOfFood = start + (start * data.totalRainfall/100);
         chanceOfFood += (chanceOfFood * data.rain24HrTotal/100);
         chanceOfFood -= data.daysSinceRain;
+
+        if (this.penalty && this.penalty.active) {
+            chanceOfFood = chanceOfFood / 2;
+        }
+
         return Math.abs(chanceOfFood);
-    }
-
-    activatePenalty() {
-        if (!this.penaltyActive) {
-            this.penaltyActive = true;
-            this.startOfPenalty = frameCount;
-            util.playNoise(sounds.penaltyOnBeep);
-        }
-    }
-
-    deactivatePenalty() {
-        if (this.penaltyActive) {
-            this.penaltyActive = false;
-            this.startOfPenalty = null;
-            util.playNoise(sounds.penaltyOffBeep);
-        }
     }
 
     checkPenaltyStatus() {
         switch (true) {
-            case !this.penaltyActive && guys.length < 100:
-                this.deactivatePenalty();
+            case !this.penalty.active && guys.length < 100:
+                this.penalty.deactivate(() => util.playNoise(sounds.penaltyOffBeep));
                 break;
-            case !this.penaltyActive && guys.length >= 100:
-                this.activatePenalty();
+            case !this.penalty.active && guys.length >= 100:
+                this.penalty.activate(() => util.playNoise(sounds.penaltyOnBeep));
                 break;
-            case this.penaltyActive && guys.length >= 100:
-                this.startOfPenalty = frameCount;
+            case this.penalty.active && guys.length >= 100:
+                this.penalty.start = frameCount;
                 break;
-            case this.penaltyActive && guys.length < 100 && this.penaltyTimeHasPassed():
-                this.deactivatePenalty();
+            case this.penalty.active && guys.length < 100 && this.penalty.hasFinished():
+                this.penalty.deactivate(() => util.playNoise(sounds.penaltyOffBeep));
                 break;
         }
-    }
-
-    penaltyTimeHasPassed() {
-        return frameCount - this.startOfPenalty >= this.penaltyLength;
     }
 
     drawMe() {

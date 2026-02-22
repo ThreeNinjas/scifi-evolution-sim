@@ -855,8 +855,11 @@ class Guy {
         }
     }
 
+    if (child.armored) {
+        child.carnivorous = false;
+    }
+
     if (child.carnivorous && !child.carnivoreNoisePlayed) {
-            child.armored = false;
             mc.addToQueue(`Guy${child.id} is a carnivore.`, 'murder')
             mc.addToQueue(`${Math.round((guys.filter(g => g.carnivorous).length / guys.length) * 100)}% of the population are carnivores`, 'murder')
             util.playNoise(sounds.carnivoreNoise);
@@ -866,10 +869,10 @@ class Guy {
     if (mutationHappened) {
       for (let type of Object.values(child.mutationPackage)) {
         for (let m of type) {
-            let min = Math.min(...Guy.getCurrentRangeFor(m.trait));
-            let max = Math.max(...Guy.getCurrentRangeFor(m.trait));
+            let minimum = Math.min(...Guy.getCurrentRangeFor(m.trait));
+            let maximum = Math.max(...Guy.getCurrentRangeFor(m.trait));
             mc.addToQueue(`Guy${child.id} had a mutation on ${m.trait}: ${typeof m.baby === 'number' ? parseFloat(m.baby.toFixed(6)): m.baby}`, 'mutation');
-          if (m.baby > max || m.baby < min) {
+          if (m.baby > maximum || m.baby < minimum) {
             console.log(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
             
             //viz.show(m.trait);
@@ -1069,7 +1072,7 @@ class Guy {
   }
 
   isSexuallyMature() {
-    return (this.size >= this.adultSize - this.adultSize * 0.1) && this.age() > 1;
+    return (this.size >= this.adultSize - this.adultSize * 0.1) && this.age() > 3;
   }
 
   calculateSensePerim() {
