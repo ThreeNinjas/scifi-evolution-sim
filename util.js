@@ -33,9 +33,9 @@ class Util {
     let b = Math.floor(random(0, temp + 1))
       .toString(16)
       .padStart(2, "0");
-    let alpha = Math.floor(hum).toString(16).padStart(2, "0");
+    let thisAlpha = Math.floor(hum).toString(16).padStart(2, "0");
 
-    return `#${r}${g}${b}${alpha}`;
+    return `#${r}${g}${b}${thisAlpha}`;
   }
 
   redShift(temp = 95, hum = 100) {
@@ -50,9 +50,9 @@ class Util {
     let b = Math.floor(random(0, temp + 1))
       .toString(16)
       .padStart(2, "0");
-    let alpha = Math.floor(hum).toString(16).padStart(2, "0");
+    let thisAlpha = Math.floor(hum).toString(16).padStart(2, "0");
 
-    return `#${r}${g}${b}${alpha}`;
+    return `#${r}${g}${b}${thisAlpha}`;
   }
 
   blueShift(temp = 95, hum = 100) {
@@ -67,9 +67,9 @@ class Util {
     let b = Math.floor(random(0, temp + 1))
       .toString(16)
       .padStart(2, "0");
-    let alpha = Math.floor(hum).toString(16).padStart(2, "0");
+    let thisAlpha = Math.floor(hum).toString(16).padStart(2, "0");
 
-    return `#${r}${g}${b}${alpha}`;
+    return `#${r}${g}${b}${thisAlpha}`;
   }
 
   closestGuyByColor(targetColor, guys) {

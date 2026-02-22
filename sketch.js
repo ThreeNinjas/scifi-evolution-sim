@@ -1178,7 +1178,7 @@ function drawSingleLine(values) {
 
 function drawIndividualLine(trait, stat) {
     if (trait === 'preference') return;
-    
+
     let minimum = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
     let maximum = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
 
@@ -1481,8 +1481,8 @@ function drawPing(guy) {
     //const end = guy.senseDistance;
     const end = guy.calculateSensePerim();
     const t = constrain((guy.pingSize - start) / (end - start), 0, 1);
-    const alpha = Math.floor(255 * (1 - t));
-    const hexAlpha = alpha.toString(16).padStart(2, '0');
+    const thisAlpha = Math.floor(255 * (1 - t));
+    const hexAlpha = thisAlpha.toString(16).padStart(2, '0');
 
     const colorStub = guy.carnivorous ? '#ff2200' : guy.isHorny ? '#ff3cd1' : '#339ccc'
     push();
