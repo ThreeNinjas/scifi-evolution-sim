@@ -876,21 +876,21 @@ function loadIcons() {
 
 function drawEnvironment() {
     push();
-    let color;
+    let thisColor;
     switch (true) {
         case forage && forage.penalty.active:
-            color = c.guys.colors.mars;
+            thisColor = c.guys.colors.mars;
             break;
         case pt && pt.mutationRateChangePeriod.active:
-            color = c.guys.colors.radioactive;
+            thisColor = c.guys.colors.radioactive;
             break;
         default:
-            color = '#cc99ff';
+            thisColor = '#cc99ff';
     }
     
     strokeWeight(2);
     //stroke(forage && forage.penaltyActive ? c.guys.colors.mars : '#cc99ff');
-    stroke(color);
+    stroke(thisColor);
     fill(0);
     rect(10, 10, width - 20, height / 2, 26);
     pop();
@@ -1321,27 +1321,27 @@ function drawGraphs() {
   for (let graph of graphs) {
     let minY = 0;
     let maxY = 0;
-    let color = '';
+    let thisColor = '';
 
     switch (graph) {
       case 'numberOfGuysHistory':
         minY = 0;
         maxY = globalMaxGuys;
-        color = '#ee1edcff';
+        thisColor = '#ee1edcff';
         break;
 
       case 'numberOfFoodHistory':
         minY = 0;
         maxY = forage.calculateChanceOfFood();
-        color = '#99cc33';
+        thisColor = '#99cc33';
         break;
 
       case 'histogram':
-        color = '#339cccff';
+        thisColor = '#339cccff';
         break;
     }
 
-    stroke(color);
+    stroke(thisColor);
     noFill();
 
     const sectionH = graphAreaHeight / graphs.length;
@@ -1356,7 +1356,7 @@ function drawGraphs() {
     if (graph != 'histogram') {
       if (stats[graph].length > 1) {
         beginShape();
-        fill(color);
+        fill(thisColor);
         for (let i = 0; i < stats[graph].length; i++) {
           let x = map(i, 0, stats[graph].length - 1, 10, width - 10);
           let y = map(stats[graph][i], minY, maxY, yBottom, yTop, true);
@@ -1376,7 +1376,7 @@ function drawGraphs() {
 
 
 function drawHistogram() { 
-  let color = histogramButtonBoxes[selectedHistogram].color;
+  let thisColor = histogramButtonBoxes[selectedHistogram].color;
   const sectionH = graphAreaHeight / 3;
   const x0 = 10;
   const y0 = 618 + 2;
@@ -1388,7 +1388,7 @@ function drawHistogram() {
   if (values.length === 0) return;
 
   push();
-  stroke(color);
+  stroke(thisColor);
   noFill();
 
   const bins = 10;
