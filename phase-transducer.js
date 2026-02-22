@@ -14,7 +14,16 @@ class PhaseTransducer {
         this.percentOfCarnivores = 0;
         this.maxPercentOfCarnivores = 0;
         this.orbiterLifeSpan = data.totalDryDays * 100;
-        this.mutationRateHalvedAt = null;
+        this.mutationRateChangePeriod = new Phase(2);
+
+        this.raftCount = 0;
+        this.raftColors = [
+            '#14e718ff',
+            '#14b2e7ff',
+            '#f994afff',
+            '#b1b1b1ff',
+            '#984effff',
+        ];
     }
 
     getCarnivorousThreshold() {
@@ -30,14 +39,17 @@ class PhaseTransducer {
     }
 
     monitorMutationRate() {
-        if (getTimeIndex() > this.mutationRateHalvedAt + 500) {
-            console.log('restoring mutation rate');
+        if (this.mutationRateChangePeriod.hasFinished()) {
+            this.mutationRateChangePeriod.deactivate(() => {
+                console.log('restoring mutation rate');
             mc.addToQueue('Mutation rate restored.');
             c.guys.mutationRate = c.guys.mutationRate * 2;
-            this.mutationRateHalvedAt = null
+            util.playNoise(sounds.penaltyOffBeep);
+            });
+            
+            return;
         }
-        //some guys have rafted in
-        //mutation rate is lowered
+        
         let courseOfAction = [
             () => this.raft(),
             () => this.mutationRateChange()
@@ -62,32 +74,51 @@ class PhaseTransducer {
             
         }
         if (globalSameCount >= 3) {
-            c.guys.mutationRate = c.guys.mutationRate / 2;
             random(courseOfAction)();
         }
     }
 
     raft() { 
-        let newGuysCount = guys.length - (guys.length * 0.25);
+        if (this.mutationRateChangePeriod.active) return;
+
+        let newGuysCount = Math.round(guys.length - (guys.length * 0.75));
+        
         for (let i = 0; i < newGuysCount; i++) {
             let newGuy = new Guy();
             newGuy.velLimit = viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5;
-            newGuy.color = '#14e718ff'
-            newGuy.adultSize = 13;
+            newGuy.seekAccel = viz.experiment.samples.seekAccel[viz.experiment.samples.seekAccel.length - 1]. max * 1.5;
+            newGuy.noiseMagnitude = Math.abs(viz.experiment.samples.noiseMagnitude[viz.experiment.samples.noiseMagnitude.length - 1].min / 1.5);
+            newGuy.noiseRotate = Math.abs(viz.experiment.samples.noiseRotate[viz.experiment.samples.noiseRotate.length - 1].min / 1.5);
+            newGuy.color = this.raftColors[this.raftCount];
+            newGuy.adultSize = Math.round(random(11, 21));
+            newGuy.size = Math.floor(newGuy.adultSize * 0.9);
+            newGuy.birthday = getTimeIndex() - 3;
+            newGuy.carnivorous = false;
 
             guys.push(newGuy);
             stats.guys++;
         }
+        this.raftCount++;
+        if (this.raftCount > this.raftColors.length - 1) this.raftCount = 0;
         console.log('raft event');
         mc.addToQueue(`${newGuysCount} strange new guys have arrived!!`, 'mutation');
+        util.playNoise(sounds.raft);
         return;
     }
 
     mutationRateChange() {
+        if (this.mutationRateChangePeriod.active) return;
+
         console.log('changing mutation rate');
-        c.guys.mutationRate = constrain(c.guys.mutationRate / 2, (c.guys.traits.binary.length + c.guys.traits.value.length) * 5, data.hum * 3);
-        this.mutationRateHalvedAt = getTimeIndex();
-        mc.addToQueue(`Increased radiation is causing mutations.`, 'mutation');
+        
+        if (!this.mutationRateChangePeriod.active) {
+            this.mutationRateChangePeriod.activate(() => {
+                c.guys.mutationRate = constrain(c.guys.mutationRate / 2, (c.guys.traits.binary.length + c.guys.traits.value.length) * 5, data.hum * 3);
+                mc.addToQueue(`Increased radiation is causing mutations.`, 'mutation');
+                util.playNoise(sounds.penaltyOnBeep);
+            });
+        }
+        
         return;
     }
 }

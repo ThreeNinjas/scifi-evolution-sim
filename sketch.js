@@ -24,6 +24,7 @@ let sounds = {
     wander: new Audio('assets/deskviewer1.mp3'),
     forage: new Audio('assets/scrscroll1.mp3'),
     armored: new Audio('assets/thatSFXguy/beep 09.mp3'),
+    raft: new Audio('assets/thatSFXguy/beep 02.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -445,7 +446,7 @@ function draw() {
     }
 
     forage.replenishProgress += forage.replenishRate;
-    if (forage.replenishProgress >= 1 && forage.foodStorage.length < (forage.chanceOfFood * 0.10)) {
+    if (forage.replenishProgress >= 1 && forage.foodStorage.length < (forage.calculateChanceOfFood() * 0.10)) {
         forage.replenishProgress = 0;
         forage.populateMe();
     }
@@ -474,7 +475,9 @@ function draw() {
         
     }
 
-    
+    if (pt.mutationRateChangePeriod.active) {
+        pt.monitorMutationRate();
+    }
 
     if (frameCount % 1000 === 0) {
         viz.houseKeeping();
@@ -871,13 +874,23 @@ function loadIcons() {
   }
 }
 
-
-
-
 function drawEnvironment() {
     push();
+    let color;
+    switch (true) {
+        case forage && forage.penalty.active:
+            color = c.guys.colors.mars;
+            break;
+        case pt && pt.mutationRateChangePeriod.active:
+            color = c.guys.colors.radioactive;
+            break;
+        default:
+            color = '#cc99ff';
+    }
+    
     strokeWeight(2);
-    stroke(forage && forage.penaltyActive ? c.guys.colors.mars : '#cc99ff');
+    //stroke(forage && forage.penaltyActive ? c.guys.colors.mars : '#cc99ff');
+    stroke(color);
     fill(0);
     rect(10, 10, width - 20, height / 2, 26);
     pop();
@@ -896,11 +909,12 @@ function drawEnvironment() {
         }
     pop();
     
-    if (forage && forage.penaltyActive) return;
+    if ((forage && forage.penalty.active) && (pt && !pt.mutationRateChangePeriod.active)) return;
 
     push();
     //the box is 380px wide
-    stroke(0);
+    let lineColor = pt && pt.mutationRateChangePeriod.active ? c.guys.colors.radioactive : 0
+    stroke(lineColor);
     strokeWeight(3);
     const linewidth = 300;
     line(linewidth, 10, width - linewidth, 10);
@@ -1004,7 +1018,7 @@ function statsText() {
         text("TIME INDEX: " + getTimeIndex(), leftMargin, startingY);
         text("GUYS: " + guys.filter(g => g.dead == 0).length, leftMargin, startingY + 20);
         text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
-        text(`CHOF: ${forage.chanceOfFood.toFixed(3)}`, leftMargin, startingY + 60);
+        text(`CHOF: ${forage.calculateChanceOfFood().toFixed(3)}`, leftMargin, startingY + 60);
 
         let middleMargin = leftMargin + 110;
         
@@ -1127,9 +1141,9 @@ function drawPreferencePlot() {
 
 function drawSingleLine(values) {
     let minimum = Math.min(...values);
-    let max = Math.max(...values);
+    let maximum = Math.max(...values);
 
-    if (minimum === max) {
+    if (minimum === maximum) {
         return;
     }
 
@@ -1138,7 +1152,7 @@ function drawSingleLine(values) {
         noStroke();
         fill(c.guys.colors.gold);
         textSize(16);
-        text(max, 1, 16);
+        text(maximum, 1, 16);
         text(minimum, 1, 99);
     pop();
 
@@ -1147,7 +1161,7 @@ function drawSingleLine(values) {
         beginShape();
             for (let i = 0; i < values.length; i++) {
                 let x = map(i, 0, values.length - 1, 0, width-20);
-                let y = map(values[i], minimum, max, 100, 0);
+                let y = map(values[i], minimum, maximum, 100, 0);
                 vertex(x, y);
             }
         endShape();
@@ -1156,9 +1170,9 @@ function drawSingleLine(values) {
 
 function drawIndividualLine(trait, stat) {
     let minimum = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
-    let max = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
+    let maximum = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
 
-    if (minimum === max) {
+    if (minimum === maximum) {
         return;
     }
     
@@ -1176,7 +1190,7 @@ function drawIndividualLine(trait, stat) {
         beginShape();
             for (let i = 0; i < viz.experiment.samples[trait].length; i++) {
                 let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
-                let y = map(viz.experiment.samples[trait][i][stat], minimum, max, 100, 0);
+                let y = map(viz.experiment.samples[trait][i][stat], minimum, maximum, 100, 0);
                 vertex(x, y);
             }
         endShape();
@@ -1185,9 +1199,9 @@ function drawIndividualLine(trait, stat) {
 
 function drawMinMaxShape(trait) {
     let minimum = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
-    let max = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
+    let maximum = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
 
-    if (minimum === max) {
+    if (minimum === maximum) {
         return;
     }
 
@@ -1196,12 +1210,12 @@ function drawMinMaxShape(trait) {
         beginShape();
             for (let i = 0; i < viz.experiment.samples[trait].length; i++) {
                 let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
-                let y = map(viz.experiment.samples[trait][i].max, minimum, max, 100, 0);
+                let y = map(viz.experiment.samples[trait][i].max, minimum, maximum, 100, 0);
                 vertex(x, y);
             }
             for (let i = viz.experiment.samples[trait].length - 1; i >= 0; i--) {
                 let x = map(i, 0, viz.experiment.samples[trait].length - 1, 0, width-20);
-                let y = map(viz.experiment.samples[trait][i].min, minimum, max, 100, 0);
+                let y = map(viz.experiment.samples[trait][i].min, minimum, maximum, 100, 0);
                 vertex(x, y);
             }
         endShape(CLOSE);
@@ -1211,8 +1225,8 @@ function drawMinMaxShape(trait) {
 function drawBinaryLine(trait) {
     const props = viz.experiment.samples[trait].map(d => d.true / (d.true + d.false));
     let minimum =  0; //Math.min(...props);
-    let max = 1; //Math.max(...props);
-    if (minimum === max) return;
+    let maximum = 1; //Math.max(...props);
+    if (minimum === maximum) return;
 
     let h = 100;
     let w = width - 20;
@@ -1226,7 +1240,7 @@ function drawBinaryLine(trait) {
         vertex(1, 1);
         for (let i = 0; i < props.length; i++) {
             let x = map(i, 0, props.length - 1, 1, w - 1);
-            let y = map(props[i], minimum, max, h - 1, 1);
+            let y = map(props[i], minimum, maximum, h - 1, 1);
             vertex(x, y);
         }
         vertex(w - 1, 1);
@@ -1318,7 +1332,7 @@ function drawGraphs() {
 
       case 'numberOfFoodHistory':
         minY = 0;
-        maxY = forage.chanceOfFood;
+        maxY = forage.calculateChanceOfFood();
         color = '#99cc33';
         break;
 
@@ -1471,8 +1485,8 @@ function drawBars() {
             rect(0, 0, forageProgress < 100 ? forageProgress : 100, 20);
 
             //food eaten
-            let cutoff = forage.chanceOfFood * 0.10;
-            let percentOfThreshold = ((forage.chanceOfFood - forage.foodStorage.length) / (forage.chanceOfFood - cutoff)) * 100;
+            let cutoff = forage.calculateChanceOfFood() * 0.10;
+            let percentOfThreshold = ((forage.calculateChanceOfFood() - forage.foodStorage.length) / (forage.calculateChanceOfFood() - cutoff)) * 100;
             percentOfThreshold = constrain(percentOfThreshold, 0, 100);
 
             stroke(c.guys.colors.hungry);
