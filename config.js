@@ -115,11 +115,8 @@ class Config {
   * 
   * 
 
---->  create a class for penalty periods, so far there's one in forage (penalty) and one in phase-transducer (lower mutation rate)
+--->  
 *** 
-
-add a clear all halos button
-
 Tails for binary mutations 
 Guys that aren't full killers, they take a nip off random guys
 Mutation viewer. Select a guy, highlight everyone with his same orbiters, hide everyone else.
@@ -207,4 +204,6 @@ x visual indicator of evadePredator()
 x runsfromPredators needs to be rarer
 x Put a limit on number of orbiters, or make them more rare.
 x Lax the restrictions on armored. If the carnivory threshold is passed, you can be armored
+x create a class for penalty periods, so far there's one in forage (penalty) and one in phase-transducer (lower mutation rate)
+x add a clear all halos button
 */

@@ -86,6 +86,7 @@ let config = {
 };
 
 const guysToRemove = new Set();
+let guysToHighlight = [];
 
 let histogramButtonBoxes;
 let selectedHistogram = 0;
@@ -614,6 +615,13 @@ function handleTreeMode() {
 }
 
 function mousePressed() {
+    //clear halo / highlight
+    if (dist(300, 531, mouseX, mouseY) < 10) { 
+        treeGuy = null;
+        guysToHighlight = [];
+        guys.forEach(g => g.halo = 0);
+    }
+    
     let yAddOn = 30;
     //mute button
     if (
@@ -1169,6 +1177,8 @@ function drawSingleLine(values) {
 }
 
 function drawIndividualLine(trait, stat) {
+    if (trait === 'preference') return;
+    
     let minimum = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
     let maximum = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
 
@@ -1198,6 +1208,8 @@ function drawIndividualLine(trait, stat) {
 }
 
 function drawMinMaxShape(trait) {
+    if (trait === 'preference') return;
+
     let minimum = Math.min(...viz.experiment.samples[trait].map(d => d['min']));
     let maximum = Math.max(...viz.experiment.samples[trait].map(d => d['max']));
 
@@ -1308,6 +1320,19 @@ function drawControls() {
             strokeWeight(1);
             line(0, 0, -4, 8);
             line(0, 0, 4, 8);
+        }
+    pop();
+
+    //clear all halos / highlights
+    push();
+        noFill();
+        stroke(c.guys.colors.hungry); 
+        translate(width - 100, y + 2 + yAddOn); //300, 531
+        strokeWeight(2);
+        circle(0, 4, 10);
+
+        if (treeGuy || guysToHighlight.length > 0) {
+            line(-4, 8, 4, 0);
         }
     pop();
 }

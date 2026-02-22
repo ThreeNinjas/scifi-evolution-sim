@@ -32,6 +32,7 @@ class Visualization {
         let extraValue = [
             'age',
             'avgActualLifeSpan',
+            'preference',
         ];
      
         traits = {
@@ -112,6 +113,7 @@ class Visualization {
         }
 
         for (let trait of this.traits.value) {
+            if (trait === 'preference') continue;
             let values;
 
             if (this.experiment.samples[trait].length > 100) {
