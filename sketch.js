@@ -25,6 +25,7 @@ let sounds = {
     forage: new Audio('assets/scrscroll1.mp3'),
     armored: new Audio('assets/thatSFXguy/beep 09.mp3'),
     raft: new Audio('assets/thatSFXguy/beep 02.mp3'),
+    alert10: new Audio('assets/thatSFXguy/beep 10.mp3'),
 };
 
 for (let sound of Object.values(sounds)) {
@@ -49,6 +50,8 @@ let diameter = 10;
 let data = null;
 
 let startTextSize = 15;
+let startTextAngle = 0.0000001;
+let startTextY = 450;
 let dominantColor = null;
 let stats = {
     guys: 0,
@@ -87,6 +90,8 @@ let config = {
 
 const guysToRemove = new Set();
 let guysToHighlight = [];
+
+let populationControl;
 
 let histogramButtonBoxes;
 let selectedHistogram = 0;
@@ -152,15 +157,16 @@ function draw() {
     byId = {};
     for (let g of guys) byId[g.id] = g;
 
-    // if (guys.filter(g => !g.dead).length <= 1) {
-    //     window.location.reload();
-    // }
-
-    if (!window.__reloading && guys.filter(g => !g.dead).length <= 1) {
-        console.log('reload lol if you see me you are fucked haha');
-        window.__reloading = true;
-        window.top.location.href = window.location.href;
+    if (guys.filter(g => !g.dead).length <= 1) {
+        //window.location.reload();
+        pt.raft();
     }
+
+    // if (!window.__reloading && guys.filter(g => !g.dead).length <= 1) {
+    //     console.log('reload lol if you see me you are fucked haha');
+    //     window.__reloading = true;
+    //     window.top.location.href = window.location.href;
+    // }
 
 
     if (guys.length > globalMaxGuys) {
@@ -408,7 +414,7 @@ function draw() {
         if (guy.stomachContents > 0 && !guy.dead) {
             //Penalizing speed, the closer you get to the initial limit, the higher the metabolic cost
             //suspending the laws of physics for mating purposes, just like irl
-            if (!guy.mate && jason != 2) {
+            if (!guy.mate) {
                 const penalty = Math.pow(guy.vel.mag() / viz.experiment.samples.velLimit[0].max, 3);
                 guy.stomachContents -= penalty * 0.001;
                 guy.stomachContents = Math.max(0, guy.stomachContents);
@@ -476,7 +482,7 @@ function draw() {
         
     }
 
-    if (pt.mutationRateChangePeriod.active) {
+    if (pt.phases.mutationRateChangePeriod.active) {
         pt.monitorMutationRate();
     }
 
@@ -484,6 +490,10 @@ function draw() {
         viz.houseKeeping();
         viz.takeSnapshot(guys);
         pt.monitorMutationRate();
+
+        if (jason) {
+            Guy.godModeStats();
+        }
         
         if (!weatherUpdateInFlight) {
             weatherUpdateInFlight = true;
@@ -540,6 +550,10 @@ function draw() {
     drawThresholdBars();
 
     drawMessageCenter();
+
+    for (let phase of Phase.instances) {
+        phase.monitor();
+    }
 }
 
 function weatherHasChanged(prevData) {
@@ -797,8 +811,12 @@ async function loadWeather() {
     console.log(url);
     data = await updateWeather();
 
+    if (!data) {
+        window.location.reload();
+    }
     mc.addToQueue('Updated weather', 'weather');
     console.log(data);
+
 
     c = new Config();
     c.generateOrbiterColors();
@@ -852,7 +870,15 @@ async function loadWeather() {
 
     stats.numberOfGuysHistory.push(stats.guys);
 
+    if (jason) {
+        Guy.godMode();
+    }
     viz.takeSnapshot(guys);
+
+    populationControl = new Phase(99999, {
+        onActivate: () => mc.addToQueue('Population measures in effect.'),
+        onDeactivate: () => mc.addToQueue('Population measures no longer in effect.')
+    }, () => guys.length > 150);
 
     for (const guy of guys) {
         guy.drawMe();
@@ -889,7 +915,7 @@ function drawEnvironment() {
         case forage && forage.penalty.active:
             thisColor = c.guys.colors.mars;
             break;
-        case pt && pt.mutationRateChangePeriod.active:
+        case pt && pt.phases.mutationRateChangePeriod.active:
             thisColor = c.guys.colors.radioactive;
             break;
         default:
@@ -917,11 +943,11 @@ function drawEnvironment() {
         }
     pop();
     
-    if ((forage && forage.penalty.active) && (pt && !pt.mutationRateChangePeriod.active)) return;
+    if ((forage && forage.penalty.active) && (pt && !pt.phases.mutationRateChangePeriod.active)) return;
 
     push();
     //the box is 380px wide
-    let lineColor = pt && pt.mutationRateChangePeriod.active ? c.guys.colors.radioactive : 0
+    let lineColor = pt && pt.phases.mutationRateChangePeriod.active ? c.guys.colors.radioactive : 0
     stroke(lineColor);
     strokeWeight(3);
     const linewidth = 300;
@@ -932,10 +958,13 @@ function drawEnvironment() {
 
 function loadingScreen() {
     background(0);
+    rotate(startTextAngle);
     fill(util.randomColor());
     textSize(startTextSize);
-    text('loading', 100, 100);
+    text('loading', 10, startTextY);
     startTextSize++;
+    startTextAngle -= 0.010;
+    startTextY -= 4;
 }
 
 function getTimeIndex() {

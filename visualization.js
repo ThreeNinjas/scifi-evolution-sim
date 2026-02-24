@@ -102,7 +102,7 @@ class Visualization {
                     break;
             }
 
-            if (this.experiment.samples[trait].length > 100) {
+            if (this.experiment.samples[trait].length > 10000) {
                 this.experiment.samples[trait].shift();
             }
             this.experiment.samples[trait].push({
@@ -116,7 +116,7 @@ class Visualization {
             if (trait === 'preference') continue;
             let values;
 
-            if (this.experiment.samples[trait].length > 100) {
+            if (this.experiment.samples[trait].length > 10000) {
                 this.experiment.samples[trait].shift();
             }
 

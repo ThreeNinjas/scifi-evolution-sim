@@ -1,23 +1,44 @@
 class Phase {
-    constructor(phaseLength) {
+    static instances = [];
+
+    constructor(phaseLength, { onActivate = null, onDeactivate = null } = {}, shouldBeActive = null) {
+        Phase.instances.push(this);
         this.start = 0;
         this.phaseLength = phaseLength;
         this.active = false;
+        this.onActivate = onActivate;
+        this.onDeactivate = onDeactivate
+
+        this.shouldBeActive = shouldBeActive;
     }
 
-    activate(callback) {
+    activate() {
         if (!this.active) {
             this.active = true;
             this.start = getTimeIndex();
-            if (callback) callback();
+            if (this.onActivate) this.onActivate();
         }
     }
 
-    deactivate(callback) {
+    deactivate() {
         if (this.active) {
             this.active = false;
             this.start = null;
-            if (callback) callback();
+            if (this.onDeactivate) this.onDeactivate();
+        }
+    }
+
+    monitor() {
+        if (this.shouldBeActive) {
+            if (this.shouldBeActive()) {
+                this.activate();
+            } else {
+                this.deactivate();
+                return;
+            }
+        }
+        if (this.hasFinished()) {
+            this.deactivate();
         }
     }
 

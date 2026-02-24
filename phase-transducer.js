@@ -14,7 +14,33 @@ class PhaseTransducer {
         this.percentOfCarnivores = 0;
         this.maxPercentOfCarnivores = 0;
         this.orbiterLifeSpan = data.totalDryDays * 100;
-        this.mutationRateChangePeriod = new Phase(2);
+
+        this.phases = {
+            mutationRateChangePeriod: new Phase(2, {
+                onActivate: () => {
+                    c.guys.mutationRate = constrain(c.guys.mutationRate / 2, (c.guys.traits.binary.length + c.guys.traits.value.length) * 5, data.hum * 3);
+                    mc.addToQueue(`Increased radiation is causing mutations.`, 'mutation');
+                    util.playNoise(sounds.penaltyOnBeep);
+                },
+                onDeactivate: () => {
+                console.log('restoring mutation rate');
+                mc.addToQueue('Mutation rate restored.');
+                c.guys.mutationRate = c.guys.mutationRate * 2;
+                util.playNoise(sounds.penaltyOffBeep);
+                }
+            }),
+            raftGuys: new Phase(5, {
+                onActivate: () => {
+                    this.raft();
+                }
+            }),
+            windfallOfFood: new Phase(3, {
+                onActivate: () => {
+                    forage.populateMe(500)
+                    mc.addToQueue('An unusual amount of food has been distributed.');
+                }
+            }),
+        };
 
         this.raftCount = 0;
         this.raftColors = [
@@ -39,20 +65,27 @@ class PhaseTransducer {
     }
 
     monitorMutationRate() {
-        if (this.mutationRateChangePeriod.hasFinished()) {
-            this.mutationRateChangePeriod.deactivate(() => {
-                console.log('restoring mutation rate');
-            mc.addToQueue('Mutation rate restored.');
-            c.guys.mutationRate = c.guys.mutationRate * 2;
-            util.playNoise(sounds.penaltyOffBeep);
-            });
-            
+        if (this.phases.mutationRateChangePeriod.hasFinished()) {
+            this.phases.mutationRateChangePeriod.deactivate();
             return;
+        }
+
+        if (this.phases.windfallOfFood.active) {
+            if (this.phases.windfallOfFood.hasFinished()) {
+                this.phases.windfallOfFood.deactivate();
+            }
+        }
+
+        if (this.phases.raftGuys.active) {
+            if (this.phases.raftGuys.hasFinished()) {
+                this.phases.raftGuys.deactivate();
+            }
         }
         
         let courseOfAction = [
             () => this.raft(),
-            () => this.mutationRateChange()
+            () => this.mutationRateChange(),
+            () => this.windfallOfFood(),
         ];
         let globalSameCount = 0;
         let sameTraits = [];
@@ -73,15 +106,15 @@ class PhaseTransducer {
             }
             
         }
-        if (globalSameCount >= 3) {
+        if (globalSameCount >= 3 && guys.length < 100) {
             random(courseOfAction)();
         }
     }
 
     raft() { 
-        if (this.mutationRateChangePeriod.active) return;
+        if (this.phases.mutationRateChangePeriod.active) return;
 
-        let newGuysCount = Math.round(guys.length - (guys.length * 0.75));
+        let newGuysCount = guys.length > 0 ? Math.round(guys.length - (guys.length * 0.75)) : data.temp;
         
         for (let i = 0; i < newGuysCount; i++) {
             let newGuy = new Guy();
@@ -100,25 +133,29 @@ class PhaseTransducer {
         }
         this.raftCount++;
         if (this.raftCount > this.raftColors.length - 1) this.raftCount = 0;
-        console.log('raft event');
+
         mc.addToQueue(`${newGuysCount} strange new guys have arrived!!`, 'mutation');
         util.playNoise(sounds.raft);
+
         return;
     }
 
     mutationRateChange() {
-        if (this.mutationRateChangePeriod.active) return;
+        if (this.phases.mutationRateChangePeriod.active) return;
+        if (guys.length > 100) return;
 
         console.log('changing mutation rate');
         
-        if (!this.mutationRateChangePeriod.active) {
-            this.mutationRateChangePeriod.activate(() => {
-                c.guys.mutationRate = constrain(c.guys.mutationRate / 2, (c.guys.traits.binary.length + c.guys.traits.value.length) * 5, data.hum * 3);
-                mc.addToQueue(`Increased radiation is causing mutations.`, 'mutation');
-                util.playNoise(sounds.penaltyOnBeep);
-            });
+        if (!this.phases.mutationRateChangePeriod.active) {
+            this.phases.mutationRateChangePeriod.activate();
         }
         
         return;
+    }
+
+    windfallOfFood() {
+        if (this.phases.windfallOfFood.active) return;
+        this.phases.windfallOfFood.activate();
+        
     }
 }

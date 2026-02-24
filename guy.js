@@ -56,7 +56,7 @@ class Guy {
         }
     }
 
-    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 3 ? util.coinToss(true, false) : false;
+    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 5 ? util.coinToss(true, false) : false;
     //this.armored = getTimeIndex() < data.totalRainfall * 10 ? false : ( guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length) ) );
     this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
     if (this.armored) this.carnivorous = false;
@@ -131,6 +131,8 @@ class Guy {
     //phylogeny
     this.parents = [];
     this.children = [];
+
+    this.penalty = false;
 
     Guy.enforceTradeOffs(this);
   }
@@ -712,6 +714,7 @@ class Guy {
   }
 
   businessTime(mate, guys) {
+    if (populationControl.active) return;
     //TODO: make babies small! let them grow into sexual maturity
     let mutationHappened = false;
     if (this.id < mate.id) return;
@@ -1294,7 +1297,7 @@ class Guy {
 
   static enforceTradeOffs(guy) {
     if (guy.armored) {
-        guy.digestionRate += guy.digestionRate * (data.totalDryDays / 100);
+        guy.digestionRate += guy.digestionRate * 2; // (data.totalDryDays / 100);
         guy.carnivorous = false;
         guy.runsFromPredators = util.coinToss(true, false);
     }
@@ -1348,28 +1351,48 @@ class Guy {
     // console.log(c.corners);
     //withArenaClip() => forage.populateMe(guys[i].stomachContents, guys[i].pos, guys[i].size))
 
-    pt.thresholds.carnivoreOnCarnivore.passed = false;
+    // pt.thresholds.carnivoreOnCarnivore.passed = false;
 
-    for (let guy of guys) {
-        guy.size = 10;
-        //guy.birthday = -18;
-        guy.velLimit = 2;
-        guy.seekAccel = 1;
-        if (guy.id > guys.length / 2) {
-            guy.color = util.redShift();
-        } else {
-            guy.color = util.blueShift();
-        }
+    // for (let guy of guys) {
+    //     guy.size = 10;
+    //     //guy.birthday = -18;
+    //     guy.velLimit = 2;
+    //     guy.seekAccel = 1;
+    //     if (guy.id > guys.length / 2) {
+    //         guy.color = util.redShift();
+    //     } else {
+    //         guy.color = util.blueShift();
+    //     }
 
-        if (util.chance(25)) {
-            guy.carnivorous = true;
-        }
+    //     if (util.chance(25)) {
+    //         guy.carnivorous = true;
+    //     }
+    // }
+    // for (let guy of guys) {
+    //     // guy.velLimit = 1;
+    //     // guy.seekAccel = 1;
+    //     if (guy.id % 2 === 0) {
+    //         //guy.penalty = true;
+    //         guy.color = '#ff0000';
+    //     } else {
+    //         //guy.penalty = false;
+    //         guy.color = '#0000ff'
+    //     }
+    // }
+    let num = 151 - guys.length;
+    for (i = 0; i < num; i++) {
+        guys.push(new Guy());
     }
     }
 
-    static redGuys() {
-        let herbivores = guys.filter(g => !g.carnivorous);
-        console.log('red: ', herbivores.filter(g => g.color.includes('#ff')).length);
-        console.log('non-red: ', herbivores.filter(g => !g.color.includes('#ff')).length);
+    static godModeStats() {
+        let red = guys.filter(g => g.color == '#ff0000').length;
+        let blue = guys.filter(g => g.color == '#0000ff').length;
+        console.log(`red: ${red} | blue: ${blue}`);
+
+        if (red == 0) {
+            console.log(`last red died at ${getTimeIndex()}`);
+            util.playNoise(sounds.alert10);
+        }
     }
 }
