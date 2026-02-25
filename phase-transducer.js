@@ -65,22 +65,32 @@ class PhaseTransducer {
     }
 
     monitorMutationRate() {
-        if (this.phases.mutationRateChangePeriod.hasFinished()) {
-            this.phases.mutationRateChangePeriod.deactivate();
-            return;
-        }
-
-        if (this.phases.windfallOfFood.active) {
-            if (this.phases.windfallOfFood.hasFinished()) {
-                this.phases.windfallOfFood.deactivate();
+        for (let phase of Object.values(this.phases)) {
+            if (phase.active) {
+                if (phase.hasFinished()) {
+                    phase.deactivate();
+                }
+                return;
             }
         }
+        // if (this.phases.mutationRateChangePeriod.active) {
+        //     if (this.phases.mutationRateChangePeriod.hasFinished()) {
+        //         this.phases.mutationRateChangePeriod.deactivate();
+        //     }
+        //     return;
+        // }
 
-        if (this.phases.raftGuys.active) {
-            if (this.phases.raftGuys.hasFinished()) {
-                this.phases.raftGuys.deactivate();
-            }
-        }
+        // if (this.phases.windfallOfFood.active) {
+        //     if (this.phases.windfallOfFood.hasFinished()) {
+        //         this.phases.windfallOfFood.deactivate();
+        //     }
+        // }
+
+        // if (this.phases.raftGuys.active) {
+        //     if (this.phases.raftGuys.hasFinished()) {
+        //         this.phases.raftGuys.deactivate();
+        //     }
+        // }
         
         let courseOfAction = [
             () => this.raft(),
@@ -114,12 +124,12 @@ class PhaseTransducer {
     raft() { 
         if (this.phases.mutationRateChangePeriod.active) return;
 
-        let newGuysCount = guys.length > 0 ? Math.round(guys.length - (guys.length * 0.75)) : data.temp;
+        let newGuysCount = Math.round(guys.length > 3 ? Math.round(guys.length - (guys.length * 0.75)) : data.temp);
         
         for (let i = 0; i < newGuysCount; i++) {
             let newGuy = new Guy();
-            newGuy.velLimit = viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5;
-            newGuy.seekAccel = viz.experiment.samples.seekAccel[viz.experiment.samples.seekAccel.length - 1]. max * 1.5;
+            newGuy.velLimit = constrain(viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5, 0, 10);
+            newGuy.seekAccel = constrain(viz.experiment.samples.seekAccel[viz.experiment.samples.seekAccel.length - 1].max * 1.5, 0, 10);
             newGuy.noiseMagnitude = Math.abs(viz.experiment.samples.noiseMagnitude[viz.experiment.samples.noiseMagnitude.length - 1].min / 1.5);
             newGuy.noiseRotate = Math.abs(viz.experiment.samples.noiseRotate[viz.experiment.samples.noiseRotate.length - 1].min / 1.5);
             newGuy.color = this.raftColors[this.raftCount];
@@ -154,7 +164,7 @@ class PhaseTransducer {
     }
 
     windfallOfFood() {
-        if (this.phases.windfallOfFood.active) return;
+        if (this.phases.windfallOfFood.active && forage.foodStorage.length > 100) return;
         this.phases.windfallOfFood.activate();
         
     }

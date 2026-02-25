@@ -75,13 +75,13 @@ class Forage {
     checkPenaltyStatus() {
         switch (true) {
             case !this.penalty.active && guys.length < 100:
-                this.penalty.deactivate(() => util.playNoise(sounds.penaltyOffBeep));
+                //this.penalty.deactivate(() => util.playNoise(sounds.penaltyOffBeep));
                 break;
             case !this.penalty.active && guys.length >= 100:
                 this.penalty.activate(() => util.playNoise(sounds.penaltyOnBeep));
                 break;
             case this.penalty.active && guys.length >= 100:
-                this.penalty.start = frameCount;
+                this.penalty.start = getTimeIndex();
                 break;
             case this.penalty.active && guys.length < 100 && this.penalty.hasFinished():
                 this.penalty.deactivate(() => util.playNoise(sounds.penaltyOffBeep));

@@ -22,6 +22,9 @@ class Util {
   }
 
   randomHexColor(temp = 95, hum = 100) {
+    if (temp === null || temp === NaN) {
+        console.log('here is where the thing is happening', temp, hum);
+    }
     temp = map(temp, 0, 95, 0, 255);
     hum = map(hum, 0, 100, 0, 255);
     let r = Math.floor(random(0, temp + 1))
@@ -76,10 +79,10 @@ class Util {
     let bestGuy = null;
     let bestDist = Infinity;
 
-    const h1 = hue(targetColor);
+    const h1 = hue(color(targetColor));
 
     for (const guy of guys) {
-      const h2 = hue(guy.color);
+      const h2 = hue(color(guy.color));
       const d = abs(h1 - h2);
       const dist = min(d, 360 - d);
 

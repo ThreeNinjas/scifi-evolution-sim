@@ -42,10 +42,12 @@ let c; //maybe rename config below later....
 
 /** @@type {Guy[]} */
 let guys = [];
-/** @@type {Forage[]} */
-let forage;
-let pt;
-let mc = new MessageCenter();
+/** @@type {Forage} */
+let forage; 
+/** @@type {PhaseTransducer} */
+let pt; 
+
+let mc = new MessageCenter(); 
 let diameter = 10;
 let data = null;
 

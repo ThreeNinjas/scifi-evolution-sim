@@ -134,7 +134,7 @@ class Guy {
 
     this.penalty = false;
 
-    Guy.enforceTradeOffs(this);
+    //Guy.enforceTradeOffs(this);
   }
 
   drawMe() {
@@ -338,7 +338,7 @@ class Guy {
             continue;
         }
       push();
-      let orbiterSize = this.size * 0.2 >= 2 ? this.size * 0.2 : 2;
+      let orbiterSize = constrain(this.size * 0.2, 2, 5);
       translate(this.pos.x, this.pos.y);
       strokeWeight(orbiterSize);
       stroke(this.orbiters[i].color);
@@ -894,7 +894,8 @@ class Guy {
             trait: m.trait,
             t: getTimeIndex(),
             angle: 0,
-            delta: (m.percentChange / 100) / 10,
+            //delta: (m.percentChange / 100) / 10,
+            delta: map(m.percentChange, -500, 500, -1, 1, true),
             color: util.randomHexColor(),
             rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
         });
@@ -927,7 +928,7 @@ class Guy {
     stats.guys++;
 
     this.resetHorniness(mate);
-    Guy.enforceTradeOffs(child);
+    Guy.enforceTradeOffs(child, parentA, parentB);
     guys.push(child);
 
     if (volumeOn && mutationHappened) {
@@ -1157,8 +1158,8 @@ class Guy {
     if (this.wanderStartingT > this.reactionTime * 2) {
         if (this.seekPriority !== 'wander') {
             this.seekPriority = 'wander'; 
-            this.target.x = c.corners[util.randomNumber(0, c.corners.length - 1)].x;
-            this.target.y = c.corners[util.randomNumber(0, c.corners.length - 1)].y;
+            this.target.x = random(c.bounds.x.min, c.bounds.x.max);
+            this.target.y = random(c.bounds.y.min, c.bounds.y.max);
         }
         //push(); stroke('white'); line(this.pos.x, this.pos.y, this.target.x, this.target.y); pop();
         util.playNoise(sounds.wander, () => this.wanderNoisePlayed = true);
@@ -1295,17 +1296,34 @@ class Guy {
     `);
   }
 
-  static enforceTradeOffs(guy) {
+  static enforceTradeOffs(guy, parentA, parentB) {
+    //only for first generation armored guys
     if (guy.armored) {
-        guy.digestionRate += guy.digestionRate * 2; // (data.totalDryDays / 100);
+        let armoredParentCount = 0;
+        for (let parent of [parentA, parentB]) {
+            if (parent.armored) armoredParentCount++;
+        }
+        if (armoredParentCount === 0) {
+            //do this only for first generation armored guys
+            guy.digestionRate = guy.digestionRate * 2; // (data.totalDryDays / 100);
+        }
+
+        if (armoredParentCount === 1) {
+            for (let parent of [parentA, parentB]) {
+                if (parent.armored) guy.digestionRate = parent.digestionRate;
+            }
+        }
+        
         guy.carnivorous = false;
-        guy.runsFromPredators = util.coinToss(true, false);
+        if (guy.runsFromPredators) guy.runsFromPredators = util.coinToss(true, false);
     }
     if (guy.carnivorous) {
-        guy.runsFromPredators = 0;
+        if (!parentA. carnivorous && !parentB.carnivorous) {
+            guy.growthRate = guy.growthRate / 2;
+        }
     }
   }
-  //0.00009508575103562424
+  
 
   static gatedTraits() {
     return [
@@ -1315,7 +1333,7 @@ class Guy {
     ];
   }
 
-  static findLeastRedGuys(guys) { console.log('flrg');
+  static findLeastRedGuys(guys) {
     const withIndex = guys.map((obj, index) => ({ obj, index }));
     let out = [];
 

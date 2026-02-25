@@ -1,6 +1,11 @@
 class Phase {
     static instances = [];
-
+    /**
+     * 
+     * @param {number} phaseLength - how long the phase should last once activated, measured in TimeIndex units
+     * @param {object} - two callback functions that run when the phase is activated or deactivated
+     * @param {callback} shouldBeActive - function that determines criteria for activating the phase
+     */
     constructor(phaseLength, { onActivate = null, onDeactivate = null } = {}, shouldBeActive = null) {
         Phase.instances.push(this);
         this.start = 0;

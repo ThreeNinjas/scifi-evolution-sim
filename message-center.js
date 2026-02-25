@@ -8,7 +8,11 @@ class MessageCenter {
         this.messageDuration = 25000;
         this.messageExpiresAt = this.messageDuration;
     }
-
+    /**
+     * 
+     * @param {string} message - The text that will be displayed to the user
+     * @param {string} category - This determines the color of the message bar
+     */
     addToQueue(message, category='none') {
         const newMessage = {
             message,
@@ -38,7 +42,11 @@ class MessageCenter {
             this.currentMessage = null;
         }
     }
-
+    /**
+     * 
+     * @param {string} category 
+     * @returns {string} - a hex color formated like #000000
+     */
     mapCategoryToColor(category) {
         switch(category) {
             case 'weather':
