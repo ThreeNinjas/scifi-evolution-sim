@@ -63,13 +63,19 @@ class Guy {
     //if (this.carnivorous) this.armored = false;
 
     if (this.armored && !pt.thresholds.armored.passed) {
-        console.log('armored');
-        console.log(this);
         mc.addToQueue(`Guy${this.id} is armored`, 'mutation');
-        this.halo = 1;
         pt.thresholds.armored.passed = true;
         util.playNoise(sounds.armored);
-        paused = true;
+    }
+
+    if (this.carnivorous && guys.filter(g => !g.carnivorous).length == 0) {
+        if (util.chance(data.clouds)) {
+            this.carnivorous = false;
+        }
+
+        if (util.chance(data.clouds)) {
+            this.armored = true;
+        }
     }
 
     //heritable - vectors
@@ -897,7 +903,7 @@ class Guy {
             //delta: (m.percentChange / 100) / 10,
             delta: map(m.percentChange, -500, 500, -1, 1, true),
             color: util.randomHexColor(),
-            rMultiplier: Math.abs(util.randomNormal(1.1, 0.5)),
+            rMultiplier: constrain(Math.abs(util.randomNormal(1.1, 0.5)), 0.75, 2),
         });
     }
 

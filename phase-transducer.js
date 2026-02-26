@@ -16,7 +16,7 @@ class PhaseTransducer {
         this.orbiterLifeSpan = data.totalDryDays * 100;
 
         this.phases = {
-            mutationRateChangePeriod: new Phase(2, {
+            mutationRateChangePeriod: new Phase(20, {
                 onActivate: () => {
                     c.guys.mutationRate = constrain(c.guys.mutationRate / 2, (c.guys.traits.binary.length + c.guys.traits.value.length) * 5, data.hum * 3);
                     mc.addToQueue(`Increased radiation is causing mutations.`, 'mutation');
@@ -29,12 +29,12 @@ class PhaseTransducer {
                 util.playNoise(sounds.penaltyOffBeep);
                 }
             }),
-            raftGuys: new Phase(5, {
+            raftGuys: new Phase(50, {
                 onActivate: () => {
                     this.raft();
                 }
             }),
-            windfallOfFood: new Phase(3, {
+            windfallOfFood: new Phase(30, {
                 onActivate: () => {
                     forage.populateMe(500)
                     mc.addToQueue('An unusual amount of food has been distributed.');
