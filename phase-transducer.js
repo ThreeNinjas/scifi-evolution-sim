@@ -128,10 +128,19 @@ class PhaseTransducer {
         
         for (let i = 0; i < newGuysCount; i++) {
             let newGuy = new Guy();
-            newGuy.velLimit = constrain(viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5, 0, 10);
-            newGuy.seekAccel = constrain(viz.experiment.samples.seekAccel[viz.experiment.samples.seekAccel.length - 1].max * 1.5, 0, 10);
-            newGuy.noiseMagnitude = Math.abs(viz.experiment.samples.noiseMagnitude[viz.experiment.samples.noiseMagnitude.length - 1].min / 1.5);
-            newGuy.noiseRotate = Math.abs(viz.experiment.samples.noiseRotate[viz.experiment.samples.noiseRotate.length - 1].min / 1.5);
+            let velLimit = constrain(viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5, 0, 10)
+            let seekAccel = constrain(viz.experiment.samples.seekAccel[viz.experiment.samples.seekAccel.length - 1].max * 1.5, 0, 10);
+            let noiseMagnitude = Math.abs(viz.experiment.samples.noiseMagnitude[viz.experiment.samples.noiseMagnitude.length - 1].min / 1.5);
+            let noiseRotate = Math.abs(viz.experiment.samples.noiseRotate[viz.experiment.samples.noiseRotate.length - 1].min / 1.5);
+
+            let overrides = {velLimit, seekAccel, noiseMagnitude, noiseRotate};
+
+            for (let key in overrides) {
+                let value = overrides[key];
+
+                if (value != null && !Number.isNaN(value)) newGuy[key] = value;
+            }
+            
             newGuy.color = this.raftColors[this.raftCount];
             newGuy.adultSize = Math.round(random(11, 21));
             newGuy.size = Math.floor(newGuy.adultSize * 0.9);

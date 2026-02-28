@@ -78,7 +78,6 @@ class Util {
   closestGuyByColor(targetColor, guys) {
     let bestGuy = null;
     let bestDist = Infinity;
-
     const h1 = hue(color(targetColor));
 
     for (const guy of guys) {

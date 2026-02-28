@@ -10,13 +10,13 @@ class Guy {
     this.adultSize = constrain(
       Math.abs(Math.floor(util.randomNormal(12, data.clouds / 10))),
       5,
-      100
+      100,
     );
     this.growthRate = Math.abs(
       util.randomNormal(
         globalDigestionRate - globalDigestionRate * (data.clouds / 100),
-        0.0005
-      )
+        0.0005,
+      ),
     );
     this.color = util.randomHexColor(data.temp);
     this.skinColor = util.randomHexColor(data.hum, data.temp);
@@ -24,9 +24,13 @@ class Guy {
     this.digestionRate = this.getDigestionRate();
     this.lifeSpan = util.randomNormal(data.temp, data.vis);
     this.childrenAllowed = Math.abs(
-      Math.round(util.randomNormal(data.temp / 5, data.vis))
+      Math.round(util.randomNormal(data.temp / 5, data.vis)),
     );
-    this.reactionTime = constrain(Math.abs(Math.floor(util.randomNormal(data.temp, data.hum))), 30, 20000);
+    this.reactionTime = constrain(
+      Math.abs(Math.floor(util.randomNormal(data.temp, data.hum))),
+      30,
+      20000,
+    );
 
     //heritable - special cases
     //there's a 1 in temperature chance that guy will have a preference of some random trait
@@ -42,40 +46,55 @@ class Guy {
     this.resolute = util.chance(10); //if this is true, guy won't change its mind about food targets
     this.movesAwayFromBaby = util.chance(data.temp);
     this.wander = util.chance(data.clouds);
-    
-    this.carnivorous = getTimeIndex() < data.totalRainfall * 10 ? false : guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length));
+
+    this.carnivorous =
+      getTimeIndex() < data.totalRainfall * 10
+        ? false
+        : guys.length == 100
+          ? true
+          : util.chance(1, Math.abs(100 - guys.length));
     this.carnivoreNoisePlayed = false;
     if (this.carnivorous) {
-        this.digestionRate = Math.abs(this.digestionRate);
-        console.log(`Guy${this.id} is a carnivore.`);
-        mc.addToQueue(`Guy${this.id} is a carnivore`, 'murder');
-        util.playNoise(sounds.carnivoreNoise, () => this.carnivoreNoisePlayed = true);
+      this.digestionRate = Math.abs(this.digestionRate);
+      console.log(`Guy${this.id} is a carnivore.`);
+      mc.addToQueue(`Guy${this.id} is a carnivore`, "murder");
+      util.playNoise(
+        sounds.carnivoreNoise,
+        () => (this.carnivoreNoisePlayed = true),
+      );
 
-        if (!pt.thresholds.carnivore.passed) {
-            pt.thresholds.carnivore.passed = true;
-        }
+      if (!pt.thresholds.carnivore.passed) {
+        pt.thresholds.carnivore.passed = true;
+      }
     }
 
-    this.armored = guys.filter(g => g.carnivorous).length > guys.length / 5 ? util.coinToss(true, false) : false;
+    this.armored =
+      guys.filter((g) => g.carnivorous).length > guys.length / 5
+        ? util.coinToss(true, false)
+        : false;
     //this.armored = getTimeIndex() < data.totalRainfall * 10 ? false : ( guys.length == 100 ? true : util.chance(1, Math.abs(100 - guys.length) ) );
-    this.runsFromPredators = guys.filter(g => g.carnivorous).length > guys.length / data.totalRainfall ? util.coinToss(true, false) : null;
+    this.runsFromPredators =
+      guys.filter((g) => g.carnivorous).length >
+      guys.length / data.totalRainfall
+        ? util.coinToss(true, false)
+        : null;
     if (this.armored) this.carnivorous = false;
     //if (this.carnivorous) this.armored = false;
 
     if (this.armored && !pt.thresholds.armored.passed) {
-        mc.addToQueue(`Guy${this.id} is armored`, 'mutation');
-        pt.thresholds.armored.passed = true;
-        util.playNoise(sounds.armored);
+      mc.addToQueue(`Guy${this.id} is armored`, "mutation");
+      pt.thresholds.armored.passed = true;
+      util.playNoise(sounds.armored);
     }
 
-    if (this.carnivorous && guys.filter(g => !g.carnivorous).length == 0) {
-        if (util.chance(data.clouds)) {
-            this.carnivorous = false;
-        }
+    if (this.carnivorous && guys.filter((g) => !g.carnivorous).length == 0) {
+      if (util.chance(data.clouds)) {
+        this.carnivorous = false;
+      }
 
-        if (util.chance(data.clouds)) {
-            this.armored = true;
-        }
+      if (util.chance(data.clouds)) {
+        this.armored = true;
+      }
     }
 
     //heritable - vectors
@@ -88,7 +107,7 @@ class Guy {
     //vectors
     this.pos = createVector(
       util.randomNumber(config.bounds.x.min, config.bounds.x.max),
-      util.randomNumber(config.bounds.y.min, config.bounds.y.max)
+      util.randomNumber(config.bounds.y.min, config.bounds.y.max),
     );
     this.vel = p5.Vector.random2D();
     this.acc = createVector(0, 0);
@@ -150,16 +169,16 @@ class Guy {
     }
 
     if (godMode) {
-        if (this.gravityBites.length > 0) {
-            for (let gb of this.gravityBites) {
-                push();
-                stroke('white');
-                line(this.pos.x, this.pos.y, gb.pos.x, gb.pos.y);
-                pop();
-            }
+      if (this.gravityBites.length > 0) {
+        for (let gb of this.gravityBites) {
+          push();
+          stroke("white");
+          line(this.pos.x, this.pos.y, gb.pos.x, gb.pos.y);
+          pop();
         }
+      }
     }
-    
+
     stroke(!this.dead ? this.skinColor : c.guys.colors.dead);
     strokeWeight(1);
     fill(!this.dead ? this.color : c.guys.colors.dead);
@@ -175,7 +194,11 @@ class Guy {
     if (this.stomachContents > 0) {
       stroke(this.carnivorous ? c.guys.colors.mars : c.forage.color);
       fill(c.forage.color);
-      circle(this.pos.x, this.pos.y + 1, constrain(this.stomachContents, 0, this.size - 1));
+      circle(
+        this.pos.x,
+        this.pos.y + 1,
+        constrain(this.stomachContents, 0, this.size - 1),
+      );
     }
     if (
       !this.dead &&
@@ -188,7 +211,7 @@ class Guy {
     }
 
     if (this.carnivorous && this.isHungry()) {
-        drawPing(this);
+      drawPing(this);
     }
     pop();
 
@@ -199,26 +222,27 @@ class Guy {
       circle(this.pos.x, this.pos.y, this.size * 2);
       pop();
       push();
-          stroke(c.guys.colors.hungry);
-          noFill();
-          circle(this.pos.x, this.pos.y, this.size * 2);
-          textSize(14);
-          let startY = this.pos.y + (this.size * 2);
-          let haloData = [];
-          haloData.push(this.age().toFixed(0));
-            if (this.carnivorous) haloData.push('carnivorous');
-            if (this.armored) haloData.push('armored');
-            if (this.children.length > 0) haloData.push(`${this.children.length} children`);
-            if (this.orbiters.length > 0) {
-            for (let orbiter of this.orbiters) {
-                haloData.push(`${orbiter.trait}, ${orbiter.delta.toFixed(4)}`);
-            }
-            }
-        fill(c.guys.colors.hungryVar2);
+      stroke(c.guys.colors.hungry);
+      noFill();
+      circle(this.pos.x, this.pos.y, this.size * 2);
+      textSize(14);
+      let startY = this.pos.y + this.size * 2;
+      let haloData = [];
+      haloData.push(this.age().toFixed(0));
+      if (this.carnivorous) haloData.push("carnivorous");
+      if (this.armored) haloData.push("armored");
+      if (this.children.length > 0)
+        haloData.push(`${this.children.length} children`);
+      if (this.orbiters.length > 0) {
+        for (let orbiter of this.orbiters) {
+          haloData.push(`${orbiter.trait}, ${orbiter.delta.toFixed(4)}`);
+        }
+      }
+      fill(c.guys.colors.hungryVar2);
 
       for (let datum of haloData) {
-          text(datum, this.pos.x-10, startY);
-          startY += 14;
+        text(datum, this.pos.x - 10, startY);
+        startY += 14;
       }
       // text(`DP:${this.digestionProgress.toFixed(4)}`, this.pos.x-10, this.pos.y + this.size * 2);
       // text(`SP:${this.calculateSensePerim().toFixed(4)}`, this.pos.x-10, (this.pos.y + this.size * 2) + 14);
@@ -239,7 +263,7 @@ class Guy {
       text(
         `${this.id},${this.calculateSensePerim()}`,
         this.pos.x - 10,
-        this.pos.y
+        this.pos.y,
       );
       pop();
 
@@ -251,23 +275,23 @@ class Guy {
     }
 
     if (this.armored) {
-        push();
-            noFill();
-            strokeWeight(1);
-            stroke(c.guys.colors.radioactive);
-            circle(this.pos.x, this.pos.y, this.size - (this.size * 0.4));
-            circle(this.pos.x, this.pos.y, this.size + (this.size * 0.5));
-        pop();
+      push();
+      noFill();
+      strokeWeight(1);
+      stroke(c.guys.colors.radioactive);
+      circle(this.pos.x, this.pos.y, this.size - this.size * 0.4);
+      circle(this.pos.x, this.pos.y, this.size + this.size * 0.5);
+      pop();
     }
 
     if (this.carnivorous) {
-        push();
-            noFill();
-            strokeWeight(1);
-            stroke(c.guys.colors.mars);
-            circle(this.pos.x, this.pos.y, this.size - (this.size * 0.4));
-            circle(this.pos.x, this.pos.y, this.size + (this.size * 0.5));
-        pop();
+      push();
+      noFill();
+      strokeWeight(1);
+      stroke(c.guys.colors.mars);
+      circle(this.pos.x, this.pos.y, this.size - this.size * 0.4);
+      circle(this.pos.x, this.pos.y, this.size + this.size * 0.5);
+      pop();
     }
   }
 
@@ -278,7 +302,7 @@ class Guy {
       this.target.x = target.pos.x;
       this.target.y = target.pos.y;
     }
-    
+
     if (this.target.x === 0 && this.target.y === 0) return;
 
     if (isGuy && !treeMode) {
@@ -293,18 +317,17 @@ class Guy {
     const tipDistanceFromSource = sourceRadius + padding;
     const back = createVector(d.x, d.y).setMag(
       dist(this.pos.x, this.pos.y, this.target.x, this.target.y) -
-        tipDistanceFromSource
+        tipDistanceFromSource,
     );
     const tip = p5.Vector.sub(this.target, back);
 
     push();
     if (isGuy) {
-        if (this.seekPriority == 'prey') {
-            stroke(c.guys.colors.mars);
-        } else {
-            stroke(c.guys.colors.horny);
-        }
-      
+      if (this.seekPriority == "prey") {
+        stroke(c.guys.colors.mars);
+      } else {
+        stroke(c.guys.colors.horny);
+      }
     } else {
       stroke(c.guys.colors.hungry);
     }
@@ -319,17 +342,17 @@ class Guy {
       line(0, 0, -4, -4);
       line(0, 0, -4, 4);
 
-      if (this.seekPriority == 'wander') {
+      if (this.seekPriority == "wander") {
         line(5, 0, -4, -4);
         line(5, 0, -4, 4);
       }
 
-      if (this.seekPriority == 'evade') {
+      if (this.seekPriority == "evade") {
         push();
-            stroke(c.guys.colors.radioactive);
-            strokeWeight(1);
-            line(10, 0, 4, -6);
-            line(10, 0, 4, 6);
+        stroke(c.guys.colors.radioactive);
+        strokeWeight(1);
+        line(10, 0, 4, -6);
+        line(10, 0, 4, 6);
         pop();
       }
     }
@@ -338,11 +361,11 @@ class Guy {
 
   orbiter() {
     if (this.dead) return;
-    
+
     for (let i = 0; i < this.orbiters.length; i++) {
-        if (this.orbiters[i].delta >= 1 || this.orbiters[i].delta <= -1) {
-            continue;
-        }
+      if (this.orbiters[i].delta >= 1 || this.orbiters[i].delta <= -1) {
+        continue;
+      }
       push();
       let orbiterSize = constrain(this.size * 0.2, 2, 5);
       translate(this.pos.x, this.pos.y);
@@ -444,12 +467,12 @@ class Guy {
       this.pos.x = constrain(
         this.pos.x,
         config.bounds.x.min,
-        config.bounds.x.max
+        config.bounds.x.max,
       );
       this.pos.y = constrain(
         this.pos.y,
         config.bounds.y.min,
-        config.bounds.y.max
+        config.bounds.y.max,
       );
 
       if (
@@ -501,12 +524,12 @@ class Guy {
     this.pos.x = constrain(
       this.pos.x,
       config.bounds.x.min,
-      config.bounds.x.max
+      config.bounds.x.max,
     );
     this.pos.y = constrain(
       this.pos.y,
       config.bounds.y.min,
-      config.bounds.y.max
+      config.bounds.y.max,
     );
     if (
       this.pos.x == config.bounds.x.min ||
@@ -536,24 +559,24 @@ class Guy {
   }
 
   seek() {
-    if (this.seekPriority == 'prey' && this.prey && this.prey.dead) {
-        this.isSeeking = 0;
-        this.target.x = 0;
-        this.target.y = 0;
-        this.seekPriority = null;
-        this.prey = null;
-        return;
+    if (this.seekPriority == "prey" && this.prey && this.prey.dead) {
+      this.isSeeking = 0;
+      this.target.x = 0;
+      this.target.y = 0;
+      this.seekPriority = null;
+      this.prey = null;
+      return;
     }
 
     switch (this.seekPriority) {
-        case 'prey':
-            this.arrow(this.prey);
-            break;
-        case 'wander':
-            this.arrow(this.target);
-            break;
+      case "prey":
+        this.arrow(this.prey);
+        break;
+      case "wander":
+        this.arrow(this.target);
+        break;
     }
-    
+
     this.acc.set(this.target).sub(this.pos);
     this.acc.setMag(this.seekAccel);
 
@@ -568,12 +591,12 @@ class Guy {
     this.pos.x = constrain(
       this.pos.x,
       config.bounds.x.min,
-      config.bounds.x.max
+      config.bounds.x.max,
     );
     this.pos.y = constrain(
       this.pos.y,
       config.bounds.y.min,
-      config.bounds.y.max
+      config.bounds.y.max,
     );
     if (
       this.pos.x == config.bounds.x.min ||
@@ -591,86 +614,92 @@ class Guy {
 
     let distToTarget;
 
-    switch(this.seekPriority) {
-        case 'evade':
-        case 'wander':
-            distToTarget = 20;
-            break;
-        default:
-            distToTarget = 5;
-            break;
+    switch (this.seekPriority) {
+      case "evade":
+      case "wander":
+        distToTarget = 20;
+        break;
+      default:
+        distToTarget = 5;
+        break;
     }
 
     //if you have reached your target:
-    if (dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= distToTarget) {
-        //if you are carnivorous and seeking prey and that prey has not died:
-        if (this.carnivorous && this.seekPriority == 'prey' && this.prey && !this.prey.dead) {
-            //you found your guy, eat that fucker! unless he's armored
-            if (!this.prey.armored) { 
-                this.stomachContents += this.prey.stomachContents + this.prey.size;
-                this.prey.stomachContents = 0;
-                Guy.killThisGuy(this.prey);
-                // console.log(`Guy${this.id} just killed Guy${this.prey.id}.`);
-                // mc.addToQueue({message: `Guy${this.id} just killed Guy${this.prey.id}`, category: 'murder'});
-                this.prey = undefined;
-            }
-        } 
-
-        //if you are being chased by a predator 
-        if (this.seekPriority == 'evade') {
-            //and he's still targeting you and he's not dead
-            if (this.beingChasedBy.prey == this && !this.beingChasedBy.dead) {
-                if (this.chosenCorner !== null) {
-                    this.chosenCorner++;
-                    if (this.chosenCorner > c.corners.length - 1) this.chosenCorner = 0;
-                    this.target = c.corners[this.chosenCorner].copy();
-                }
-                return;
-            }
+    if (
+      dist(this.pos.x, this.pos.y, this.target.x, this.target.y) <= distToTarget
+    ) {
+      //if you are carnivorous and seeking prey and that prey has not died:
+      if (
+        this.carnivorous &&
+        this.seekPriority == "prey" &&
+        this.prey &&
+        !this.prey.dead
+      ) {
+        //you found your guy, eat that fucker! unless he's armored
+        if (!this.prey.armored) {
+          this.stomachContents += this.prey.stomachContents + this.prey.size;
+          this.prey.stomachContents = 0;
+          Guy.killThisGuy(this.prey);
+          // console.log(`Guy${this.id} just killed Guy${this.prey.id}.`);
+          // mc.addToQueue({message: `Guy${this.id} just killed Guy${this.prey.id}`, category: 'murder'});
+          this.prey = undefined;
         }
-        this.nullifyTarget();
+      }
+
+      //if you are being chased by a predator
+      if (this.seekPriority == "evade") {
+        //and he's still targeting you and he's not dead
+        if (this.beingChasedBy.prey == this && !this.beingChasedBy.dead) {
+          if (this.chosenCorner !== null) {
+            this.chosenCorner++;
+            if (this.chosenCorner > c.corners.length - 1) this.chosenCorner = 0;
+            this.target = c.corners[this.chosenCorner].copy();
+          }
+          return;
+        }
+      }
+      this.nullifyTarget();
     }
   }
 
   evadePredator() {
     //make corners an array, loop through them with i and have bestCorner be the index
     util.playNoise(sounds.avoid);
-    this.seekPriority = 'evade';
+    this.seekPriority = "evade";
     this.arrow();
     if (this.target.x == 0 && this.target.y === 0) {
-        let away = p5.Vector.sub(this.pos, this.beingChasedBy.pos).normalize();
-        let bestCorner = null;
-        let bestScore = -Infinity;
+      let away = p5.Vector.sub(this.pos, this.beingChasedBy.pos).normalize();
+      let bestCorner = null;
+      let bestScore = -Infinity;
 
-        for (let i = 0; i < c.corners.length; i++) {
-            let dir = p5.Vector.sub(c.corners[i], this.pos).normalize();
-            let score = away.dot(dir);
-            if (score > bestScore) {
-                bestScore = score;
-                bestCorner = c.corners[i].copy();
-                this.target = bestCorner;   
-                this.chosenCorner = i;
-            }
+      for (let i = 0; i < c.corners.length; i++) {
+        let dir = p5.Vector.sub(c.corners[i], this.pos).normalize();
+        let score = away.dot(dir);
+        if (score > bestScore) {
+          bestScore = score;
+          bestCorner = c.corners[i].copy();
+          this.target = bestCorner;
+          this.chosenCorner = i;
         }
+      }
     }
 
-     
     this.seek();
   }
 
   nullifyTarget() {
     switch (this.seekPriority) {
-        case 'prey':
-            this.prey = null;
-            break;
-        case 'evade':
-            this.beingChasedBy = null;
-            this.chosenCorner = null;
-            break;
-        case 'wander':
-            this.wanderStartingT = 0;
-            this.wanderNoisePlayed = false;
-            break;
+      case "prey":
+        this.prey = null;
+        break;
+      case "evade":
+        this.beingChasedBy = null;
+        this.chosenCorner = null;
+        break;
+      case "wander":
+        this.wanderStartingT = 0;
+        this.wanderNoisePlayed = false;
+        break;
     }
     this.isSeeking = 0;
     this.target.x = 0;
@@ -680,15 +709,12 @@ class Guy {
   }
 
   chooseMate() {
-    let speciationTraits = [
-        'carnivorous',
-        'armored'
-    ];
+    let speciationTraits = ["carnivorous", "armored"];
 
     for (let trait of speciationTraits) {
-        if (this[trait] && pt.speciationThresholdReached(trait)) {
-            this.potentialMates = this.potentialMates.filter(g => g[trait]);
-        }
+      if (this[trait] && pt.speciationThresholdReached(trait)) {
+        this.potentialMates = this.potentialMates.filter((g) => g[trait]);
+      }
     }
     if (!this.preference || this.potentialMates.length < 2) {
       return util.closestGuyByColor(this.color, this.potentialMates);
@@ -714,7 +740,10 @@ class Guy {
     }
 
     util.playNoise(sounds.prefBeep);
-    mc.addToQueue(`Guy${this.id} like a guy with a ${util.biggerSmaller(this.preferenceDirection)} ${this.preference}`, 'mating');
+    mc.addToQueue(
+      `Guy${this.id} like a guy with a ${util.biggerSmaller(this.preferenceDirection)} ${this.preference}`,
+      "mating",
+    );
 
     return bestGuy;
   }
@@ -776,25 +805,28 @@ class Guy {
         };
         const sign = util.chance(1, 2) ? 1 : -1;
         const percent = Math.abs(
-          util.randomNormal(0, util.randomNumber(0.001, util.coinToss(data.totalDryDays, 0.5)))
+          util.randomNormal(
+            0,
+            util.randomNumber(0.001, util.coinToss(data.totalDryDays, 0.5)),
+          ),
         );
         child[trait] *= 1 + sign * percent;
-        
+
         switch (trait) {
-            case 'childrenAllowed':
-                child[trait] = Math.round(child[trait]);
-                break;
-            case 'adultSize':
-            case 'growthRate':
-            case 'digestionRate':
-                child[trait] = Math.abs(child[trait]);
-                break;
+          case "childrenAllowed":
+            child[trait] = Math.round(child[trait]);
+            break;
+          case "adultSize":
+          case "growthRate":
+          case "digestionRate":
+            child[trait] = Math.abs(child[trait]);
+            break;
         }
         mutation.baby = child[trait];
         mutation.mutated = child[trait];
         mutation.percentChange = util.percentChange(
           mutation.original,
-          mutation.mutated
+          mutation.mutated,
         );
 
         child.mutationPackage.value.push(mutation);
@@ -828,7 +860,6 @@ class Guy {
       }
     }
 
-
     //TODO refactor this and make it so I can add whatever traits that work this way in the future
     // if (parentA.carnivorous || parentB.carnivorous) {
     //     child.carnivorous = util.coinToss(true, false);
@@ -840,91 +871,120 @@ class Guy {
     // }
 
     if (parentA.carnivorous && parentB.carnivorous) {
-        child.carnivorous = true;
+      child.carnivorous = true;
 
-        if (!pt.thresholds.carnivoreOnCarnivore.passed) {
-            pt.thresholds.carnivoreOnCarnivore.passed = true;
-        }
+      if (!pt.thresholds.carnivoreOnCarnivore.passed) {
+        pt.thresholds.carnivoreOnCarnivore.passed = true;
+      }
     }
 
-    for (let trait of Guy.gatedTraits()) { continue;
-        if (trait === 'armored' /* && (pt.thresholds.carnivoresExtinct.passed || !pt.thresholds.armored.passed) */ ) {
-            //if this carnivores are extinct, or this is the first armored, we don't need these rules
-            continue;
-        }
-        if (parentA[trait] || parentB[trait]) {
-            child[trait] = util.coinToss(true, false);
-        }
+    for (let trait of Guy.gatedTraits()) {
+      continue;
+      if (
+        trait ===
+        "armored" /* && (pt.thresholds.carnivoresExtinct.passed || !pt.thresholds.armored.passed) */
+      ) {
+        //if this carnivores are extinct, or this is the first armored, we don't need these rules
+        continue;
+      }
+      if (parentA[trait] || parentB[trait]) {
+        child[trait] = util.coinToss(true, false);
+      }
 
-        if (parentA[trait] && parentB[trait]) {
-            child[trait] = true;
-            if (trait == 'carnivorous' && !pt.thresholds.carnivoreOnCarnivore.passed) {
-                pt.thresholds.carnivoreOnCarnivore.passed = true;
-            }
+      if (parentA[trait] && parentB[trait]) {
+        child[trait] = true;
+        if (
+          trait == "carnivorous" &&
+          !pt.thresholds.carnivoreOnCarnivore.passed
+        ) {
+          pt.thresholds.carnivoreOnCarnivore.passed = true;
         }
+      }
     }
 
     if (child.armored) {
-        child.carnivorous = false;
+      child.carnivorous = false;
     }
 
     if (child.carnivorous && !child.carnivoreNoisePlayed) {
-            mc.addToQueue(`Guy${child.id} is a carnivore.`, 'murder')
-            mc.addToQueue(`${Math.round((guys.filter(g => g.carnivorous).length / guys.length) * 100)}% of the population are carnivores`, 'murder')
-            util.playNoise(sounds.carnivoreNoise);
-            child.carnivoreNoisePlayed = true;
-        }
+      mc.addToQueue(`Guy${child.id} is a carnivore.`, "murder");
+      mc.addToQueue(
+        `${Math.round((guys.filter((g) => g.carnivorous).length / guys.length) * 100)}% of the population are carnivores`,
+        "murder",
+      );
+      util.playNoise(sounds.carnivoreNoise);
+      child.carnivoreNoisePlayed = true;
+    }
 
     if (mutationHappened) {
       for (let type of Object.values(child.mutationPackage)) {
         for (let m of type) {
-            let minimum = Math.min(...Guy.getCurrentRangeFor(m.trait));
-            let maximum = Math.max(...Guy.getCurrentRangeFor(m.trait));
-            mc.addToQueue(`Guy${child.id} had a mutation on ${m.trait}: ${typeof m.baby === 'number' ? parseFloat(m.baby.toFixed(6)): m.baby}`, 'mutation');
-          if (m.baby > maximum || m.baby < minimum) {
-            console.log(`Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`);
-            
+          let range = Guy.getCurrentRangeFor(m.trait);
+          mc.addToQueue(
+            `Guy${child.id} had a mutation on ${m.trait}: ${typeof m.baby === "number" ? parseFloat(m.baby.toFixed(6)) : m.baby}`,
+            "mutation",
+          );
+          if (range != null && (m.baby > range.max || m.baby < range.min)) {
+            console.log(
+              `Guy${child.id} had a mutation on ${m.trait}: ${m.baby}`,
+            );
+
             //viz.show(m.trait);
 
             if (volumeOn) {
-                sounds.monsterAlert.currentTime = 0;
-                sounds.monsterAlert.play().catch(() => {});
+              sounds.monsterAlert.currentTime = 0;
+              sounds.monsterAlert.play().catch(() => {});
             }
           }
         }
       }
     }
-       
+
     for (const m of child.mutationPackage.value) {
         child.orbiters.push({
             trait: m.trait,
             t: getTimeIndex(),
             angle: 0,
             //delta: (m.percentChange / 100) / 10,
-            delta: map(m.percentChange, -500, 500, -1, 1, true),
+            delta: (() => {
+              if (!Number.isFinite(m.original) || !Number.isFinite(m.mutated)) return 0.001;
+              const diff = m.mutated - m.original;
+              const scale = Math.abs(m.original) + Math.abs(m.mutated) || 1;
+              const signed = diff / scale;
+              return Math.tanh(signed * 3);
+            })(),
             color: util.randomHexColor(),
-            rMultiplier: constrain(Math.abs(util.randomNormal(1.1, 0.5)), 0.75, 2),
+            rMultiplier: (() => {
+              if (!Number.isFinite(m.original) || !Number.isFinite(m.mutated)) return 0.8;
+              const diff = m.mutated - m.original;
+              const scale = Math.abs(m.original) + Math.abs(m.mutated) || 1;
+              const signed = diff / scale;
+              const squashed = Math.tanh(signed * 3);
+              //return map(Math.abs(squashed), 0, 1, 0.8, 2, true);
+              return map(Math.abs(squashed), 0, 1, 2, 0.8, true);
+            })(),
         });
     }
 
     for (const orbiterArray of [parentA.orbiters, parentB.orbiters]) {
       for (const o of orbiterArray) {
-        if (!child.orbiters.some((c) => c.trait === o.trait) && getTimeIndex() - o.t < pt.orbiterLifeSpan) {
+        if (
+          !child.orbiters.some((c) => c.trait === o.trait) &&
+          getTimeIndex() - o.t < pt.orbiterLifeSpan
+        ) {
           child.orbiters.push({ ...o });
         }
       }
     }
-    
 
-    
     child.color = parentA.hasDominantColor
       ? parentA.color
       : parentB.hasDominantColor
-      ? parentB.color
-      : util.coinToss(parentA, parentB).color;
+        ? parentB.color
+        : util.coinToss(parentA, parentB).color;
 
     if (data.clouds > 1 && util.chance(1, data.clouds)) {
-        mc.addToQueue(`Guy${child.id} had a mutation on color`);
+      mc.addToQueue(`Guy${child.id} had a mutation on color`);
       child.color = util.randomHexColor(data.temp);
     }
 
@@ -966,7 +1026,10 @@ class Guy {
   sensesFood(foods) {
     let potentialFoods = [];
     for (let food of foods) {
-      if (dist(this.pos.x, this.pos.y, food.x, food.y) < this.calculateSensePerim()) {
+      if (
+        dist(this.pos.x, this.pos.y, food.x, food.y) <
+        this.calculateSensePerim()
+      ) {
         this.isSeeking = 1;
         if (this.smartFoodFinder || this.size >= 12) {
           potentialFoods.push({
@@ -982,65 +1045,62 @@ class Guy {
     }
 
     if (potentialFoods.length > 0) {
-        if (this.size < 12) {
-            return potentialFoods.reduce((a, b) => (a.dist < b.dist ? a : b));
-        }
-        this.gravityFeed(potentialFoods);
-        return null;
+      if (this.size < 12) {
+        return potentialFoods.reduce((a, b) => (a.dist < b.dist ? a : b));
+      }
+      this.gravityFeed(potentialFoods);
+      return null;
     }
 
     return null;
   }
 
   gravityFeed(potentialFoods = null) {
-        if (this.carnivorous) return;
-        if (potentialFoods) {
-            for (let pf of potentialFoods) {
-                if (this.isHungry()) {
-                    if (dist(this.pos.x, this.pos.y, pf.x, pf.y) <= this.size * 5) {
-                        let bite = {
-                            id: pf.id,
-                            pos: createVector(pf.x, pf.y),
-                            acc: createVector(0, 0),
-                            vel: createVector(0, 0),
-                            color: c.forage.color,
-                            dist: pf.dist,
-                        };
-                        this.gravityBites.push(bite);
-                        this.eat(pf.id);
-                    }
-                } else {
-
-                }
-            }
+    if (this.carnivorous) return;
+    if (potentialFoods) {
+      for (let pf of potentialFoods) {
+        if (this.isHungry()) {
+          if (dist(this.pos.x, this.pos.y, pf.x, pf.y) <= this.size * 5) {
+            let bite = {
+              id: pf.id,
+              pos: createVector(pf.x, pf.y),
+              acc: createVector(0, 0),
+              vel: createVector(0, 0),
+              color: c.forage.color,
+              dist: pf.dist,
+            };
+            this.gravityBites.push(bite);
+            this.eat(pf.id);
+          }
+        } else {
         }
-
-
-
-        for (let b of this.gravityBites) { 
-            /**
-             * we have secretly already eaten the food particles, and now we are animating them to create
-             * the illusion that it's being pulled in by the gravity of the guy
-             */
-            push();
-            stroke(c.forage.color);
-            
-            circle(b.pos.x, b.pos.y, 1);
-            let d = dist(this.pos.x, this.pos.y, b.pos.x, b.pos.y);
-            b.dist = Math.max(b.dist, d);
-            let t = 1 - constrain(d / b.dist, 0, 1);
-            let speed = lerp(0.01, d, t*t);
-            let direction = p5.Vector.sub(this.pos, b.pos);
-            
-            if (d <= this.size) {
-                const i = this.gravityBites.findIndex(f => f.id === b.id);
-                this.gravityBites.splice(i, 1);
-            } else {
-                b.pos.add(direction.limit(speed));
-            }
-            pop();
-        }
+      }
     }
+
+    for (let b of this.gravityBites) {
+      /**
+       * we have secretly already eaten the food particles, and now we are animating them to create
+       * the illusion that it's being pulled in by the gravity of the guy
+       */
+      push();
+      stroke(c.forage.color);
+
+      circle(b.pos.x, b.pos.y, 1);
+      let d = dist(this.pos.x, this.pos.y, b.pos.x, b.pos.y);
+      b.dist = Math.max(b.dist, d);
+      let t = 1 - constrain(d / b.dist, 0, 1);
+      let speed = lerp(0.01, d, t * t);
+      let direction = p5.Vector.sub(this.pos, b.pos);
+
+      if (d <= this.size) {
+        const i = this.gravityBites.findIndex((f) => f.id === b.id);
+        this.gravityBites.splice(i, 1);
+      } else {
+        b.pos.add(direction.limit(speed));
+      }
+      pop();
+    }
+  }
 
   senses(other) {
     return (
@@ -1082,7 +1142,7 @@ class Guy {
   }
 
   isSexuallyMature() {
-    return (this.size >= this.adultSize - this.adultSize * 0.1) && this.age() > 3;
+    return this.size >= this.adultSize - this.adultSize * 0.1 && this.age() > 3;
   }
 
   calculateSensePerim() {
@@ -1113,8 +1173,8 @@ class Guy {
       0,
       util.randomNormal(
         Guy.getGlobalSenseDistance(this.size),
-        data.vis * data.vis
-      )
+        data.vis * data.vis,
+      ),
     );
   }
 
@@ -1124,37 +1184,42 @@ class Guy {
 
   playDeathBeep() {
     if (volumeOn) {
-        sounds.deathBeep.currentTime = 0;
-        sounds.deathBeep.play().catch(() => {});
+      sounds.deathBeep.currentTime = 0;
+      sounds.deathBeep.play().catch(() => {});
     }
 
     this.deathNoisePlayed = 1;
   }
 
   getAncestors() {
-    return this.getDescendants({}, new Set(), 'parents');
+    return this.getDescendants({}, new Set(), "parents");
   }
 
-  getDescendants(out = {}, visited = new Set(), which='children', returnEldestLiving=false) {
+  getDescendants(
+    out = {},
+    visited = new Set(),
+    which = "children",
+    returnEldestLiving = false,
+  ) {
     visited.add(this.id);
 
     for (let childId of this[which]) {
-        const child = Guy.getGuyById(childId);
-        if (returnEldestLiving && child && !child.dead) {
-            return child;
-        }
-        if (!child || child.dead) continue;
+      const child = Guy.getGuyById(childId);
+      if (returnEldestLiving && child && !child.dead) {
+        return child;
+      }
+      if (!child || child.dead) continue;
 
-        if (!out[this.id]) out[this.id] = [];
-        out[this.id].push(childId);
+      if (!out[this.id]) out[this.id] = [];
+      out[this.id].push(childId);
 
-        if (!visited.has(childId)) {
-            visited.add(childId);
-            child.getDescendants(out, visited, which);
-        }
+      if (!visited.has(childId)) {
+        visited.add(childId);
+        child.getDescendants(out, visited, which);
+      }
     }
     if (returnEldestLiving) {
-        return null;
+      return null;
     }
     return out;
   }
@@ -1162,14 +1227,14 @@ class Guy {
   initiateWander(message) {
     this.wanderStartingT++;
     if (this.wanderStartingT > this.reactionTime * 2) {
-        if (this.seekPriority !== 'wander') {
-            this.seekPriority = 'wander'; 
-            this.target.x = random(c.bounds.x.min, c.bounds.x.max);
-            this.target.y = random(c.bounds.y.min, c.bounds.y.max);
-        }
-        //push(); stroke('white'); line(this.pos.x, this.pos.y, this.target.x, this.target.y); pop();
-        util.playNoise(sounds.wander, () => this.wanderNoisePlayed = true);
-        this.seek();
+      if (this.seekPriority !== "wander") {
+        this.seekPriority = "wander";
+        this.target.x = random(c.bounds.x.min, c.bounds.x.max);
+        this.target.y = random(c.bounds.y.min, c.bounds.y.max);
+      }
+      //push(); stroke('white'); line(this.pos.x, this.pos.y, this.target.x, this.target.y); pop();
+      util.playNoise(sounds.wander, () => (this.wanderNoisePlayed = true));
+      this.seek();
     }
   }
 
@@ -1243,100 +1308,105 @@ class Guy {
         ? 1
         : -1
       : util.chance(60)
-      ? -1
-      : 1;
+        ? -1
+        : 1;
   }
 
   static getCurrentRangeFor(trait) {
-    return guys.map((g) => g[trait]);
+    const allValues = guys.map((g) => g[trait]).filter(Number.isFinite);
+    if (allValues.length === 0) return null;
+
+    return {
+      min: Math.min(...allValues),
+      max: Math.max(...allValues),
+    };
   }
 
-  static killThisGuy(guy, returnNutrients=false) {
-    if (!guy) return; 
+  static killThisGuy(guy, returnNutrients = false) {
+    if (!guy) return;
     viz.experiment.currentDeathsCounted++;
     viz.experiment.currentCumulativeLifeSpan += guy.age();
-    
+
     if (treeGuy === guy) {
-        const oldTreeGuyId = guy.id;
-        treeGuy = guy.getDescendants({}, new Set(), 'children', true);
-        if (treeGuy) {
-            treeGuy.halo = 1;
-        }
-        util.playNoise(sounds.treeGuyTorchPassNoise);
-        mc.addToQueue(`TreeGuy${oldTreeGuyId} has passed the torch to TreeGuy${treeGuy.id}`);
+      const oldTreeGuyId = guy.id;
+      treeGuy = guy.getDescendants({}, new Set(), "children", true);
+      if (treeGuy) {
+        treeGuy.halo = 1;
+      }
+      util.playNoise(sounds.treeGuyTorchPassNoise);
+      mc.addToQueue(
+        `TreeGuy${oldTreeGuyId} has passed the torch to TreeGuy${treeGuy.id}`,
+      );
     }
     guy.dead = 1;
     stats.guys--;
 
     if (!guy.deathNoisePlayed) {
-        guy.playDeathBeep();
+      guy.playDeathBeep();
     }
 
     if (returnNutrients) {
-        if (guy.stomachContents > 0) {
-            forage.populateMe(guy.stomachContents, guy.pos, guy.size);
-            guy.stomachContents = 0;
-        }
+      if (guy.stomachContents > 0) {
+        forage.populateMe(guy.stomachContents, guy.pos, guy.size);
+        guy.stomachContents = 0;
+      }
 
-        forage.populateMe(guy.size, guy.pos, guy.size);
+      forage.populateMe(guy.size, guy.pos, guy.size);
     }
   }
 
   static makeThisGuyCarnivorous(id) {
-    let guy = guys.find(g => g.id === id);
+    let guy = guys.find((g) => g.id === id);
     if (!guy) return;
 
-    guy.carnivorous = 1; 
+    guy.carnivorous = 1;
     guy.target.x = 0;
     guy.target.y = 0;
-    guy.seekPriority = 'prey';
+    guy.seekPriority = "prey";
   }
 
   static showCarnivoreDetails(id) {
-    let guy = guys.find(g => g.id === id);
+    let guy = guys.find((g) => g.id === id);
     if (!guy) return;
     console.log(
-        `isHungry: ${guy.isHungry()}; isHorny: ${guy.isHorny}; stomachContents: ${guy.stomachContents};
+      `isHungry: ${guy.isHungry()}; isHorny: ${guy.isHorny}; stomachContents: ${guy.stomachContents};
         seekPriority: ${guy.seekPriority}; size: ${guy.size};
         target: ${guy.target.x},${guy.target.y}; prey: ${guy.prey};
-    `);
+    `,
+    );
   }
 
   static enforceTradeOffs(guy, parentA, parentB) {
     //only for first generation armored guys
     if (guy.armored) {
-        let armoredParentCount = 0;
-        for (let parent of [parentA, parentB]) {
-            if (parent.armored) armoredParentCount++;
-        }
-        if (armoredParentCount === 0) {
-            //do this only for first generation armored guys
-            guy.digestionRate = guy.digestionRate * 2; // (data.totalDryDays / 100);
-        }
+      let armoredParentCount = 0;
+      for (let parent of [parentA, parentB]) {
+        if (parent.armored) armoredParentCount++;
+      }
+      if (armoredParentCount === 0) {
+        //do this only for first generation armored guys
+        guy.digestionRate = guy.digestionRate * 2; // (data.totalDryDays / 100);
+      }
 
-        if (armoredParentCount === 1) {
-            for (let parent of [parentA, parentB]) {
-                if (parent.armored) guy.digestionRate = parent.digestionRate;
-            }
+      if (armoredParentCount === 1) {
+        for (let parent of [parentA, parentB]) {
+          if (parent.armored) guy.digestionRate = parent.digestionRate;
         }
-        
-        guy.carnivorous = false;
-        if (guy.runsFromPredators) guy.runsFromPredators = util.coinToss(true, false);
+      }
+
+      guy.carnivorous = false;
+      if (guy.runsFromPredators)
+        guy.runsFromPredators = util.coinToss(true, false);
     }
     if (guy.carnivorous) {
-        if (!parentA. carnivorous && !parentB.carnivorous) {
-            guy.growthRate = guy.growthRate / 2;
-        }
+      if (!parentA.carnivorous && !parentB.carnivorous) {
+        guy.growthRate = guy.growthRate / 2;
+      }
     }
   }
-  
 
   static gatedTraits() {
-    return [
-        'armored',
-        'carnivorous',
-        'runsFromPredators',
-    ];
+    return ["armored", "carnivorous", "runsFromPredators"];
   }
 
   static findLeastRedGuys(guys) {
@@ -1405,18 +1475,18 @@ class Guy {
     // }
     let num = 151 - guys.length;
     for (i = 0; i < num; i++) {
-        guys.push(new Guy());
+      guys.push(new Guy());
     }
-    }
+  }
 
-    static godModeStats() {
-        let red = guys.filter(g => g.color == '#ff0000').length;
-        let blue = guys.filter(g => g.color == '#0000ff').length;
-        console.log(`red: ${red} | blue: ${blue}`);
+  static godModeStats() {
+    let red = guys.filter((g) => g.color == "#ff0000").length;
+    let blue = guys.filter((g) => g.color == "#0000ff").length;
+    console.log(`red: ${red} | blue: ${blue}`);
 
-        if (red == 0) {
-            console.log(`last red died at ${getTimeIndex()}`);
-            util.playNoise(sounds.alert10);
-        }
+    if (red == 0) {
+      console.log(`last red died at ${getTimeIndex()}`);
+      util.playNoise(sounds.alert10);
     }
+  }
 }

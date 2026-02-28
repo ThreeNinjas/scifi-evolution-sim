@@ -84,6 +84,8 @@ class Visualization {
     }
 
     takeSnapshot(guys) {
+        if (guys.length === 0) return;
+        
         let t = frameCount;
 
         let aliveGuys = guys.filter(g => g.dead === 0);
@@ -102,9 +104,9 @@ class Visualization {
                     break;
             }
 
-            if (this.experiment.samples[trait].length > 10000) {
-                this.experiment.samples[trait].shift();
-            }
+            // if (this.experiment.samples[trait].length > 10000) {
+            //     this.experiment.samples[trait].shift();
+            // }
             this.experiment.samples[trait].push({
                 t,
                 true: truesies,
@@ -116,9 +118,9 @@ class Visualization {
             if (trait === 'preference') continue;
             let values;
 
-            if (this.experiment.samples[trait].length > 10000) {
-                this.experiment.samples[trait].shift();
-            }
+            // if (this.experiment.samples[trait].length > 10000) {
+            //     this.experiment.samples[trait].shift();
+            // }
 
             switch (trait) {
                 case 'age':
