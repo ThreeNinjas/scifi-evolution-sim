@@ -17,6 +17,7 @@ class MessageCenter {
         const newMessage = {
             message,
             category,
+            t: getTimeIndex(),
         };
 
         if (this.activeQueue.length === 0) {

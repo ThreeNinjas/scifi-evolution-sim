@@ -85,6 +85,7 @@ class Guy {
       mc.addToQueue(`Guy${this.id} is armored`, "mutation");
       pt.thresholds.armored.passed = true;
       util.playNoise(sounds.armored);
+      c.guys.traits.binary.push('armored');
     }
 
     if (this.carnivorous && guys.filter((g) => !g.carnivorous).length == 0) {
@@ -363,6 +364,10 @@ class Guy {
     if (this.dead) return;
 
     for (let i = 0; i < this.orbiters.length; i++) {
+      if (getTimeIndex() - this.orbiters[i].t > c.guys.orbiters.lifeSpan) {
+        this.orbiters.splice(i, 1);
+        continue;
+      }
       if (this.orbiters[i].delta >= 1 || this.orbiters[i].delta <= -1) {
         continue;
       }
@@ -977,6 +982,8 @@ class Guy {
       }
     }
 
+    child.skinColor = util.coinToss(parentA, parentB).color;
+
     child.color = parentA.hasDominantColor
       ? parentA.color
       : parentB.hasDominantColor
@@ -1447,21 +1454,23 @@ class Guy {
 
     // pt.thresholds.carnivoreOnCarnivore.passed = false;
 
-    // for (let guy of guys) {
-    //     guy.size = 10;
-    //     //guy.birthday = -18;
-    //     guy.velLimit = 2;
-    //     guy.seekAccel = 1;
-    //     if (guy.id > guys.length / 2) {
-    //         guy.color = util.redShift();
-    //     } else {
-    //         guy.color = util.blueShift();
-    //     }
+    for (let guy of guys) {
+        guy.size = 10;
+        //guy.birthday = -18;
+        guy.velLimit = 2;
+        guy.seekAccel = 1;
+        guy.armored = true;
+        if (guy.id > guys.length / 2) {
+            guy.color = '#ff0000';
+            
+        } else {
+            guy.color = '#0000ff';
+        }
 
-    //     if (util.chance(25)) {
-    //         guy.carnivorous = true;
-    //     }
-    // }
+        // if (util.chance(25)) {
+        //     guy.carnivorous = true;
+        // }
+    }
     // for (let guy of guys) {
     //     // guy.velLimit = 1;
     //     // guy.seekAccel = 1;
@@ -1473,10 +1482,10 @@ class Guy {
     //         guy.color = '#0000ff'
     //     }
     // }
-    let num = 151 - guys.length;
-    for (i = 0; i < num; i++) {
-      guys.push(new Guy());
-    }
+    // let num = 151 - guys.length;
+    // for (i = 0; i < num; i++) {
+    //   guys.push(new Guy());
+    // }
   }
 
   static godModeStats() {

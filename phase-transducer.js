@@ -23,13 +23,17 @@ class PhaseTransducer {
                     util.playNoise(sounds.penaltyOnBeep);
                 },
                 onDeactivate: () => {
+                    if (this.mutationRateIsStale() && guys.length > 0) {
+                        this.phases.mutationRateChangePeriod.activate();
+                        return;
+                    }
                 console.log('restoring mutation rate');
                 mc.addToQueue('Mutation rate restored.');
                 c.guys.mutationRate = c.guys.mutationRate * 2;
                 util.playNoise(sounds.penaltyOffBeep);
                 }
             }),
-            raftGuys: new Phase(50, {
+            raftGuys: new Phase(100, {
                 onActivate: () => {
                     this.raft();
                 }
@@ -50,6 +54,12 @@ class PhaseTransducer {
             '#b1b1b1ff',
             '#984effff',
         ];
+
+        this.courseOfAction = [
+            () => this.raft(),
+            () => this.mutationRateChange(),
+            () => this.windfallOfFood(),
+        ];
     }
 
     getCarnivorousThreshold() {
@@ -64,39 +74,7 @@ class PhaseTransducer {
         return guys.filter(g => g[trait]).length > guys.length * 0.2;
     }
 
-    monitorMutationRate() {
-        for (let phase of Object.values(this.phases)) {
-            if (phase.active) {
-                if (phase.hasFinished()) {
-                    phase.deactivate();
-                }
-                return;
-            }
-        }
-        // if (this.phases.mutationRateChangePeriod.active) {
-        //     if (this.phases.mutationRateChangePeriod.hasFinished()) {
-        //         this.phases.mutationRateChangePeriod.deactivate();
-        //     }
-        //     return;
-        // }
-
-        // if (this.phases.windfallOfFood.active) {
-        //     if (this.phases.windfallOfFood.hasFinished()) {
-        //         this.phases.windfallOfFood.deactivate();
-        //     }
-        // }
-
-        // if (this.phases.raftGuys.active) {
-        //     if (this.phases.raftGuys.hasFinished()) {
-        //         this.phases.raftGuys.deactivate();
-        //     }
-        // }
-        
-        let courseOfAction = [
-            () => this.raft(),
-            () => this.mutationRateChange(),
-            () => this.windfallOfFood(),
-        ];
+    mutationRateIsStale() {
         let globalSameCount = 0;
         let sameTraits = [];
         for (let [trait, samples] of Object.entries(viz.experiment.samples)) {
@@ -117,7 +95,24 @@ class PhaseTransducer {
             
         }
         if (globalSameCount >= 3 && guys.length < 100) {
-            random(courseOfAction)();
+            return true; 
+        }
+
+        return false;
+    }
+
+    monitorMutationRate() {
+        for (let phase of Object.values(this.phases)) {
+            if (phase.active) {
+                if (phase.hasFinished()) {
+                    phase.deactivate();
+                }
+                return;
+            }
+        }
+        
+        if (this.mutationRateIsStale()) {
+            random(this.courseOfAction)();
         }
     }
 
@@ -128,24 +123,24 @@ class PhaseTransducer {
         
         for (let i = 0; i < newGuysCount; i++) {
             let newGuy = new Guy();
-            let velLimit = constrain(viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5, 0, 10)
-            let seekAccel = constrain(viz.experiment.samples.seekAccel[viz.experiment.samples.seekAccel.length - 1].max * 1.5, 0, 10);
-            let noiseMagnitude = Math.abs(viz.experiment.samples.noiseMagnitude[viz.experiment.samples.noiseMagnitude.length - 1].min / 1.5);
-            let noiseRotate = Math.abs(viz.experiment.samples.noiseRotate[viz.experiment.samples.noiseRotate.length - 1].min / 1.5);
+            // let velLimit = constrain(viz.experiment.samples.velLimit[viz.experiment.samples.velLimit.length - 1].max * 1.5, 0, 10)
+            // let seekAccel = constrain(viz.experiment.samples.seekAccel[viz.experiment.samples.seekAccel.length - 1].max * 1.5, 0, 10);
+            // let noiseMagnitude = Math.abs(viz.experiment.samples.noiseMagnitude[viz.experiment.samples.noiseMagnitude.length - 1].min / 1.5);
+            // let noiseRotate = Math.abs(viz.experiment.samples.noiseRotate[viz.experiment.samples.noiseRotate.length - 1].min / 1.5);
 
-            let overrides = {velLimit, seekAccel, noiseMagnitude, noiseRotate};
+            // let overrides = {velLimit, seekAccel, noiseMagnitude, noiseRotate};
 
-            for (let key in overrides) {
-                let value = overrides[key];
+            // for (let key in overrides) {
+            //     let value = overrides[key];
 
-                if (value != null && !Number.isNaN(value)) newGuy[key] = value;
-            }
+            //     if (value != null && !Number.isNaN(value)) newGuy[key] = value;
+            // }
             
             newGuy.color = this.raftColors[this.raftCount];
-            newGuy.adultSize = Math.round(random(11, 21));
+            //newGuy.adultSize = Math.round(random(11, 21));
             newGuy.size = Math.floor(newGuy.adultSize * 0.9);
             newGuy.birthday = getTimeIndex() - 3;
-            newGuy.carnivorous = false;
+            //newGuy.carnivorous = false;
 
             guys.push(newGuy);
             stats.guys++;

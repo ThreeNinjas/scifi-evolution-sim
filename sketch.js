@@ -164,6 +164,14 @@ function draw() {
         pt.raft();
     }
 
+    if (guys.length === 0) {
+        for (let phase of Phase.instances) {
+            phase.deactivate();
+        }
+
+        pt.raft();
+    }
+
     // if (!window.__reloading && guys.filter(g => !g.dead).length <= 1) {
     //     console.log('reload lol if you see me you are fucked haha');
     //     window.__reloading = true;
@@ -416,17 +424,7 @@ function draw() {
         if (guy.stomachContents > 0 && !guy.dead) {
             //Penalizing speed, the closer you get to the initial limit, the higher the metabolic cost
             //suspending the laws of physics for mating purposes, just like irl
-            if (!guy.mate) {
-                const penalty = Math.pow(guy.vel.mag() / viz.experiment.samples.velLimit[0].max, 3);
-                guy.stomachContents -= penalty * 0.001;
-                guy.stomachContents = Math.max(0, guy.stomachContents);
-            }
-            /**
-             * Just so you remember how this works lol
-                1 / 5 ^ 3 = 0.008
-                5 / 5 ^ 3 = 1
-                6 / 5 ^ 3 = 1.728
-             */
+            Physics.enforceLawsOfPhyics(guy);
         }
         if (guy.stomachContents > 0 && guy.dead == 0) {
             if (guy.digestionProgress >= 1) {
@@ -814,7 +812,7 @@ async function loadWeather() {
     data = await updateWeather();
 
     if (!data) {
-        window.location.reload();
+        //window.location.reload();
     }
     mc.addToQueue('Updated weather', 'weather');
     console.log(data);
@@ -1047,14 +1045,31 @@ function drawMasking() {
     pop();
 }
 
+function displayTimeIndex(value = null) {
+    const fc = (value === null || value === undefined) ? frameCount : value;
+
+    const raw = Math.max(0, Math.floor(fc)).toString().padStart(4, '0');
+
+    const intPart = raw.slice(0, -3) || '0';
+    const decPart = raw.slice(-3);
+
+    if (intPart.length >= 5) return intPart;
+
+    const allowedDecimals = 5 - intPart.length;
+    const trimmedDec = decPart.slice(0, allowedDecimals).replace(/0+$/, '');
+
+    return trimmedDec.length ? intPart + '.' + trimmedDec : intPart;
+}
+
 function statsText() {
     let leftMargin = 10;
     let startingY = (height / 2) + graphAreaHeight + 50;
+
     push();
         noStroke();
         fill("#ddbbff");
         textSize(15);
-        text("TIME INDEX: " + getTimeIndex(), leftMargin, startingY);
+        text("TIME INDEX: " + displayTimeIndex(), leftMargin, startingY);
         text("GUYS: " + guys.filter(g => g.dead == 0).length, leftMargin, startingY + 20);
         text("FOOD: " + forage.foodStorage.length, leftMargin, startingY + 40);
         text(`CHOF: ${forage.calculateChanceOfFood().toFixed(3)}`, leftMargin, startingY + 60);

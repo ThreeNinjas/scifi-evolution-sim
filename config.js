@@ -7,6 +7,9 @@ class Config {
         this.guys = {
             mutationRate: data.hum * 3,
             size: 10,
+            orbiters: {
+                lifeSpan: 100,
+            },
             colors: {
                 dead: '#272a3aff',
                 horny: '#ff3cd1ff',
