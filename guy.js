@@ -53,9 +53,10 @@ class Guy {
         : guys.length == 100
           ? true
           : util.chance(1, Math.abs(100 - guys.length));
+    this.carnivorous = Guy.carnivorePercent() > 50 ? util.coinToss(true, false) : this.carnivorous;
+    
     this.carnivoreNoisePlayed = false;
     if (this.carnivorous) {
-      this.digestionRate = Math.abs(this.digestionRate);
       console.log(`Guy${this.id} is a carnivore.`);
       mc.addToQueue(`Guy${this.id} is a carnivore`, "murder");
       util.playNoise(
@@ -371,6 +372,8 @@ class Guy {
       if (this.orbiters[i].delta >= 1 || this.orbiters[i].delta <= -1) {
         continue;
       }
+      this.orbiters[i].delta = map(this.orbiters[i].delta, -1, 1, -0.5, 0.5);
+
       push();
       let orbiterSize = constrain(this.size * 0.2, 2, 5);
       translate(this.pos.x, this.pos.y);
@@ -755,6 +758,7 @@ class Guy {
 
   businessTime(mate, guys) {
     if (populationControl.active) return;
+
     //TODO: make babies small! let them grow into sexual maturity
     let mutationHappened = false;
     if (this.id < mate.id) return;
@@ -914,7 +918,7 @@ class Guy {
     if (child.carnivorous && !child.carnivoreNoisePlayed) {
       mc.addToQueue(`Guy${child.id} is a carnivore.`, "murder");
       mc.addToQueue(
-        `${Math.round((guys.filter((g) => g.carnivorous).length / guys.length) * 100)}% of the population are carnivores`,
+        `${Math.round(Guy.carnivorePercent())}% of the population are carnivores`,
         "murder",
       );
       util.playNoise(sounds.carnivoreNoise);
@@ -1172,7 +1176,7 @@ class Guy {
   }
 
   getDigestionRate() {
-    return Guy.getGlobalDigestionRate() * util.logNormalMultiplier();
+    return Math.abs(Guy.getGlobalDigestionRate() * util.logNormalMultiplier());
   }
 
   getSenseDistance() {
@@ -1285,7 +1289,7 @@ class Guy {
   // -0.05957793103448276
 
   static getGlobalDigestionRate() {
-    return data.temp / (data.hum * 750);
+    return Math.abs(data.temp / (data.hum * 750));
   }
 
   static getGlobalSenseDistance(size) {
@@ -1433,6 +1437,10 @@ class Guy {
     return out;
   }
 
+  static carnivorePercent() {
+    return Math.round((guys.filter((g) => g.carnivorous).length / guys.length) * 100);
+  }
+
   static godMode(i) {
     //godMode = true;
     // guys.filter(g => g.id > 10).forEach(g => g.dead = 1);
@@ -1459,12 +1467,18 @@ class Guy {
         //guy.birthday = -18;
         guy.velLimit = 2;
         guy.seekAccel = 1;
-        guy.armored = true;
+        //guy.armored = true;
         if (guy.id > guys.length / 2) {
             guy.color = '#ff0000';
+            guy.carnivorous = true;
+            guy.armored = false;
             
         } else {
             guy.color = '#0000ff';
+            if (util.coinToss(true, false)) {
+              guy.armored = true;
+              guy.carnivorous = false;
+            }
         }
 
         // if (util.chance(25)) {

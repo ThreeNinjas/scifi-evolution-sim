@@ -211,25 +211,8 @@ function draw() {
 
     for (let guy of guys) {
         //kill guys whose time is up or who have had their allotment of children
-        if (!guy.dead && (getTimeIndex() - guy.birthday >= guy.lifeSpan || guy.offspringCount > guy.childrenAllowed)) {
+        if (!guy.dead && (guy.age() >= guy.lifeSpan || guy.offspringCount >= guy.childrenAllowed)) {
             Guy.killThisGuy(guy, true);
-            // guy.dead = 1;
-
-            // if (treeGuy === guy) {
-            //     treeGuy = guy.getDescendants({}, new Set(), 'children', true);
-            // }
-
-            // if (!guy.deathNoisePlayed) {
-            //     //return them to the environment
-            //     if (guy.stomachContents > 0) {
-            //         forage.populateMe(guy.stomachContents, guy.pos, guy.size);
-            //         guy.stomachContents = 0;
-            //     }
-
-            //     forage.populateMe(guy.size, guy.pos, guy.size);
-            //     stats.guys--;
-            //     guy.playDeathBeep();
-            // }
         }
 
         //guys that aren't full grown, increment their growth
@@ -239,7 +222,7 @@ function draw() {
             //if their belly is full and so is their growth progress, increment their size
             if (!guy.isHungry() && guy.growthProgress >= 1) {
                 guy.size++;
-                guy.growthProgress--;
+                guy.growthProgress = 0;
                 guy.senseDistance = guy.senseDistanceG();
             }
         }
@@ -418,7 +401,7 @@ function draw() {
             guy.isHorny = false;
         }
 
-
+        if (guy.digestionRate < 0) console.log('NEG DIG RATE', guy.id, guy.digestionRate, guy.digestionProgress);
         guy.digestionProgress += guy.isSexuallyMature() ? guy.digestionRate : guy.digestionRate / 4;
 
         if (guy.stomachContents > 0 && !guy.dead) {
@@ -426,8 +409,10 @@ function draw() {
             //suspending the laws of physics for mating purposes, just like irl
             Physics.enforceLawsOfPhyics(guy);
         }
-        if (guy.stomachContents > 0 && guy.dead == 0) {
-            if (guy.digestionProgress >= 1) {
+
+        //note, this block is from ChatGPT and I'm not sure I understand it or agree with it but I'm giving it a shot.
+        if (!guy.dead && guy.stomachContents > 0) {
+            while (guy.digestionProgress >= 1 && guy.stomachContents >= forage.foodSize) {
                 guy.stomachContents -= forage.foodSize;
                 guy.digestionProgress -= 1;
 
@@ -436,13 +421,16 @@ function draw() {
                     guy.haloWasSetAutomatically = 0;
                 }
             }
-        } else {
-            if (guy.digestionProgress >= 1 && guy.dead == 0 && guy.stomachContents == 0) {
-                if (treeGuy === guy) {
-                    treeGuy = guy.getDescendants({}, new Set(), 'children', true);
-                }
-                Guy.killThisGuy(guy);
+
+            if (guy.stomachContents < forage.foodSize) {
+                guy.stomachContents = Math.max(0, guy.stomachContents);
+                guy.digestionProgress = Math.min(guy.digestionProgress, 0.999999);
             }
+        } else if (!guy.dead && guy.stomachContents == 0 && guy.digestionProgress >= 1) {
+            if (treeGuy === guy) {
+                treeGuy = guy.getDescendants({}, new Set(), 'children', true);
+            }
+            Guy.killThisGuy(guy);
         }
 
         
@@ -509,7 +497,7 @@ function draw() {
                         forage.chanceOfFood = forage.calculateChanceOfFood();
                         mc.addToQueue('Updated weather', 'weather');
                         util.playNoise(sounds.weatherUpdated);
-                        console.log(data);
+                        util.clog(data);
                     }
                 }).finally(() => {
                     weatherUpdateInFlight = false;
@@ -815,8 +803,7 @@ async function loadWeather() {
         //window.location.reload();
     }
     mc.addToQueue('Updated weather', 'weather');
-    console.log(data);
-
+    util.clog(data);
 
     c = new Config();
     c.generateOrbiterColors();
@@ -1046,19 +1033,18 @@ function drawMasking() {
 }
 
 function displayTimeIndex(value = null) {
-    const fc = (value === null || value === undefined) ? frameCount : value;
+    if (value === null) value = getTimeIndex();
 
-    const raw = Math.max(0, Math.floor(fc)).toString().padStart(4, '0');
+    const intLength = Math.floor(value).toString().length;
+    const allowed = Math.max(0, 5 - intLength);
 
-    const intPart = raw.slice(0, -3) || '0';
-    const decPart = raw.slice(-3);
+    const formatter = new Intl.NumberFormat('en-US', {
+        useGrouping: false,
+        minimumFractionDigits: allowed,
+        maximumFractionDigits: allowed
+    });
 
-    if (intPart.length >= 5) return intPart;
-
-    const allowedDecimals = 5 - intPart.length;
-    const trimmedDec = decPart.slice(0, allowedDecimals).replace(/0+$/, '');
-
-    return trimmedDec.length ? intPart + '.' + trimmedDec : intPart;
+    return formatter.format(value);
 }
 
 function statsText() {

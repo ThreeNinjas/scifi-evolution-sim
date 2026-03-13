@@ -22,11 +22,15 @@ class Util {
   }
 
   randomHexColor(temp = 95, hum = 100) {
-    if (temp === null || temp === NaN) {
-        console.log('here is where the thing is happening', temp, hum);
+    if (temp === null || Number.isNaN(temp) || hum === null || Number.isNaN(hum)) {
+        this.clog('here is where the thing is happening', temp, hum);
     }
-    temp = map(temp, 0, 95, 0, 255);
-    hum = map(hum, 0, 100, 0, 255);
+    temp = constrain(map(temp, 0, 95, 0, 255), 0, 255);
+    hum = constrain(map(hum, 0, 100, 0, 255), 0, 255);
+
+    if (temp > 255 || hum > 255) {
+      this.clog('we found the problem', temp, hum);
+    }
     let r = Math.floor(random(0, temp + 1))
       .toString(16)
       .padStart(2, "0");
@@ -78,10 +82,14 @@ class Util {
   closestGuyByColor(targetColor, guys) {
     let bestGuy = null;
     let bestDist = Infinity;
-    const h1 = hue(color(targetColor));
+
+    const c1 = color(targetColor);
+    const h1 = saturation(c1) === 0 ? 0 : hue(c1);
 
     for (const guy of guys) {
-      const h2 = hue(color(guy.color));
+      const c2 = color(guy.color);
+      const h2 = saturation(c2) === 0 ? 0 : hue(c2);
+
       const d = abs(h1 - h2);
       const dist = min(d, 360 - d);
 
@@ -92,7 +100,7 @@ class Util {
     }
 
     return bestGuy;
-  }
+}
 
   chance(chance, mult = 100) {
     return util.randomNumber(1, mult) <= chance;
@@ -290,5 +298,9 @@ class Util {
 
   biggerSmaller(data) {
     return data == -1 ? "smaller" : "bigger";
+  }
+
+  clog(message) {
+    console.log(getTimeIndex(), message);
   }
 }
