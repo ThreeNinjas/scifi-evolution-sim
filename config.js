@@ -169,6 +169,7 @@ Need a way to save a comprehensive snapshot of everything, to a file. A
 
 Message center
 
+The number of arrows connecting ancestor to descendant should reflect the number of generations from the highlighted guy
 
 x When the carnivores are the majority, evolve guys with defenses
 x No arrow if target is 0,0

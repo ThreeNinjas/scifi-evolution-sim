@@ -75,7 +75,7 @@ let weatherUpdateInFlight = false;
 let viewerOn = false;
 
 const serverURL =
-    local == 1 ? "http://localhost:3000/" : "http://199.19.74.165:3000/";
+    local == 1 ? "http://localhost:3000/" : "https://jasonjbru.net/api/";
 
 let config = {
     bounds: {
