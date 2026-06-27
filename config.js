@@ -120,6 +120,8 @@ class Config {
 
 --->  
 *** 
+In tree mode, count under tree guy should show #of great grandchildren, great great, total descendants, % of population, etc
+Should they die after having their max # of children? Or just can't have kids anymore? I think I like that better
 Tails for binary mutations 
 Guys that aren't full killers, they take a nip off random guys
 Mutation viewer. Select a guy, highlight everyone with his same orbiters, hide everyone else.

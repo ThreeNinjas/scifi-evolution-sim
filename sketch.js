@@ -74,8 +74,10 @@ let weatherUpdateInFlight = false;
 
 let viewerOn = false;
 
-const serverURL =
+let serverURL =
     local == 1 ? "http://localhost:3000/" : "https://jasonjbru.net/api/";
+
+serverURL += "weather/guys";
 
 let config = {
     bounds: {
@@ -117,6 +119,7 @@ TODO: other real world data variables: size, speed (increment by more than 1?), 
 TODO: implement quadtree
 TODO: visual indicators of certain traits
 */
+let position = false;
 
 async function setup() { 
     font = await loadFont("assets/Antonio-Regular.ttf");
@@ -126,8 +129,13 @@ async function setup() {
     createCanvas(400, 800);
 
     background(0);
-    drawEnvironment();
+    //drawEnvironment();
+    position = await getLocation();
+    if (position) {
+        serverURL += `?lat=${position.lat}&lon=${position.lon}`;
+    }
     loadWeather();
+    
     config.bounds.x.max = width - 20;
     config.bounds.y.max = height / 2;
 }
@@ -768,7 +776,8 @@ async function updateWeather() {
     let oldData = data;
 
     try {
-        const nextData = await fetch(`${serverURL}weather/guys`)
+        //const nextData = await fetch(`${serverURL}weather/guys`)
+        const nextData = await fetch(serverURL)
             .then(r => r.json());
         data = nextData && nextData.error ? oldData : nextData;
         return data;
@@ -793,10 +802,35 @@ async function updateWeather() {
     //     })
 }
 
-async function loadWeather() {
+async function getLocation() { 
+    return new Promise(resolve => {
+        if (!navigator.geolocation) { console.log('hello');
+            resolve(false);
+            return;
+        }
+
+        const watchId = navigator.geolocation.watchPosition(
+            position => {
+                navigator.geolocation.clearWatch(watchId);
+                resolve({lat: position.coords.latitude, lon: position.coords.longitude});
+            },
+            error => {
+                navigator.geolocation.clearWatch(watchId);
+                    resolve(false);
+            },
+            {
+                enableHighAccuracy: true,
+                maximumAge: 0
+            }
+        );
+    });
+}
+
+async function loadWeather(location) { 
     loadIcons();
-    const url = `${serverURL}weather/guys`;
-    console.log(url);
+    //let url = `${serverURL}weather/guys`;
+    
+    console.log(serverURL);
     data = await updateWeather();
 
     if (!data) {
@@ -1528,7 +1562,7 @@ function drawPing(guy) {
     pop();
 }
 
-function drawBars() {
+function drawBars() { 
     if (guys.length > 0) {
         push();
             translate(200, 712);
