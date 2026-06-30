@@ -136,7 +136,7 @@ class PhaseTransducer {
             //     if (value != null && !Number.isNaN(value)) newGuy[key] = value;
             // }
             
-            newGuy.color = this.raftColors[this.raftCount];
+            newGuy.color = util.slightlyRandomizeColor(this.raftColors[this.raftCount]);
             //newGuy.adultSize = Math.round(random(11, 21));
             newGuy.size = Math.floor(newGuy.adultSize * 0.9);
             newGuy.birthday = getTimeIndex() - 3;

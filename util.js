@@ -21,6 +21,25 @@ class Util {
     );
   }
 
+  slightlyRandomizeColor(color) {
+  let map = [
+    1, 3, 5
+  ];
+  let choice = map[Math.floor(Math.random() * map.length)];
+  let originalValue = color.substring(choice, choice + 2);
+  let subbableValue = parseInt(originalValue, 16);
+  
+  subbableValue = subbableValue + (subbableValue * this.randomNumber(0, 300)/100);
+
+  subbableValue = Math.min(255, Math.max(0, subbableValue));
+
+  subbableValue = Math.round(subbableValue);
+ 
+  let out = color.replace(originalValue, subbableValue.toString(16).padStart(2, "0"));
+  //console.log(originalValue, subbableValue, out);
+  return out;
+}
+
   randomHexColor(temp = 95, hum = 100) {
     if (temp === null || Number.isNaN(temp) || hum === null || Number.isNaN(hum)) {
         this.clog('here is where the thing is happening', temp, hum);
