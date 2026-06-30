@@ -120,6 +120,15 @@ class Config {
 
 --->  
 *** 
+ALL ORBITERS ARE STATIONARY :(
+what if, in viz mode on the prefs graph, clicking the name of the pref took. you to that pref's graph
+mutation notif in message center: add a "show me" button that highlights the guy in question
+look at mc wrt pref choosing, it messages too much
+minimum speed for orbiters? some dont' really move at all...really if it's 0% it's not a mutation...but why does that happen so often?
+messages should be all the way left aligned
+some noises should be a small word popping up next to the guy making it, instead of a message
+make sure carnivores only take in what their stomachs can fit, the rest must return to the environment
+orbiters all disappear when they expire...they should just not be passed on
 In tree mode, count under tree guy should show #of great grandchildren, great great, total descendants, % of population, etc
 Should they die after having their max # of children? Or just can't have kids anymore? I think I like that better
 Tails for binary mutations 
